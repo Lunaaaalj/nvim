@@ -11,4 +11,5 @@ vim.o.winbar = table.concat({
   " ",
   "%f",
 })
+vim.opt.scrolloff = 999
 
