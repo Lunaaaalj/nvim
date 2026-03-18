@@ -9,7 +9,8 @@ vim.opt.shiftwidth = 4
 vim.opt.expandtab = true
 vim.opt.autoindent = true
 vim.opt.smartindent = true
-vim.opt.wrap = false
+vim.opt.wrap = true 
+vim.opt.linebreak = true
 
 vim.api.nvim_create_autocmd(
   { "FocusGained", "BufEnter", "CursorHold" },
