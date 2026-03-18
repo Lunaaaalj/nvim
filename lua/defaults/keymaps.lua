@@ -24,3 +24,8 @@ vim.keymap.set("n", "<leader>md", ":MoltenDelete<CR>", { desc = "delete Molten c
 
 -- if you work with html outputs:
 vim.keymap.set("n", "<localleader>mx", ":MoltenOpenInBrowser<CR>", { desc = "open output in browser", silent = true })
+
+-- claude keymaps
+
+vim.keymap.set("n", "<leader>ac", "<cmd>ClaudeCode<cr>", { desc = "Toggle Claude" })
+
