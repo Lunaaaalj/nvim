@@ -14,7 +14,7 @@ return {
         -- see the image.nvim readme for more information about configuring this plugin
         "3rd/image.nvim",
         opts = {
-            backend = "Kitty", -- whatever backend you would like to use
+            backend = "iTerm2", -- whatever backend you would like to use
             max_width = 100,
             max_height = 12,
             max_height_window_percentage = math.huge,
