@@ -28,6 +28,11 @@ vim.keymap.set("n", "<localleader>mx", ":MoltenOpenInBrowser<CR>", { desc = "ope
 
 vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, { desc = "Show diagnostic" })
 
+-- bufferline navigation
+vim.keymap.set("n", "<Tab>", "<cmd>BufferLineCycleNext<cr>", { desc = "Next buffer" })
+vim.keymap.set("n", "<S-Tab>", "<cmd>BufferLineCyclePrev<cr>", { desc = "Prev buffer" })
+vim.keymap.set("n", "<leader>x", "<cmd>bd<cr>", { desc = "Close buffer" })
+
 -- claude keymaps
 
 vim.keymap.set("n", "<leader>ac", "<cmd>ClaudeCode<cr>", { desc = "Toggle Claude" })
