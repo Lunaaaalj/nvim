@@ -1,4 +1,5 @@
 vim.g.mapleader = " "
+vim.g.maplocalleader = "\\"
 vim.keymap.set('n','<leader>ff','<cmd>Telescope find_files<cr>',{ desc = 'Telescope find files' })
 
 vim.keymap.set("n", "<C-h>", "<C-w>h", { desc = "Move to left window" })
@@ -10,7 +11,7 @@ vim.keymap.set("n", "<C-l>", "<C-w>l", { desc = "Move to right window" })
 vim.keymap.set('n','<leader>n', "<cmd>Neotree toggle<cr>", { desc = "Toogle Neo-Tree" })
 
 vim.keymap.set("n", "<leader>t", function()
-  vim.cmd("ToggleTerm direction=vertical size=60")
+    vim.cmd("ToggleTerm direction=vertical size=80")
 end)
 
 vim.keymap.set("t", "<C-h>", [[<C-\><C-n><C-w>h]], { desc = "Exit terminal and go left" })
@@ -25,7 +26,10 @@ vim.keymap.set("n", "<leader>md", ":MoltenDelete<CR>", { desc = "delete Molten c
 -- if you work with html outputs:
 vim.keymap.set("n", "<localleader>mx", ":MoltenOpenInBrowser<CR>", { desc = "open output in browser", silent = true })
 
+vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, { desc = "Show diagnostic" })
+
 -- claude keymaps
 
 vim.keymap.set("n", "<leader>ac", "<cmd>ClaudeCode<cr>", { desc = "Toggle Claude" })
 
+vim.keymap.set("n", "<leader>z", "<cmd>ZenMode<cr>", { desc = "Toogle Zen mode" })
