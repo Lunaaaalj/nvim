@@ -9,20 +9,20 @@ Opinionated Neovim config written in Lua using `lazy.nvim` as the plugin manager
 ## Architecture
 
 ### Load order
-`init.lua` → `lua/defaults/init.lua` → options, keymaps, lazy bootstrap, theme → all plugin specs under `lua/plugins/`
+`init.lua` → `lua/defaults/init.lua` → options, keymaps, lazy bootstrap, colorscheme restore → all plugin specs under `lua/plugins/`
 
 ### Key separation
-- `lua/defaults/` — core Neovim settings (not plugin-specific): options, keymaps, lazy bootstrapping, LSP server setup (`lsp.lua`), and theme auto-switching
+- `lua/defaults/` — core Neovim settings (not plugin-specific): options, keymaps, lazy bootstrapping, and LSP server setup (`lsp.lua`)
 - `lua/plugins/` — one file per plugin (or tightly related group), each returning a lazy.nvim spec table
 
-### Theme
-`lua/defaults/theme.lua` polls macOS `defaults read -g AppleInterfaceStyle` every 2 seconds and switches between `kanso-zen` (dark) and `kanso-pearl` (light). The colorscheme is `kanso` (set in `defaults/init.lua`). On non-macOS, edit this file.
+### Colorscheme
+The last used colorscheme is persisted to `.colorscheme` (in the config root) and restored on startup via `lua/defaults/init.lua`. Any `:colorscheme` call triggers an autocmd that writes the name to that file. `<leader>cs` opens Telescope with live colorscheme preview.
 
 ### LSP
-Two-layer setup: `lua/plugins/mason.lua` ensures `clangd` and `pyright` are installed via mason-lspconfig; `lua/defaults/lsp.lua` configures `tsserver` with on-attach keymaps. Add new LSP servers to either layer depending on whether they need mason management.
+Two-layer setup: `lua/plugins/mason.lua` ensures `clangd` and `pyright` are installed via mason-lspconfig; `lua/defaults/lsp.lua` configures LSP on-attach keymaps. `lua/plugins/lsp.lua` handles additional server configuration. Add new LSP servers to either layer depending on whether they need mason management.
 
 ### Molten / notebooks
-`molten.nvim` uses `image.nvim` with the Kitty backend. Requires `:UpdateRemotePlugins` after install.
+`molten.nvim` uses `image.nvim` with the Kitty backend. Requires `:UpdateRemotePlugins` after install. `jupytext.nvim` handles `.ipynb` ↔ script conversion.
 
 ## Adding a plugin
 
@@ -44,9 +44,12 @@ Leader: `<Space>`, localleader: `\`
 | Key | Action |
 |-----|--------|
 | `<leader>ff` | Telescope find files |
+| `<leader>cs` | Pick colorscheme (live preview, persisted) |
 | `<leader>n` | Toggle Neo-tree |
-| `<leader>t` | Toggle vertical terminal (size 60) |
+| `<leader>t` | Toggle vertical terminal (size 80) |
 | `<leader>ac` | Toggle ClaudeCode |
+| `<leader>z` | Toggle Zen Mode |
+| `<leader>d` | Show diagnostic float |
 | `<leader>e` | Molten evaluate operator |
 | `<leader>r` (visual) | Molten evaluate selection |
 | `<leader>rr` | Molten re-evaluate cell |
@@ -54,13 +57,13 @@ Leader: `<Space>`, localleader: `\`
 | `<leader>oh` | Molten hide output |
 | `<leader>md` | Molten delete cell |
 | `<localleader>mx` | Molten open output in browser |
+| `<Tab>` / `<S-Tab>` | Next / previous buffer (bufferline) |
+| `<leader>x` | Close buffer |
 | `gd` / `K` / `gr` / `<leader>rn` | LSP definition / hover / references / rename |
 | `<C-h/j/k/l>` | Move between windows |
 
 ## External dependencies
 
 - `lazygit` binary (for lazygit.nvim)
-- `gh` CLI (for octo.nvim)
 - `make` (for telescope-fzf-native)
 - Kitty terminal (for image.nvim)
-- macOS `defaults` command (for theme auto-switching)

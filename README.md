@@ -1,11 +1,12 @@
 # Neovim config
 
-Opinionated Neovim setup focused on a clean UI, fast navigation, and a small set of productive plugins. This config is written in Lua and uses `lazy.nvim` as the plugin manager.
+Opinionated Neovim setup focused on a clean UI, fast navigation, and a small set of productive plugins. Written in Lua using `lazy.nvim` as the plugin manager. Targets macOS with Kitty terminal.
 
 ## Requirements
 - Neovim (recent version with Lua support)
 - Git
-- macOS (recommended) for automatic light/dark theme switching via `defaults`
+- macOS (recommended)
+- Kitty terminal (for `image.nvim`)
 
 ## Install
 1. Clone the repo into your Neovim config path:
@@ -23,40 +24,55 @@ nvim
 ## Features
 - Plugin management via `lazy.nvim`
 - LSP support via `nvim-lspconfig` + `mason.nvim` (`clangd`, `pyright` ensured)
+- Completion via `nvim-cmp` with autopairs
 - Treesitter with common language parsers
-- UI polish: `lualine`, `noice`, `notify`, `barbecue`, `nvim-navic`, winbar location
+- UI polish: `lualine`, `noice`, `notify`, `barbecue`, `nvim-navic`, `bufferline`, `smear-cursor`
 - Navigation: `telescope` + `telescope-fzf-native`, `neo-tree`
 - Terminal: `toggleterm`
-- Git: `lazygit.nvim`, `octo.nvim`
-- Notebook-style evaluation: `molten.nvim` with `image.nvim`
+- Git: `lazygit.nvim`, `gitsigns.nvim`
+- Notebook-style evaluation: `molten.nvim` with `image.nvim`, `jupytext.nvim`
+- Prose: `zen-mode.nvim`, `render-markdown.nvim`, `vimtex`
+- AI: `claude-code` integration
+- Persistent colorscheme: last used colorscheme is saved and restored on startup
 
 ## Keymaps (core)
-Leader is `<Space>`.
+Leader is `<Space>`, localleader is `\`.
 
-- `<leader>ex` open netrw (`:Ex`)
-- `<leader>ff` Telescope find files
-- `<leader>n` toggle Neo-tree
-- `<leader>t` toggle vertical terminal
-- `<leader>lg` LazyGit
-- `<leader>mc` Molten evaluate visual selection
-- `<leader>ml` Molten evaluate line
-- `gd` / `K` / `gr` / `<leader>rn` (LSP) definition / hover / references / rename
-- `<C-h/j/k/l>` move between windows
-
-## Notes and Dependencies
-- Theme auto-switching uses `defaults` (macOS). On non-macOS, edit `lua/defaults/theme.lua`.
-- `telescope-fzf-native` requires `make`.
-- `lazygit.nvim` requires the `lazygit` binary.
-- `octo.nvim` expects GitHub CLI (`gh`).
-- `image.nvim` is configured for the Kitty terminal backend.
+| Key | Action |
+|-----|--------|
+| `<leader>ff` | Telescope find files |
+| `<leader>cs` | Pick colorscheme (with live preview) |
+| `<leader>n` | Toggle Neo-tree |
+| `<leader>t` | Toggle vertical terminal (size 80) |
+| `<leader>ac` | Toggle Claude Code |
+| `<leader>z` | Toggle Zen Mode |
+| `<leader>d` | Show diagnostics float |
+| `<leader>e` | Molten evaluate operator |
+| `<leader>r` (visual) | Molten evaluate selection |
+| `<leader>rr` | Molten re-evaluate cell |
+| `<leader>os` | Molten open output window |
+| `<leader>oh` | Molten hide output |
+| `<leader>md` | Molten delete cell |
+| `<localleader>mx` | Molten open output in browser |
+| `<Tab>` / `<S-Tab>` | Next / previous buffer |
+| `<leader>x` | Close buffer |
+| `gd` / `K` / `gr` / `<leader>rn` | LSP definition / hover / references / rename |
+| `<C-h/j/k/l>` | Move between windows |
 
 ## Layout
 - `init.lua` loads the defaults
-- `lua/defaults/` options, keymaps, LSP, theme, and lazy bootstrapping
-- `lua/plugins/` plugin specs
-- `lazy-lock.json` locked plugin versions
+- `lua/defaults/` — options, keymaps, LSP, and lazy bootstrapping
+- `lua/plugins/` — one file per plugin spec
+- `lazy-lock.json` — locked plugin versions
+- `.colorscheme` — persisted colorscheme name
+
+## Notes and Dependencies
+- Colorscheme is persisted to `.colorscheme`; use `<leader>cs` to pick with live preview.
+- `telescope-fzf-native` requires `make`.
+- `lazygit.nvim` requires the `lazygit` binary.
+- `image.nvim` is configured for the Kitty terminal backend.
 
 ## Troubleshooting
 - If a plugin fails to load, run `:Lazy sync`.
-- If the theme looks off, confirm your terminal supports true color and check `lua/defaults/theme.lua`.
-
+- For `molten.nvim`, run `:UpdateRemotePlugins` after install.
+- If the colorscheme looks off, check `.colorscheme` or run `<leader>cs` to repick.
