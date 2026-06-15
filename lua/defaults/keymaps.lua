@@ -16,6 +16,7 @@ end)
 
 vim.keymap.set("t", "<C-h>", [[<C-\><C-n><C-w>h]], { desc = "Exit terminal and go left" })
 
+vim.keymap.set("n", "<leader>mi", ":MoltenInit<CR>", { desc = "init Molten kernel", silent = true })
 vim.keymap.set("n", "<leader>e", ":MoltenEvaluateOperator<CR>", { desc = "evaluate operator", silent = true })
 vim.keymap.set("n", "<leader>os", ":noautocmd MoltenEnterOutput<CR>", { desc = "open output window", silent = true })
 vim.keymap.set("n", "<leader>rr", ":MoltenReevaluateCell<CR>", { desc = "re-eval cell", silent = true })
@@ -25,6 +26,8 @@ vim.keymap.set("n", "<leader>md", ":MoltenDelete<CR>", { desc = "delete Molten c
 
 -- if you work with html outputs:
 vim.keymap.set("n", "<localleader>mx", ":MoltenOpenInBrowser<CR>", { desc = "open output in browser", silent = true })
+-- open the current cell's image output in an external viewer (use in Alacritty)
+vim.keymap.set("n", "<leader>oi", ":MoltenImagePopup<CR>", { desc = "open image output externally", silent = true })
 
 vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, { desc = "Show diagnostic" })
 

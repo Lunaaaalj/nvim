@@ -19,3 +19,12 @@ vim.api.nvim_create_autocmd("ColorScheme", {
   end,
 })
 
+-- Dedicated venv for Neovim's Python host (has pynvim + jupyter_client for Molten).
+-- Homebrew's python3 is PEP-668 externally-managed, so we don't install into it.
+vim.g.python3_host_prog = vim.fn.expand('~/.virtualenvs/neovim/bin/python')
+-- Prepend the neovim venv bin so jupytext.nvim (which calls a bare `jupytext`)
+-- and the python host resolve, then homebrew bin.
+vim.env.PATH = vim.fn.expand('~/.virtualenvs/neovim/bin')
+  .. ':/opt/homebrew/bin:' .. vim.env.PATH
+
+
