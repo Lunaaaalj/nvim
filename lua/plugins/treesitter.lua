@@ -4,24 +4,19 @@ return {
         lazy = false,
         build = ':TSUpdate',
         config = function()
-      -- Optional: set install directory (defaults are fine too)
-      require("nvim-treesitter").setup({
-        install_dir = vim.fn.stdpath("data") .. "/site",
-      })
-
-      -- Install parsers you want
-      require("nvim-treesitter").install({
-        "lua",
-        "vim",
-        "vimdoc",
-        "bash",
-        "python",
-        "cpp",
-        "c",
-        "markdown",
-        "markdown_inline",
-      })
-    end,
-  },
-    
+            require("nvim-treesitter").setup({
+                ensure_installed = {
+                    "lua", "vim", "vimdoc", "bash",
+                    "python", "cpp", "c",
+                    "markdown", "markdown_inline",
+                },
+                parser_install_dir = vim.fn.stdpath("data") .. "/parsers",
+                highlight = {
+        enable = true,
+        -- disable legacy vim regex highlighting when treesitter is active
+        additional_vim_regex_highlighting = false,
+    },
+            })
+        end,
+    }
 }
