@@ -2,6 +2,26 @@ require("defaults.options")
 require("defaults.keymaps")
 require("defaults.lazy")
 
+-- Universal transparency: after ANY colorscheme loads, strip the background of
+-- the core editor groups so the Alacritty background shows through. This works
+-- even for colorschemes without a built-in transparency option (e.g. melange).
+-- Defined before the startup colorscheme load below so it also applies on boot.
+local transparent_groups = {
+  "Normal", "NormalNC", "NormalFloat", "FloatBorder", "FloatTitle",
+  "SignColumn", "LineNr", "CursorLineNr", "FoldColumn", "EndOfBuffer",
+  "MsgArea", "TabLineFill", "WinBar", "WinBarNC",
+  "TelescopeNormal", "TelescopeBorder", "TelescopePromptNormal",
+  "NeoTreeNormal", "NeoTreeNormalNC", "NeoTreeEndOfBuffer", "NeoTreeWinSeparator",
+}
+vim.api.nvim_create_autocmd("ColorScheme", {
+  callback = function()
+    for _, g in ipairs(transparent_groups) do
+      -- only touch the bg attribute; fg/styles from the colorscheme are kept
+      vim.cmd(("highlight %s guibg=NONE ctermbg=NONE"):format(g))
+    end
+  end,
+})
+
 -- Load persisted colorscheme, fallback to kanso
 local cs_file = vim.fn.stdpath("config") .. "/.colorscheme"
 local ok, cs = pcall(vim.fn.readfile, cs_file)
