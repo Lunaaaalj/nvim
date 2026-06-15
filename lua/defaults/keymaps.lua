@@ -1,6 +1,12 @@
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 vim.keymap.set('n','<leader>ff','<cmd>Telescope find_files<cr>',{ desc = 'Telescope find files' })
+-- Searchable menu of ALL keybinds (fuzzy filter, <CR> to run one)
+vim.keymap.set('n','<leader>?','<cmd>Telescope keymaps<cr>',{ desc = 'Search keymaps' })
+-- Static grouped cheatsheet in a floating window
+local cheatsheet = require("defaults.cheatsheet")
+vim.api.nvim_create_user_command("Cheatsheet", cheatsheet.open, {})
+vim.keymap.set('n','<leader>k', cheatsheet.open, { desc = 'Keybindings cheatsheet' })
 
 vim.keymap.set("n", "<C-h>", "<C-w>h", { desc = "Move to left window" })
 vim.keymap.set("n", "<C-j>", "<C-w>j", { desc = "Move to lower window" })
