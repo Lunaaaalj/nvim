@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Opinionated Neovim config written in Lua using `lazy.nvim` as the plugin manager. Targets macOS with Kitty terminal.
+Opinionated Neovim config written in Lua using `lazy.nvim` as the plugin manager. Targets macOS, primarily run in Alacritty (inline notebook images require a Kitty-graphics terminal instead — see Molten / notebooks).
 
 ## Architecture
 
@@ -18,11 +18,19 @@ Opinionated Neovim config written in Lua using `lazy.nvim` as the plugin manager
 ### Colorscheme
 The last used colorscheme is persisted to `.colorscheme` (in the config root) and restored on startup via `lua/defaults/init.lua`. Any `:colorscheme` call triggers an autocmd that writes the name to that file. `<leader>cs` opens Telescope with live colorscheme preview.
 
+Installed schemes (one file each under `lua/plugins/`): catppuccin, kanagawa, kanso, lackluster, nightfox, everforest, melange, gruvbox-material, zenbones (+ its variants forestbones/neobones/kanagawabones/seoulbones). The palette leans earthy (grays/greens/browns), minimalist, with dark and light variants.
+
+**Transparency:** every colorscheme renders with no editor background so the Alacritty background shows through. This is enforced two ways: native `transparent` options are set per-plugin where supported, and a global `ColorScheme` autocmd in `lua/defaults/init.lua` (`transparent_groups`) strips the bg of core groups after any scheme loads — covering schemes without a transparency option (e.g. melange). Add new groups to that list if a plugin leaves a background. Note: light colorschemes only look right if Alacritty's background is also light, since transparency means the terminal background is what shows.
+
 ### LSP
 Two-layer setup: `lua/plugins/mason.lua` ensures `clangd` and `pyright` are installed via mason-lspconfig; `lua/defaults/lsp.lua` configures LSP on-attach keymaps. `lua/plugins/lsp.lua` handles additional server configuration. Add new LSP servers to either layer depending on whether they need mason management.
 
 ### Molten / notebooks
-`molten.nvim` uses `image.nvim` with the Kitty backend. Requires `:UpdateRemotePlugins` after install. `jupytext.nvim` handles `.ipynb` ↔ script conversion.
+`molten.nvim` runs code in Jupyter kernels and `jupytext.nvim` handles `.ipynb` ↔ markdown conversion. Requires `:UpdateRemotePlugins` after install.
+
+**Python host:** Neovim's Python provider points at a dedicated venv `~/.virtualenvs/neovim` (set via `vim.g.python3_host_prog` in `lua/defaults/init.lua`) that holds `pynvim`, `jupyter_client`, and `jupytext`. Homebrew's python3 is PEP-668 externally-managed, so deps aren't installed there. That venv's `bin` is prepended to `PATH` so `jupytext.nvim` (which calls a bare `jupytext`) resolves. Notebook kernels are separate per-project venvs registered with `jupyter kernelspec`.
+
+**Images / terminal:** inline image output (plots) only works in terminals speaking the Kitty graphics protocol (Kitty/WezTerm/Ghostty). `lua/plugins/molten.lua` detects the terminal at startup: in a capable terminal it uses `image.nvim` (loaded via `cond`); otherwise (e.g. **Alacritty**, the current terminal) it sets `molten_image_provider = "none"` and relies on virtual-text output. View plots externally with `<leader>oi` (`:MoltenImagePopup`) or `<localleader>mx` (`:MoltenOpenInBrowser`).
 
 ## Adding a plugin
 
@@ -41,15 +49,20 @@ lazy.nvim auto-imports everything under `lua/plugins/`.
 
 Leader: `<Space>`, localleader: `\`
 
+`<leader>?` opens a live searchable list of all maps (Telescope). `<leader>k` opens a hand-curated cheatsheet floating window defined in `lua/defaults/cheatsheet.lua` — keep its `sections` table in sync when you add/change keymaps.
+
 | Key | Action |
 |-----|--------|
 | `<leader>ff` | Telescope find files |
+| `<leader>?` | Search all keymaps (Telescope) |
+| `<leader>k` | Keybindings cheatsheet (floating window) |
 | `<leader>cs` | Pick colorscheme (live preview, persisted) |
 | `<leader>n` | Toggle Neo-tree |
 | `<leader>t` | Toggle vertical terminal (size 80) |
 | `<leader>ac` | Toggle ClaudeCode |
 | `<leader>z` | Toggle Zen Mode |
 | `<leader>d` | Show diagnostic float |
+| `<leader>mi` | Molten init kernel |
 | `<leader>e` | Molten evaluate operator |
 | `<leader>r` (visual) | Molten evaluate selection |
 | `<leader>rr` | Molten re-evaluate cell |
@@ -57,6 +70,7 @@ Leader: `<Space>`, localleader: `\`
 | `<leader>oh` | Molten hide output |
 | `<leader>md` | Molten delete cell |
 | `<localleader>mx` | Molten open output in browser |
+| `<leader>oi` | Molten open image output externally |
 | `<Tab>` / `<S-Tab>` | Next / previous buffer (bufferline) |
 | `<leader>x` | Close buffer |
 | `gd` / `K` / `gr` / `<leader>rn` | LSP definition / hover / references / rename |
@@ -66,4 +80,5 @@ Leader: `<Space>`, localleader: `\`
 
 - `lazygit` binary (for lazygit.nvim)
 - `make` (for telescope-fzf-native)
-- Kitty terminal (for image.nvim)
+- `~/.virtualenvs/neovim` venv with `pynvim`, `jupyter_client`, `jupytext` (Neovim Python host / Molten / jupytext.nvim)
+- A Kitty-graphics terminal (Kitty/WezTerm/Ghostty) is only needed for inline Molten images; Alacritty works for everything else
