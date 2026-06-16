@@ -11,12 +11,14 @@ return {
             end,
         })
     end,
-    opts = {
-        symbol = "│",
-        options = { try_as_border = true },
-        draw = {
-            delay = 80,
-            animation = require("mini.indentscope").gen_animation.none(),
-        },
-    },
+    config = function()
+        require("mini.indentscope").setup({
+            symbol = "│",
+            options = { try_as_border = true },
+            draw = {
+                delay = 80,
+                animation = require("mini.indentscope").gen_animation.none(),
+            },
+        })
+    end,
 }
