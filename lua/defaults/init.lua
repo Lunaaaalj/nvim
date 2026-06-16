@@ -13,6 +13,7 @@ local transparent_groups = {
   "MsgArea", "TabLineFill", "WinBar", "WinBarNC",
   "TelescopeNormal", "TelescopeBorder", "TelescopePromptNormal",
   "NeoTreeNormal", "NeoTreeNormalNC", "NeoTreeEndOfBuffer", "NeoTreeWinSeparator",
+  "SnacksDashboardNormal",
 }
 vim.api.nvim_create_autocmd("ColorScheme", {
   callback = function()
@@ -22,6 +23,13 @@ vim.api.nvim_create_autocmd("ColorScheme", {
     end
   end,
 })
+
+-- Build help tags for this config's own docs so `:help nvim-config` resolves.
+-- Cheap and idempotent: only runs when doc/tags is missing (e.g. fresh clone).
+local doc_dir = vim.fn.stdpath("config") .. "/doc"
+if vim.fn.filereadable(doc_dir .. "/tags") == 0 and vim.fn.isdirectory(doc_dir) == 1 then
+  pcall(vim.cmd, "helptags " .. doc_dir)
+end
 
 -- Load persisted colorscheme, fallback to kanso
 local cs_file = vim.fn.stdpath("config") .. "/.colorscheme"

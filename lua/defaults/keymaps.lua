@@ -8,6 +8,12 @@ local cheatsheet = require("defaults.cheatsheet")
 vim.api.nvim_create_user_command("Cheatsheet", cheatsheet.open, {})
 vim.keymap.set('n','<leader>k', cheatsheet.open, { desc = 'Keybindings cheatsheet' })
 
+-- Clear search highlight on Esc (keeps normal-mode Esc behaviour otherwise)
+vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<cr>", { desc = "Clear search highlight" })
+
+-- Quick write
+vim.keymap.set("n", "<leader>w", "<cmd>write<cr>", { desc = "Save file" })
+
 vim.keymap.set("n", "<C-h>", "<C-w>h", { desc = "Move to left window" })
 vim.keymap.set("n", "<C-j>", "<C-w>j", { desc = "Move to lower window" })
 vim.keymap.set("n", "<C-k>", "<C-w>k", { desc = "Move to upper window" })
@@ -123,7 +129,24 @@ vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, { desc = "Show diagn
 -- bufferline navigation
 vim.keymap.set("n", "<Tab>", "<cmd>BufferLineCycleNext<cr>", { desc = "Next buffer" })
 vim.keymap.set("n", "<S-Tab>", "<cmd>BufferLineCyclePrev<cr>", { desc = "Prev buffer" })
-vim.keymap.set("n", "<leader>x", "<cmd>bd<cr>", { desc = "Close buffer" })
+-- Close the current buffer without destroying the window layout: switch the
+-- window to the alternate/previous buffer first, then delete the original.
+vim.keymap.set("n", "<leader>x", function()
+  local cur = vim.api.nvim_get_current_buf()
+  local alt = vim.fn.bufnr("#")
+  if alt > 0 and vim.fn.buflisted(alt) == 1 then
+    vim.cmd("buffer #")
+  else
+    vim.cmd("bprevious")
+  end
+  -- If nothing else was open we may still be on the same buffer; only delete
+  -- when we actually moved away from it.
+  if vim.api.nvim_get_current_buf() ~= cur then
+    vim.cmd("bdelete " .. cur)
+  else
+    vim.cmd("bdelete")
+  end
+end, { desc = "Close buffer (keep layout)" })
 
 -- claude keymaps live in lua/plugins/claude.lua (the `keys` table)
 

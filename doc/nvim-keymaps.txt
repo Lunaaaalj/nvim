@@ -1,0 +1,263 @@
+*nvim-keymaps.txt*        Complete keymap reference for this Neovim config
+
+==============================================================================
+CONTENTS                                                       *nvim-keymaps*
+
+Leader is <Space>; localleader is "\". Modes are noted where not normal mode.
+
+  1.  General & UI .............................. |nvim-keymaps-general|
+  2.  Windows & buffers ........................ |nvim-keymaps-windows|
+  3.  Find, files & search ..................... |nvim-keymaps-find|
+  4.  Motion & navigation ...................... |nvim-keymaps-motion|
+  5.  Editing operators ........................ |nvim-keymaps-editing|
+  6.  LSP, diagnostics & format ................ |nvim-keymaps-lsp|
+  7.  Completion (insert mode) ................. |nvim-keymaps-completion|
+  8.  Harpoon .................................. |nvim-keymaps-harpoon|
+  9.  Git ...................................... |nvim-keymaps-git|
+  10. Test (Neotest) ........................... |nvim-keymaps-test|
+  11. Debug (DAP) .............................. |nvim-keymaps-debug|
+  12. Session (Persistence) .................... |nvim-keymaps-session|
+  13. Notebooks (Molten) ....................... |nvim-keymaps-notebooks|
+  14. Claude Code .............................. |nvim-keymaps-claude|
+
+Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
+`<leader>k` opens a curated floating cheatsheet.
+
+==============================================================================
+1. GENERAL & UI                                        *nvim-keymaps-general*
+
+  <leader>?     Search all keymaps (Telescope)
+  <leader>k     Open the keybindings cheatsheet (floating window)
+  <leader>w     Save the current file
+  <Esc>         Clear search highlight
+  <leader>z     Toggle Zen mode
+  <leader>d     Show diagnostic float (line diagnostics)
+  <leader>cs    Pick colorscheme with live preview (persisted)
+  <leader>ut    Toggle treesitter sticky context header
+  <leader>up    Toggle precognition motion hints
+  <leader>fml   Make it rain (cellular-automaton, just for fun)
+  <leader>flife Game of Life (cellular-automaton)
+
+==============================================================================
+2. WINDOWS & BUFFERS                                   *nvim-keymaps-windows*
+
+  <C-h>         Move to the left window
+  <C-j>         Move to the lower window
+  <C-k>         Move to the upper window
+  <C-l>         Move to the right window
+  <C-h>  (term) Exit terminal mode and move to the left window
+
+  <Tab>         Next buffer        (bufferline)
+  <S-Tab>       Previous buffer    (bufferline)
+  <leader>x     Close the current buffer (preserves window layout)
+
+==============================================================================
+3. FIND, FILES & SEARCH                                   *nvim-keymaps-find*
+
+  <leader>ff    Telescope find files
+  <leader>ft    Find TODO/FIX/HACK/NOTE comments (Telescope)
+  <leader>n     Toggle Neo-tree file explorer
+  <leader>t     Toggle a vertical terminal (width 80)
+  -             Oil: open the parent directory as an editable buffer
+  <leader>sr    Search & replace across files (grug-far); prefills a
+                `*.<ext>` filter from the current file
+  <leader>sR    (visual) Search & replace using the visual selection
+
+==============================================================================
+4. MOTION & NAVIGATION                                  *nvim-keymaps-motion*
+
+Flash (labeled jumps):
+  s             Flash jump            (normal, visual, operator-pending)
+  S             Flash treesitter select (normal, operator-pending)
+  r             Flash remote          (operator-pending)
+  <C-s>         Toggle Flash in search (command-line mode)
+
+Folds (nvim-ufo):
+  zR            Open all folds
+  zM            Close all folds
+  zr            Open folds except excluded kinds
+  K             Peek folded lines under cursor, else hover docs (see LSP)
+
+Other:
+  ]t  /  [t     Next / previous TODO comment
+  ]x  /  [x     Next / previous git conflict (see Git)
+  <leader>j     TreeSJ: toggle split/join of the block under the cursor
+
+==============================================================================
+5. EDITING OPERATORS                                   *nvim-keymaps-editing*
+
+These come from plugins using their default mappings:
+
+nvim-surround:
+  ys{motion}{char}   Add a surrounding (e.g. `ysiw"` quotes a word)
+  ds{char}           Delete a surrounding
+  cs{old}{new}       Change a surrounding
+
+Comment.nvim:
+  gcc                Toggle line comment
+  gbc                Toggle block comment
+  gc{motion}         Comment a motion / selection
+  gb{motion}         Block-comment a motion / selection
+
+mini.ai:
+  Enhanced `a`/`i` text objects (functions, args, brackets, quotes, etc.),
+  scanning up to 500 lines. Use inside operators, e.g. `cif`, `va)`.
+
+gitsigns:
+  ih                 Text object selecting the current hunk (operator/visual)
+
+==============================================================================
+6. LSP, DIAGNOSTICS & FORMAT                               *nvim-keymaps-lsp*
+
+LSP (buffer-local; wired via the server on_attach in `lua/defaults/lsp.lua`):
+  gd            Go to definition
+  gr            List references
+  <leader>rn    Rename symbol
+
+Note: the on_attach maps above are attached to the `tsserver` setup;
+`clangd`/`pyright` are installed and set up via the mason handler. `K` is
+overridden globally by hover.nvim (and ufo) below.
+
+Hover (hover.nvim):
+  K             Show hover docs (falls back from ufo fold-peek)
+  gK            Hover: choose a provider (LSP / man / dictionary)
+  <C-n>         Hover: switch to the next provider
+  <C-p>         Hover: switch to the previous provider
+
+Diagnostics:
+  <leader>d     Show the diagnostic float for the current line
+  <leader>xx    Trouble: workspace diagnostics
+  <leader>xb    Trouble: current-buffer diagnostics
+  <leader>xs    Trouble: document symbols
+  <leader>xl    Trouble: LSP references / definitions
+  <leader>xq    Trouble: quickfix list
+  <leader>xt    Trouble: TODO comments
+
+Format:
+  <leader>cf    Format the buffer with conform (async, LSP fallback). Files are
+                also formatted on save.
+
+==============================================================================
+7. COMPLETION (INSERT MODE)                        *nvim-keymaps-completion*
+
+nvim-cmp mappings, active during insert:
+  <C-Space>     Trigger completion
+  <C-e>         Abort completion
+  <CR>          Confirm the selected item
+  <Tab>         Next item / expand-or-jump snippet
+  <S-Tab>       Previous item / jump backwards in snippet
+
+==============================================================================
+8. HARPOON                                             *nvim-keymaps-harpoon*
+
+  <leader>Ha    Add the current file to the Harpoon list
+  <leader>Hh    Toggle the Harpoon quick menu
+  <leader>1     Jump to Harpoon file 1
+  <leader>2     Jump to Harpoon file 2
+  <leader>3     Jump to Harpoon file 3
+  <leader>4     Jump to Harpoon file 4
+
+==============================================================================
+9. GIT                                                      *nvim-keymaps-git*
+
+LazyGit:
+  <leader>lg    Open LazyGit
+
+Diffview:
+  <leader>gd    Open the diff view
+  <leader>gh    File history of the current file
+  <leader>gH    Repository-wide history
+  <leader>gc    Close Diffview
+
+Gitsigns (buffer-local):
+  ]c  /  [c     Next / previous hunk (respects diff mode)
+  <leader>hs    Stage hunk            (visual: stage selected lines)
+  <leader>hr    Reset hunk            (visual: reset selected lines)
+  <leader>hS    Stage the whole buffer
+  <leader>hR    Reset the whole buffer
+  <leader>hp    Preview hunk (float)
+  <leader>hi    Preview hunk inline
+  <leader>hb    Blame the current line (full)
+  <leader>hd    Diff this file against the index
+  <leader>hD    Diff this file against the parent commit (~)
+  <leader>hq    Send the current hunk to the quickfix list
+  <leader>hQ    Send all hunks to the quickfix list
+  <leader>tb    Toggle current-line blame
+  <leader>tw    Toggle word diff
+  ih            Text object: select the current hunk (operator/visual)
+
+git-conflict (active on files with conflict markers):
+  co            Choose ours
+  ct            Choose theirs
+  cb            Choose both
+  c0            Choose none
+  ]x  /  [x     Next / previous conflict
+
+==============================================================================
+10. TEST (NEOTEST)                                         *nvim-keymaps-test*
+
+  <leader>Tr    Run the nearest test
+  <leader>Tf    Run all tests in the current file
+  <leader>Ts    Toggle the test summary panel
+  <leader>To    Toggle the test output panel
+  <leader>TX    Stop running tests
+  <leader>Td    Debug the nearest test (via DAP)
+
+==============================================================================
+11. DEBUG (DAP)                                           *nvim-keymaps-debug*
+
+  <leader>db    Toggle breakpoint
+  <leader>dB    Set a conditional breakpoint (prompts for the condition)
+  <leader>dc    Continue / start the session
+  <leader>di    Step into
+  <leader>dn    Step over (next)
+  <leader>de    Step out (exit)
+  <leader>dr    Open the debug REPL
+  <leader>du    Toggle the DAP UI
+  <leader>dx    Terminate the session
+
+The DAP UI auto-opens when a session starts and auto-closes when it ends.
+
+==============================================================================
+12. SESSION (PERSISTENCE)                               *nvim-keymaps-session*
+
+  <leader>qs    Restore the session for the current directory
+  <leader>ql    Restore the last session
+  <leader>qS    Select a session to restore
+  <leader>qd    Stop saving the session on exit
+
+==============================================================================
+13. NOTEBOOKS (MOLTEN)                                *nvim-keymaps-notebooks*
+
+  <leader>mi    Initialize a Molten kernel (:MoltenInit, kernel picker)
+  <leader>e     Evaluate operator (then a motion)
+  <leader>r     (visual) Evaluate the visual selection
+  <leader>rc    Run the current cell (auto-selects the ```python fence)
+  <leader>ra    Run all cells, top to bottom
+  <leader>rk    Run every cell above the cursor
+  <leader>rj    Run the current cell and everything below
+  <leader>rr    Re-evaluate the current cell
+  <leader>os    Open the output window
+  <leader>oh    Hide the output
+  <leader>md    Delete the cell
+  <leader>oi    Open image output externally (:MoltenImagePopup)
+  <localleader>mx  Open output in the browser (:MoltenOpenInBrowser)
+
+See |nvim-notebooks| for the full workflow.
+
+==============================================================================
+14. CLAUDE CODE                                          *nvim-keymaps-claude*
+
+  <leader>ac    Toggle the Claude panel
+  <leader>af    Focus the Claude panel
+  <leader>ar    Resume a previous Claude session
+  <leader>aC    Continue the last Claude session
+  <leader>am    Select the Claude model
+  <leader>ab    Add the current buffer to Claude's context
+  <leader>as    (visual) Send the selection to Claude
+  <leader>as    (neo-tree/oil/minifiles) Add the file under cursor to context
+  <leader>aa    Accept Claude's proposed diff
+  <leader>ad    Reject Claude's proposed diff
+
+ vim:tw=78:ts=8:noet:ft=help:norl:
+</content>

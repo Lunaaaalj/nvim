@@ -22,6 +22,15 @@ Installed schemes (one file each under `lua/plugins/`): catppuccin, kanagawa, ka
 
 **Transparency:** every colorscheme renders with no editor background so the Alacritty background shows through. This is enforced two ways: native `transparent` options are set per-plugin where supported, and a global `ColorScheme` autocmd in `lua/defaults/init.lua` (`transparent_groups`) strips the bg of core groups after any scheme loads — covering schemes without a transparency option (e.g. melange). Add new groups to that list if a plugin leaves a background. Note: light colorschemes only look right if Alacritty's background is also light, since transparency means the terminal background is what shows.
 
+### Aesthetics & ambience
+A layer of plugins exists purely for a pleasant feel (one file each under `lua/plugins/`):
+- **`snacks.lua`** — enables the snacks `dashboard` and `scroll` modules (snacks itself comes in via `claudecode.nvim`). The dashboard is **static** (no animation) and **transparent** — its `SnacksDashboardNormal` group is in the `transparent_groups` list in `lua/defaults/init.lua`. The header art is read verbatim from `dashboard-header.txt` in the config root if that file exists (paste any ASCII art there to swap it), otherwise a built-in Python snake is used. Sections: header, a date/version subtitle, quick-action keys (find/recent/grep/projects/session/config/lazy/mason), **GitHub contribution heatmap**, **GitHub PR/review/issue counts**, **Claude token-usage sparkline**, recent files, and a startup footer.
+- **`lua/defaults/dashboard_data.lua`** — the async/cached data layer behind those live sections. It fetches the GitHub contribution calendar + PR/issue counts via `gh` (authenticated `viewer`, no hardcoded username) and Claude per-day token totals via `scripts/claude_usage.py` (pure-stdlib aggregation of `~/.claude/projects/**/*.jsonl`). Results are written to `stdpath('cache')/dashboard/*.json` with a 30-min TTL; sections read the cache instantly (never blocking startup) and a debounced `Snacks.dashboard.update()` refreshes the view when each source returns. Everything degrades gracefully (no `gh`/not authed/no logs → that section renders nothing). The heatmap/sparkline use hardcoded GitHub-green `GhContrib0..4` highlight groups (re-applied on `ColorScheme`) as a deliberate homage.
+- **`mini-animate.lua`** — window resize/open/close animations. Its cursor + scroll animations are disabled on purpose (smear_cursor handles the cursor, snacks.scroll handles scrolling) to avoid double-animating.
+- **`colorizer.lua`**, **`rainbow-delimiters.lua`**, **`tiny-devicons.lua`**, **`satellite.lua`** (scrollbar with git/diagnostic/search marks), **`illuminate.lua`** (word-under-cursor), **`precognition.lua`** (motion hints), **`cellular-automaton.lua`** (fun screensaver).
+
+When adding cursor/scroll-animating plugins, check this list first — multiple plugins animating the same thing will conflict.
+
 ### LSP
 Two-layer setup: `lua/plugins/mason.lua` ensures `clangd` and `pyright` are installed via mason-lspconfig; `lua/defaults/lsp.lua` configures LSP on-attach keymaps. `lua/plugins/lsp.lua` handles additional server configuration. Add new LSP servers to either layer depending on whether they need mason management.
 
@@ -53,11 +62,15 @@ Leader: `<Space>`, localleader: `\`
 
 `<leader>?` opens a live searchable list of all maps (Telescope). `<leader>k` opens a hand-curated cheatsheet floating window defined in `lua/defaults/cheatsheet.lua` — keep its `sections` table in sync when you add/change keymaps.
 
+The authoritative human-facing reference is the in-editor `:help` documentation under `doc/` (`:help nvim-config`, `:help nvim-keymaps`, `:help nvim-plugins`, `:help nvim-notebooks`). When you add or change a keymap/plugin, update the matching `doc/*.txt` file — tags rebuild automatically on startup when `doc/tags` is absent (see `lua/defaults/init.lua`), or run `:helptags doc` manually.
+
 | Key | Action |
 |-----|--------|
 | `<leader>ff` | Telescope find files |
 | `<leader>?` | Search all keymaps (Telescope) |
 | `<leader>k` | Keybindings cheatsheet (floating window) |
+| `<leader>w` | Save file |
+| `<Esc>` | Clear search highlight |
 | `<leader>cs` | Pick colorscheme (live preview, persisted) |
 | `<leader>n` | Toggle Neo-tree |
 | `<leader>t` | Toggle vertical terminal (size 80) |
@@ -77,13 +90,17 @@ Leader: `<Space>`, localleader: `\`
 | `<localleader>mx` | Molten open output in browser |
 | `<leader>oi` | Molten open image output externally |
 | `<Tab>` / `<S-Tab>` | Next / previous buffer (bufferline) |
-| `<leader>x` | Close buffer |
+| `<leader>x` | Close buffer (preserves window layout) |
 | `gd` / `K` / `gr` / `<leader>rn` | LSP definition / hover / references / rename |
 | `<C-h/j/k/l>` | Move between windows |
+| `<leader>up` | Toggle precognition motion hints |
+| `<leader>fml` | Make it rain (cellular-automaton, fun) |
 
 ## External dependencies
 
 - `lazygit` binary (for lazygit.nvim)
+- `gh` CLI, authenticated (`gh auth login`) — optional; powers the dashboard's GitHub contribution heatmap and PR/issue counts. Without it those sections simply don't render.
+- `python3` — also used by `scripts/claude_usage.py` for the dashboard's Claude token-usage sparkline.
 - `make` (for telescope-fzf-native)
 - `~/.virtualenvs/neovim` venv with `pynvim`, `jupyter_client`, `jupytext` (Neovim Python host / Molten / jupytext.nvim)
 - `~/.local/bin/jkernel` helper script for registering/removing per-project Jupyter kernels (see [`docs/molten.md`](docs/molten.md)). Not part of this repo — lives in `~/.local/bin`.
