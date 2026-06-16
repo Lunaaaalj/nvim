@@ -36,12 +36,15 @@ return {
     }
   },
   sections = {
-    lualine_a = {'mode'},
-    lualine_b = {'branch', 'diff', 'diagnostics'},
-    lualine_c = {'filename'},
-    lualine_x = {'encoding', 'fileformat', 'filetype'},
-    lualine_y = {'progress'},
-    lualine_z = {'location'}
+    lualine_a = { 'mode' },
+    lualine_b = { 'branch', 'diff' },
+    lualine_c = { { 'filename', path = 1 } }, -- relative path
+    lualine_x = {
+      { 'diagnostics', sources = { 'nvim_lsp' }, symbols = { error = ' ', warn = ' ', info = ' ' } },
+      'filetype',
+    },
+    lualine_y = { 'progress' },
+    lualine_z = { 'location' },
   },
   inactive_sections = {
     lualine_a = {},

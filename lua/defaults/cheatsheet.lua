@@ -13,20 +13,35 @@ local sections = {
   } },
   { "Find / Files / UI", {
     { "<leader>ff", "Telescope find files" },
+    { "<leader>ft", "Find TODOs (Telescope)" },
+    { "<leader>sr / sR", "Search & replace / replace selection (grug-far)" },
     { "<leader>cs", "Pick colorscheme (live preview)" },
     { "<leader>n", "Toggle Neo-tree" },
     { "<leader>t", "Toggle vertical terminal" },
+    { "<leader>ut", "Toggle treesitter context" },
   } },
   { "Windows / Buffers", {
     { "<C-h/j/k/l>", "Move between windows" },
     { "<Tab> / <S-Tab>", "Next / previous buffer" },
     { "<leader>x", "Close buffer" },
   } },
-  { "LSP", {
+  { "LSP / Diagnostics", {
     { "gd / gr", "Go to definition / references" },
-    { "K", "Hover docs" },
+    { "K", "Hover docs (cycle providers with <C-n>/<C-p>)" },
+    { "gK", "Hover: select provider" },
     { "<leader>rn", "Rename symbol" },
     { "<leader>d", "Diagnostic float" },
+    { "<leader>cf", "Format buffer (conform)" },
+    { "<leader>xx", "Trouble: workspace diagnostics" },
+    { "<leader>xb", "Trouble: buffer diagnostics" },
+    { "<leader>xs", "Trouble: document symbols" },
+    { "<leader>xt", "Trouble: TODOs" },
+    { "<leader>xq", "Trouble: quickfix" },
+  } },
+  { "Navigation", {
+    { "s", "Flash jump (2-char)" },
+    { "S", "Flash treesitter select" },
+    { "]t / [t", "Next / prev TODO" },
   } },
   { "Molten / Notebooks", {
     { "<leader>mi", "Init kernel" },
