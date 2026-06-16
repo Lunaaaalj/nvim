@@ -27,6 +27,89 @@ vim.keymap.set("n", "<leader>e", ":MoltenEvaluateOperator<CR>", { desc = "evalua
 vim.keymap.set("n", "<leader>os", ":noautocmd MoltenEnterOutput<CR>", { desc = "open output window", silent = true })
 vim.keymap.set("n", "<leader>rr", ":MoltenReevaluateCell<CR>", { desc = "re-eval cell", silent = true })
 vim.keymap.set("v", "<leader>r", ":<C-u>MoltenEvaluateVisual<CR>gv", { desc = "execute visual selection", silent = true })
+
+-- Run whole notebook cells with a single keystroke. Notebooks open as jupytext
+-- markdown, so a "cell" is a fenced code block: opening fence carries a language
+-- (```python), closing fence is bare (```). We collect those spans and hand line
+-- ranges to Molten (MoltenEvaluateRange auto-resolves a single attached kernel,
+-- and the kernel runs queued evaluations in order).
+local function molten_cells()
+    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+    local cells, open = {}, nil
+    for i, l in ipairs(lines) do
+        if not open then
+            if l:match("^```%a") then
+                open = i
+            end
+        elseif l:match("^```") then
+            cells[#cells + 1] = { open = open, close = i }
+            open = nil
+        end
+    end
+    return cells
+end
+
+-- Evaluate a list of {open, close} cells, skipping empties.
+local function molten_run(cells)
+    local ran = 0
+    for _, c in ipairs(cells) do
+        if c.close - 1 >= c.open + 1 then
+            vim.fn.MoltenEvaluateRange(c.open + 1, c.close - 1)
+            ran = ran + 1
+        end
+    end
+    return ran
+end
+
+-- Split all cells into those above the cursor and those at/below it. If the
+-- cursor is inside a cell, that cell counts as "below" (current + below);
+-- otherwise the split falls on the cursor line.
+local function molten_split()
+    local cells = molten_cells()
+    local cur = vim.api.nvim_win_get_cursor(0)[1]
+    local idx
+    for i, c in ipairs(cells) do
+        if cur >= c.open and cur <= c.close then
+            idx = i
+            break
+        end
+    end
+    local above, below = {}, {}
+    for i, c in ipairs(cells) do
+        local is_above = idx and i < idx or (not idx and c.close < cur)
+        if is_above then
+            above[#above + 1] = c
+        else
+            below[#below + 1] = c
+        end
+    end
+    return above, below
+end
+
+local function molten_eval_cell()
+    local cur = vim.api.nvim_win_get_cursor(0)[1]
+    local _, below = molten_split()
+    local c = below[1]
+    -- Only fire when the cursor is actually inside the cell, not in prose above it.
+    if c and cur >= c.open and cur <= c.close then
+        molten_run({ c })
+    else
+        vim.notify("Not inside a code cell", vim.log.levels.WARN)
+    end
+end
+
+vim.keymap.set("n", "<leader>rc", molten_eval_cell, { desc = "Molten run current cell", silent = true })
+vim.keymap.set("n", "<leader>ra", function()
+    molten_run(molten_cells())
+end, { desc = "Molten run all cells", silent = true })
+vim.keymap.set("n", "<leader>rk", function()
+    local above = molten_split()
+    molten_run(above)
+end, { desc = "Molten run cells above", silent = true })
+vim.keymap.set("n", "<leader>rj", function()
+    local _, below = molten_split()
+    molten_run(below)
+end, { desc = "Molten run current cell and below", silent = true })
 vim.keymap.set("n", "<leader>oh", ":MoltenHideOutput<CR>", { desc = "close output window", silent = true })
 vim.keymap.set("n", "<leader>md", ":MoltenDelete<CR>", { desc = "delete Molten cell", silent = true })
 

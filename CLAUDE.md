@@ -30,6 +30,8 @@ Two-layer setup: `lua/plugins/mason.lua` ensures `clangd` and `pyright` are inst
 
 **Python host:** Neovim's Python provider points at a dedicated venv `~/.virtualenvs/neovim` (set via `vim.g.python3_host_prog` in `lua/defaults/init.lua`) that holds `pynvim`, `jupyter_client`, and `jupytext`. Homebrew's python3 is PEP-668 externally-managed, so deps aren't installed there. That venv's `bin` is prepended to `PATH` so `jupytext.nvim` (which calls a bare `jupytext`) resolves. Notebook kernels are separate per-project venvs registered with `jupyter kernelspec`.
 
+**Kernels:** `:MoltenInit` lists *registered Jupyter kernels*, not venvs — a venv must be registered as a kernel before it appears. The `jkernel` helper (`~/.local/bin/jkernel`) does this: `jkernel add` registers the current directory's venv (prompts for a name), `jkernel rm` removes one, `jkernel list` lists them. It uses the Neovim host's `jupyter` so the list matches what Molten sees. Full workflow in [`docs/molten.md`](docs/molten.md).
+
 **Images / terminal:** inline image output (plots) only works in terminals speaking the Kitty graphics protocol (Kitty/WezTerm/Ghostty). `lua/plugins/molten.lua` detects the terminal at startup: in a capable terminal it uses `image.nvim` (loaded via `cond`); otherwise (e.g. **Alacritty**, the current terminal) it sets `molten_image_provider = "none"` and relies on virtual-text output. View plots externally with `<leader>oi` (`:MoltenImagePopup`) or `<localleader>mx` (`:MoltenOpenInBrowser`).
 
 ## Adding a plugin
@@ -65,6 +67,9 @@ Leader: `<Space>`, localleader: `\`
 | `<leader>mi` | Molten init kernel |
 | `<leader>e` | Molten evaluate operator |
 | `<leader>r` (visual) | Molten evaluate selection |
+| `<leader>rc` | Molten run current cell (auto-selects the ```` ```python ```` fence) |
+| `<leader>ra` | Molten run all cells |
+| `<leader>rk` / `<leader>rj` | Molten run cells above / current cell and below |
 | `<leader>rr` | Molten re-evaluate cell |
 | `<leader>os` | Molten open output window |
 | `<leader>oh` | Molten hide output |
@@ -81,4 +86,5 @@ Leader: `<Space>`, localleader: `\`
 - `lazygit` binary (for lazygit.nvim)
 - `make` (for telescope-fzf-native)
 - `~/.virtualenvs/neovim` venv with `pynvim`, `jupyter_client`, `jupytext` (Neovim Python host / Molten / jupytext.nvim)
+- `~/.local/bin/jkernel` helper script for registering/removing per-project Jupyter kernels (see [`docs/molten.md`](docs/molten.md)). Not part of this repo — lives in `~/.local/bin`.
 - A Kitty-graphics terminal (Kitty/WezTerm/Ghostty) is only needed for inline Molten images; Alacritty works for everything else
