@@ -34,7 +34,11 @@ A layer of plugins exists purely for a pleasant feel (one file each under `lua/p
 When adding cursor/scroll-animating plugins, check this list first — multiple plugins animating the same thing will conflict.
 
 ### LSP
-Two-layer setup: `lua/plugins/mason.lua` ensures `clangd` and `pyright` are installed via mason-lspconfig; `lua/defaults/lsp.lua` configures LSP on-attach keymaps. `lua/plugins/lsp.lua` handles additional server configuration. Add new LSP servers to either layer depending on whether they need mason management.
+Two-layer setup:
+- `lua/plugins/mason.lua` ensures the servers are installed via mason-lspconfig (`clangd`, `pyright`, `ruff`, `ts_ls`, `html`, `cssls`, `emmet_language_server`, `texlab`, `lua_ls`) and sets them up through a single `handlers` default function. Per-server overrides (capabilities/settings/filetypes) live in the `servers` table in that file — `clangd` pins utf-16 offset encoding, `pyright` defers import-organizing to `ruff`, `ruff` drops its hover so it doesn't duplicate pyright. The same file also registers **mason-tool-installer** to guarantee the non-LSP tools conform/dap call by name (`black`, `isort`, `stylua`, `clang-format`, `latexindent`, `prettier`, `codelldb`, `debugpy`).
+- `lua/defaults/lsp.lua` is a single global `LspAttach` autocmd that binds buffer-local keymaps (`gd`/`gD`/`gr`/`gi`/`gy`/`K`/`<leader>rn`/`<leader>ca`/`[d`/`]d`) for **any** attached server, and enables inlay hints (toggle `<leader>uh`) when the server supports them. It is `require`d from `lua/defaults/init.lua`. Do not add per-server `on_attach` keymaps — extend this autocmd instead.
+
+`lua/plugins/lsp.lua` just pulls in `nvim-lspconfig`. Add new LSP servers to `ensure_installed` (and `servers` for overrides) in `mason.lua`.
 
 A `.luarc.json` at the config root configures lua_ls for this repo: it declares `vim` and `Snacks` as globals so editing the config produces no spurious "undefined global" warnings (LuaJIT runtime, third-party checks off). Add to its `diagnostics.globals` if another runtime global trips lua_ls.
 
@@ -95,7 +99,12 @@ The authoritative human-facing reference is the in-editor `:help` documentation 
 | `<leader>oi` | Molten open image output externally |
 | `<Tab>` / `<S-Tab>` | Next / previous buffer (bufferline) |
 | `<leader>x` | Close buffer (preserves window layout) |
-| `gd` / `K` / `gr` / `<leader>rn` | LSP definition / hover / references / rename |
+| `gd` / `gD` / `gr` / `gi` / `gy` | LSP definition / declaration / references / implementation / type def |
+| `K` / `<leader>rn` / `<leader>ca` | LSP hover / rename / code action |
+| `[d` / `]d` | Previous / next diagnostic |
+| `<leader>uh` / `<leader>uf` / `<leader>us` | Toggle inlay hints / format-on-save / spell-check |
+| `af`/`if`, `ac`/`ic`, `aa`/`ia` | Treesitter text objects: function / class / parameter |
+| `<leader>db` / `<leader>dc` / `<leader>du` | DAP breakpoint / continue / toggle UI (Python + C/C++) |
 | `<C-h/j/k/l>` | Move between windows |
 | `<leader>up` | Toggle precognition motion hints |
 | `<leader>fml` | Make it rain (cellular-automaton, fun) |

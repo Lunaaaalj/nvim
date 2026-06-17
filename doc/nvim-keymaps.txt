@@ -106,17 +106,31 @@ mini.ai:
 gitsigns:
   ih                 Text object selecting the current hunk (operator/visual)
 
+nvim-treesitter-textobjects (syntax-aware; use in operators/visual):
+  af / if            Function outer / inner   (e.g. `vif`, `daf`)
+  ac / ic            Class outer / inner
+  aa / ia            Parameter (argument) outer / inner
+  <leader>sp         Swap parameter with the next
+  <leader>sP         Swap parameter with the previous
+  ]m / [m            Next / previous function start
+  ]] / [[            Next / previous class start
+
 ==============================================================================
 6. LSP, DIAGNOSTICS & FORMAT                               *nvim-keymaps-lsp*
 
-LSP (buffer-local; wired via the server on_attach in `lua/defaults/lsp.lua`):
+LSP (buffer-local; bound by a global LspAttach autocmd in
+`lua/defaults/lsp.lua`, so they work for every server: clangd, pyright, ruff,
+ts_ls, html, cssls, emmet, texlab, lua_ls):
   gd            Go to definition
+  gD            Go to declaration
   gr            List references
+  gi            Go to implementation
+  gy            Go to type definition
   <leader>rn    Rename symbol
+  <leader>ca    Code action            (normal / visual)
+  <leader>uh    Toggle inlay hints     (enabled by default when supported)
 
-Note: the on_attach maps above are attached to the `tsserver` setup;
-`clangd`/`pyright` are installed and set up via the mason handler. `K` is
-overridden globally by hover.nvim (and ufo) below.
+`K` is overridden globally by hover.nvim (and ufo) below.
 
 Hover (hover.nvim):
   K             Show hover docs (falls back from ufo fold-peek)
@@ -126,6 +140,7 @@ Hover (hover.nvim):
 
 Diagnostics:
   <leader>d     Show the diagnostic float for the current line
+  [d  /  ]d     Previous / next diagnostic (with float)
   <leader>xx    Trouble: workspace diagnostics
   <leader>xb    Trouble: current-buffer diagnostics
   <leader>xs    Trouble: document symbols
@@ -136,6 +151,12 @@ Diagnostics:
 Format:
   <leader>cf    Format the buffer with conform (async, LSP fallback). Files are
                 also formatted on save.
+  <leader>uf    Toggle format-on-save (sets g:disable_autoformat)
+
+Spell-check (auto-enabled for tex/markdown/gitcommit/text):
+  <leader>us    Toggle spell-check in the current window
+  ]s  /  [s     Next / previous misspelled word
+  z=            Suggest corrections
 
 ==============================================================================
 7. COMPLETION (INSERT MODE)                        *nvim-keymaps-completion*
@@ -217,6 +238,8 @@ git-conflict (active on files with conflict markers):
   <leader>dx    Terminate the session
 
 The DAP UI auto-opens when a session starts and auto-closes when it ends.
+Adapters: Python (debugpy via the neovim venv) and C/C++ (codelldb). For C/C++,
+<leader>dc prompts for the path to the compiled executable to launch.
 
 ==============================================================================
 12. SESSION (PERSISTENCE)                               *nvim-keymaps-session*
