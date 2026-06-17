@@ -14,6 +14,7 @@ local transparent_groups = {
   "TelescopeNormal", "TelescopeBorder", "TelescopePromptNormal",
   "NeoTreeNormal", "NeoTreeNormalNC", "NeoTreeEndOfBuffer", "NeoTreeWinSeparator",
   "SnacksDashboardNormal",
+  "WinSeparator", "VertSplit", "StatusLine", "StatusLineNC",
 }
 vim.api.nvim_create_autocmd("ColorScheme", {
   callback = function()
@@ -21,6 +22,8 @@ vim.api.nvim_create_autocmd("ColorScheme", {
       -- only touch the bg attribute; fg/styles from the colorscheme are kept
       vim.cmd(("highlight %s guibg=NONE ctermbg=NONE"):format(g))
     end
+    -- Transparent-friendly current line: no bg band, just a subtle underline.
+    vim.cmd("highlight CursorLine guibg=NONE ctermbg=NONE gui=underline cterm=underline")
   end,
 })
 

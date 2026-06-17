@@ -31,9 +31,38 @@ vim.opt.swapfile = false
 vim.opt.scrolloff = 8
 vim.opt.signcolumn = "yes"
 
--- Highlight only the current line number (clean against transparent bg)
+-- Highlight the current line number + a subtle underline on the line itself.
+-- The CursorLine bg is stripped on ColorScheme (see init.lua) so it stays
+-- transparent; the underline is what reads against the Alacritty background.
 vim.opt.cursorline = true
-vim.opt.cursorlineopt = "number"
+vim.opt.cursorlineopt = "number,line"
+
+-- Only show the cursorline in the focused window so inactive splits stay clean.
+local cursorline_grp = vim.api.nvim_create_augroup("ActiveCursorLine", { clear = true })
+vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter" }, {
+  group = cursorline_grp,
+  callback = function() vim.opt_local.cursorline = true end,
+})
+vim.api.nvim_create_autocmd({ "WinLeave" }, {
+  group = cursorline_grp,
+  callback = function() vim.opt_local.cursorline = false end,
+})
+
+-- Slight transparency on the popup menu and floating windows so they sit
+-- lightly over the (transparent) editor instead of reading as solid blocks.
+vim.opt.pumblend = 10
+vim.opt.winblend = 10
+
+-- Clean window/gutter glyphs: no end-of-buffer tildes, thin separators.
+vim.opt.fillchars = {
+  eob = " ",
+  vert = "│",
+  horiz = "─",
+  fold = " ",
+  foldopen = "▾",
+  foldclose = "▸",
+  foldsep = " ",
+}
 
 -- Faster CursorHold (drives checktime/hover) and snappier which-key popups
 vim.opt.updatetime = 250
@@ -49,6 +78,22 @@ vim.opt.confirm = true
 
 -- Single global statusline (pairs with lualine globalstatus)
 vim.opt.laststatus = 3
+
+-- Diagnostics: icon signs instead of Neovim's default E/W/I/H letters, sorted
+-- by severity so the most important sign wins the gutter cell.
+vim.diagnostic.config({
+  severity_sort = true,
+  underline = true,
+  virtual_text = { spacing = 2, prefix = "●" },
+  signs = {
+    text = {
+      [vim.diagnostic.severity.ERROR] = "",
+      [vim.diagnostic.severity.WARN]  = "",
+      [vim.diagnostic.severity.INFO]  = "",
+      [vim.diagnostic.severity.HINT]  = "",
+    },
+  },
+})
 
 vim.api.nvim_create_autocmd(
   { "FocusGained", "BufEnter", "CursorHold" },

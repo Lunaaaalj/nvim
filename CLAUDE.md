@@ -22,6 +22,8 @@ Installed schemes (one file each under `lua/plugins/`): catppuccin, kanagawa, ka
 
 **Transparency:** every colorscheme renders with no editor background so the Alacritty background shows through. This is enforced two ways: native `transparent` options are set per-plugin where supported, and a global `ColorScheme` autocmd in `lua/defaults/init.lua` (`transparent_groups`) strips the bg of core groups after any scheme loads — covering schemes without a transparency option (e.g. melange). Add new groups to that list if a plugin leaves a background. Note: light colorschemes only look right if Alacritty's background is also light, since transparency means the terminal background is what shows.
 
+**UI chrome (`lua/defaults/options.lua`):** a few options keep the UI clean against the transparent background. `fillchars` blanks the end-of-buffer `~` and uses a thin `│` window separator. The `cursorline` is shown only in the active window (toggled via autocmds) and rendered as a transparent underline — its `CursorLine` background is stripped inside the same `ColorScheme` autocmd as `transparent_groups`, so don't expect a background band. `pumblend`/`winblend` give the popup menu and floats slight transparency. Diagnostics use icon signs (via `vim.diagnostic.config`) instead of the default `E`/`W`/`I`/`H` letters.
+
 ### Aesthetics & ambience
 A layer of plugins exists purely for a pleasant feel (one file each under `lua/plugins/`):
 - **`snacks.lua`** — enables the snacks `dashboard` and `scroll` modules (snacks itself comes in via `claudecode.nvim`). The dashboard is **static** (no animation) and **transparent** — its `SnacksDashboardNormal` group is in the `transparent_groups` list in `lua/defaults/init.lua`. The header art is read verbatim from `dashboard-header.txt` in the config root if that file exists (paste any ASCII art there to swap it), otherwise a built-in Python snake is used. Sections: header, a date/version subtitle, quick-action keys (find/recent/grep/projects/session/config/lazy/mason), **GitHub contribution heatmap**, **GitHub PR/review/issue counts**, **Claude token-usage sparkline**, recent files, and a startup footer.
@@ -33,6 +35,8 @@ When adding cursor/scroll-animating plugins, check this list first — multiple 
 
 ### LSP
 Two-layer setup: `lua/plugins/mason.lua` ensures `clangd` and `pyright` are installed via mason-lspconfig; `lua/defaults/lsp.lua` configures LSP on-attach keymaps. `lua/plugins/lsp.lua` handles additional server configuration. Add new LSP servers to either layer depending on whether they need mason management.
+
+A `.luarc.json` at the config root configures lua_ls for this repo: it declares `vim` and `Snacks` as globals so editing the config produces no spurious "undefined global" warnings (LuaJIT runtime, third-party checks off). Add to its `diagnostics.globals` if another runtime global trips lua_ls.
 
 ### Molten / notebooks
 `molten.nvim` runs code in Jupyter kernels and `jupytext.nvim` handles `.ipynb` ↔ markdown conversion. Requires `:UpdateRemotePlugins` after install.

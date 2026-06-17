@@ -1,0 +1,185 @@
+*nvim-config.txt*          Documentation for this opinionated Neovim config
+
+==============================================================================
+CONTENTS                                                       *nvim-config*
+
+  1. Introduction ................................. |nvim-config-intro|
+  2. Requirements ................................. |nvim-config-requirements|
+  3. Install ...................................... |nvim-config-install|
+  4. Architecture ................................. |nvim-config-architecture|
+  5. Editor options ............................... |nvim-config-options|
+  6. Colorschemes & transparency ................. |nvim-config-colorscheme|
+  7. Other help files ............................. |nvim-config-help|
+
+This config also ships these companion help files:
+
+    |nvim-keymaps|      Complete keymap reference, grouped by area
+    |nvim-plugins|      Every plugin: purpose, keymaps, notable options
+    |nvim-notebooks|    Molten / Jupyter notebook workflow
+
+==============================================================================
+1. INTRODUCTION                                          *nvim-config-intro*
+
+An opinionated Neovim configuration written in Lua, using `lazy.nvim` as the
+plugin manager. It targets macOS and is primarily run in Alacritty.
+
+Design goals:
+  - A clean, minimal UI with universal background transparency so the
+    terminal background always shows through.
+  - An earthy, low-contrast palette (grays / greens / browns) with a set of
+    interchangeable dark and light colorschemes, persisted across sessions.
+  - A small, productive plugin set covering LSP, completion, fuzzy finding,
+    git, testing, debugging, and Jupyter-style notebook evaluation.
+
+Leader is <Space>; localleader is "\". For the full keymap reference see
+|nvim-keymaps|. Two in-editor discovery aids:
+  - `<leader>?`   Telescope live-searchable list of ALL keymaps
+  - `<leader>k`   Hand-curated cheatsheet in a floating window
+
+==============================================================================
+2. REQUIREMENTS                                   *nvim-config-requirements*
+
+Core:
+  - Neovim (recent version with Lua support)
+  - git                  Plugin management and version control features
+  - macOS                Recommended / tested platform
+  - Alacritty            Terminal the transparency is tuned for (any terminal
+                         works; light schemes need a light terminal background)
+
+External binaries:
+  - make                 Builds `telescope-fzf-native`
+  - lazygit              Required by `lazygit.nvim`
+  - sioyek               PDF viewer used by `vimtex` (view method)
+  - clang-format, black, isort, stylua    Formatters used by `conform.nvim`
+
+Notebooks / Molten (optional, only if you use notebooks):
+  - A Python venv at `~/.virtualenvs/neovim` providing the Neovim Python host.
+    It must contain `pynvim`, `jupyter_client`, and `jupytext`. Homebrew's
+    python3 is PEP-668 externally-managed, so deps are NOT installed there.
+  - `~/.local/bin/jkernel`   Helper to register per-project venvs as Jupyter
+                             kernels (not part of this repo). See |nvim-notebooks|.
+  - A Kitty-graphics terminal (Kitty / WezTerm / Ghostty) is needed ONLY for
+    inline notebook images; Alacritty works for everything else via virtual
+    text. See |nvim-notebooks|.
+
+LSP servers `clangd` and `pyright` are installed automatically by mason; you
+do not need to install them yourself.
+
+==============================================================================
+3. INSTALL                                             *nvim-config-install*
+
+1. Clone into your Neovim config path: >
+     git clone <repo-url> ~/.config/nvim
+<
+2. Start Neovim. `lazy.nvim` bootstraps itself and syncs all plugins on first
+   launch. If anything looks off, run `:Lazy sync`.
+
+3. For notebooks, after molten-nvim installs, run `:UpdateRemotePlugins` and
+   restart Neovim (see |nvim-notebooks|).
+
+Help tags: this documentation lives under `doc/`. If `:help nvim-config` does
+not resolve, build the tag index once with: >
+     :helptags ~/.config/nvim/doc
+<
+==============================================================================
+4. ARCHITECTURE                                   *nvim-config-architecture*
+
+Load order:
+  `init.lua`
+    -> `lua/defaults/init.lua`
+         -> `lua/defaults/options.lua`   editor options
+         -> `lua/defaults/keymaps.lua`   core (non-plugin) keymaps
+         -> `lua/defaults/lazy.lua`      lazy.nvim bootstrap + plugin import
+    -> colorscheme restore + transparency autocmd + Python host setup
+    -> all plugin specs under `lua/plugins/`
+
+Directory layout:
+  - `lua/defaults/`   Core Neovim settings, not plugin-specific: options,
+                      keymaps, lazy bootstrap, and LSP on-attach (`lsp.lua`).
+  - `lua/plugins/`    One file per plugin (or tightly related group); each
+                      returns a lazy.nvim spec table. lazy.nvim auto-imports
+                      everything in this directory.
+  - `lazy-lock.json`  Locked plugin versions.
+  - `.colorscheme`    Persisted colorscheme name (see below).
+
+To add a plugin, create a new file under `lua/plugins/` returning a spec: >
+     return {
+       "author/plugin-name",
+       opts = { ... },
+     }
+<
+==============================================================================
+5. EDITOR OPTIONS                                      *nvim-config-options*
+
+Set in `lua/defaults/options.lua`:
+  - `number` + `relativenumber`   Hybrid line numbers.
+  - `tabstop`/`softtabstop`/`shiftwidth` = 4, `expandtab`   4-space indents.
+  - `autoindent` + `smartindent`  Automatic indentation.
+  - `wrap` + `linebreak`          Soft-wrap long lines at word boundaries.
+  - `netrw_banner = 0`            Hide the netrw banner.
+  - `cursorline` (number,line)    Active window only: the line number is
+                                  highlighted and the current line gets a
+                                  subtle underline. The `CursorLine` group's
+                                  background is stripped on ColorScheme (see
+                                  |nvim-config-colorscheme|) so it stays
+                                  transparent — the underline is what reads.
+                                  Autocmds toggle it off in inactive windows.
+  - `fillchars`                   Clean window chrome: blank `eob` (no `~` on
+                                  empty lines), thin `│` window separator, `─`
+                                  horizontal split, and fold arrows.
+  - `pumblend`/`winblend` = 10    Slight transparency on the completion popup
+                                  and floating windows so they sit lightly
+                                  over the editor instead of as solid blocks.
+
+Diagnostics (`vim.diagnostic.config`) use icon signs instead of Neovim's
+default `E`/`W`/`I`/`H` letters, are sorted by severity, and show virtual
+text. lua_ls is told `vim` and `Snacks` are globals via `.luarc.json` in the
+config root, so editing the config itself produces no spurious
+"undefined global" warnings.
+
+An autocmd runs `:checktime` on FocusGained / BufEnter / CursorHold so files
+changed on disk are auto-reloaded.
+
+Python host (`lua/defaults/init.lua`): `g:python3_host_prog` points at
+`~/.virtualenvs/neovim/bin/python`, and that venv's `bin` is prepended to
+`$PATH` so a bare `jupytext` resolves. See |nvim-notebooks|.
+
+==============================================================================
+6. COLORSCHEMES & TRANSPARENCY                     *nvim-config-colorscheme*
+
+Persistence ~
+The last-used colorscheme is written to `.colorscheme` in the config root and
+restored on startup (fallback: `kanso`). Any `:colorscheme` call triggers an
+autocmd that saves the name, so your choice survives restarts.
+
+Picker ~
+  - `<leader>cs`   Opens Telescope with live colorscheme preview; the
+                   selection is persisted automatically.
+
+Universal transparency ~
+Every scheme renders with no editor background so the terminal background
+shows through. This is enforced two ways:
+  1. Native `transparent` options set per-plugin where supported.
+  2. A global `ColorScheme` autocmd in `lua/defaults/init.lua` strips the
+     background of core highlight groups (`transparent_groups`) after ANY
+     scheme loads — covering schemes without a transparency option (e.g.
+     melange). Add new groups to that list if a plugin leaves a background.
+
+Note: light colorschemes only look right if the terminal background is also
+light, since transparency means the terminal background is what shows.
+
+Installed schemes (one file each under `lua/plugins/`): catppuccin, kanagawa,
+kanso, lackluster, nightfox, everforest, melange, gruvbox-material, and
+zenbones with its variants (forestbones, neobones, kanagawabones,
+seoulbones). See |nvim-plugins-colorschemes|.
+
+==============================================================================
+7. OTHER HELP FILES                                       *nvim-config-help*
+
+  |nvim-keymaps|      Every keymap in the config, grouped by area.
+  |nvim-plugins|      Catalog of all plugins with their options and maps.
+  |nvim-notebooks|    Molten / Jupyter notebook workflow and the `jkernel`
+                      helper.
+
+ vim:tw=78:ts=8:noet:ft=help:norl:
+</content>
