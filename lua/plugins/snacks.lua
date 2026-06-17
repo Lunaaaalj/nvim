@@ -118,6 +118,10 @@ return {
         function()
           return block(data.render_usage(), 2)
         end,
+        -- Local git: current branch + dirty state + recent commits.
+        function()
+          return block(data.render_git(), 2)
+        end,
       },
     },
   },

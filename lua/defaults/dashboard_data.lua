@@ -4,6 +4,8 @@
 --   * GitHub open PR / review / issue counts
 --   * Claude Code token usage per day (from local ~/.claude logs, via
 --     scripts/claude_usage.py)
+-- Plus one synchronous, always-current source (local + instant, so no cache):
+--   * git branch / dirty state / recent commits for the cwd (render_git)
 --
 -- Flow: dashboard sections read whatever is in the cache (instant). On open we
 -- kick off refresh() in the background; when a source returns we write its cache
@@ -217,11 +219,45 @@ function M.render_contrib()
   return out
 end
 
+-- Current contribution streak: consecutive days (ending today) with > 0
+-- contributions. Today is allowed to be empty without breaking the streak,
+-- since it may simply not have any commits *yet*.
+local function contrib_streak(cal)
+  if not cal or not cal.weeks then
+    return 0
+  end
+  local days = {}
+  for _, week in ipairs(cal.weeks) do
+    for _, day in ipairs(week.contributionDays or {}) do
+      days[#days + 1] = day.contributionCount or 0
+    end
+  end
+  local i = #days
+  if i == 0 then
+    return 0
+  end
+  if days[i] == 0 then -- grace for "today, no commits yet"
+    i = i - 1
+  end
+  local streak = 0
+  while i >= 1 and days[i] > 0 do
+    streak = streak + 1
+    i = i - 1
+  end
+  return streak
+end
+
 function M.contrib_title()
   local cal = M.contrib()
   local total = cal and cal.totalContributions or nil
   local label = total and (" " .. total .. " contributions this year") or " GitHub activity"
-  return { { label, hl = "SnacksDashboardTitle" } }
+  local out = { { label, hl = "SnacksDashboardTitle" } }
+  local streak = contrib_streak(cal)
+  if streak > 0 then
+    out[#out + 1] = { "   ·   ", hl = "SnacksDashboardDesc" }
+    out[#out + 1] = { " " .. streak .. " day streak", hl = "GhContrib4" }
+  end
+  return out
 end
 
 function M.render_counts()
@@ -292,6 +328,72 @@ function M.render_usage()
     local idx = t <= 0 and 1 or math.max(1, math.min(#bars, math.ceil(t / max * #bars)))
     out[#out + 1] = { bars[idx] .. " ", hl = "GhContrib" .. (t <= 0 and 0 or level(math.ceil(t / max * 10))) }
   end
+  return out
+end
+
+-- Local git summary for the dashboard's cwd: current branch + dirty count,
+-- then the last few commits. All local and instant (no async/caching), so it
+-- always reflects the real repo state; returns nil when cwd isn't a work tree.
+function M.render_git()
+  local cwd = vim.fn.getcwd()
+  local function git(args)
+    local cmd = { "git", "-C", cwd }
+    vim.list_extend(cmd, args)
+    local res = vim.fn.systemlist(cmd)
+    if vim.v.shell_error ~= 0 then
+      return nil
+    end
+    return res
+  end
+
+  local branch = git({ "rev-parse", "--abbrev-ref", "HEAD" })
+  if not branch or not branch[1] or branch[1] == "" then
+    return nil
+  end
+
+  -- header: branch  [↑ahead ↓behind]  dirty/clean
+  local out = { { " " .. branch[1], hl = "SnacksDashboardTitle" } }
+
+  -- ahead/behind upstream: `--left-right --count @{u}...HEAD` -> "behind\tahead".
+  -- Fails (skipped) when the branch has no upstream configured.
+  local ab = git({ "rev-list", "--left-right", "--count", "@{u}...HEAD" })
+  if ab and ab[1] then
+    local behind, ahead = ab[1]:match("(%d+)%s+(%d+)")
+    if ahead and tonumber(ahead) > 0 then
+      out[#out + 1] = { "  ↑" .. ahead, hl = "GhContrib3" }
+    end
+    if behind and tonumber(behind) > 0 then
+      out[#out + 1] = { "  ↓" .. behind, hl = "SnacksDashboardDesc" }
+    end
+  end
+
+  local dirty = git({ "status", "--porcelain" })
+  if dirty and #dirty > 0 then
+    out[#out + 1] = { "  ● " .. #dirty .. " changed", hl = "SnacksDashboardDesc" }
+  else
+    out[#out + 1] = { "   clean", hl = "SnacksDashboardDesc" }
+  end
+  out[#out + 1] = { "\n\n" }
+
+  -- last few commits: <hash>  <subject>  <relative date>  (\30 = unit sep)
+  local log = git({ "log", "-5", "--pretty=format:%h\30%s\30%cr" })
+  if log then
+    for i, line in ipairs(log) do
+      local hash, subject, when = line:match("^(.-)\30(.-)\30(.*)$")
+      if hash then
+        if #subject > 32 then
+          subject = subject:sub(1, 31) .. "…"
+        end
+        out[#out + 1] = { hash .. "  ", hl = "GhContrib3" }
+        out[#out + 1] = { subject .. "  ", hl = "SnacksDashboardDesc" }
+        out[#out + 1] = { when, hl = "GhContrib2" }
+        if i < #log then
+          out[#out + 1] = { "\n" }
+        end
+      end
+    end
+  end
+
   return out
 end
 
