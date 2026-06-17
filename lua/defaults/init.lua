@@ -1,4 +1,3 @@
-vim.opt.runtimepath:append("~/.local/share/nvim/site/parser/")
 require("defaults.options")
 require("defaults.keymaps")
 require("defaults.lazy")
