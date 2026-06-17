@@ -1,5 +1,6 @@
 require("defaults.options")
 require("defaults.keymaps")
+require("defaults.lsp")
 require("defaults.lazy")
 
 -- Universal transparency: after ANY colorscheme loads, strip the background of
