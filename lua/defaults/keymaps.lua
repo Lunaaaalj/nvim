@@ -151,3 +151,9 @@ end, { desc = "Close buffer (keep layout)" })
 -- claude keymaps live in lua/plugins/claude.lua (the `keys` table)
 
 vim.keymap.set("n", "<leader>z", "<cmd>ZenMode<cr>", { desc = "Toogle Zen mode" })
+
+-- Toggle spell-check in the current buffer
+vim.keymap.set("n", "<leader>us", function()
+  vim.wo.spell = not vim.wo.spell
+  vim.notify("Spell: " .. (vim.wo.spell and "ON" or "OFF"))
+end, { desc = "Toggle spell-check" })

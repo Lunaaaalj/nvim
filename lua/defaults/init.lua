@@ -14,6 +14,7 @@ local transparent_groups = {
   "TelescopeNormal", "TelescopeBorder", "TelescopePromptNormal",
   "NeoTreeNormal", "NeoTreeNormalNC", "NeoTreeEndOfBuffer", "NeoTreeWinSeparator",
   "SnacksDashboardNormal",
+  "WhichKeyNormal", "WhichKeyFloat", "WhichKeyBorder", "WhichKeyTitle",
   "WinSeparator", "VertSplit", "StatusLine", "StatusLineNC",
 }
 vim.api.nvim_create_autocmd("ColorScheme", {
