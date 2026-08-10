@@ -50,6 +50,7 @@ local function named_term(cmd, name)
 end
 vim.keymap.set("n", "<leader>tp", named_term("python3", "python"), { desc = "Terminal: Python REPL" })
 vim.keymap.set("n", "<leader>tN", named_term("node", "node"), { desc = "Terminal: Node REPL" })
+vim.keymap.set("n", "<leader>tR", named_term("R", "R"), { desc = "Terminal: R REPL" })
 
 -- Terminal-mode escapes: jump to other windows or back to normal mode without
 -- getting trapped in insert. <Esc><Esc> leaves terminal-insert to normal mode.
@@ -67,15 +68,17 @@ vim.keymap.set("v", "<leader>r", ":<C-u>MoltenEvaluateVisual<CR>gv", { desc = "e
 
 -- Run whole notebook cells with a single keystroke. Notebooks open as jupytext
 -- markdown, so a "cell" is a fenced code block: opening fence carries a language
--- (```python), closing fence is bare (```). We collect those spans and hand line
--- ranges to Molten (MoltenEvaluateRange auto-resolves a single attached kernel,
--- and the kernel runs queued evaluations in order).
+-- (```python), closing fence is bare (```). Quarto/R-Markdown documents (.qmd)
+-- use curly-brace chunk headers instead (```{r}, ```{python}), so both forms
+-- are matched. We collect those spans and hand line ranges to Molten
+-- (MoltenEvaluateRange auto-resolves a single attached kernel, and the kernel
+-- runs queued evaluations in order).
 local function molten_cells()
     local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
     local cells, open = {}, nil
     for i, l in ipairs(lines) do
         if not open then
-            if l:match("^```%a") then
+            if l:match("^```%a") or l:match("^```{%a") then
                 open = i
             end
         elseif l:match("^```") then
