@@ -65,6 +65,7 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
   <leader>tf    Terminal: floating terminal
   <leader>th    Terminal: horizontal (bottom) terminal
   <leader>tp    Terminal: Python REPL    <leader>tN  Node REPL
+                <leader>tR  R REPL
   2<C-\>        Open numbered shell #2 (prefix <C-\> with a count for any id)
                 Each terminal's winbar shows a tab-strip of all open shells,
                 with the current one bracketed. In terminal mode, <C-h/j/k/l>
@@ -261,12 +262,13 @@ Adapters: Python (debugpy via the neovim venv) and C/C++ (codelldb). For C/C++,
   <leader>qd    Stop saving the session on exit
 
 ==============================================================================
-13. NOTEBOOKS (MOLTEN)                                *nvim-keymaps-notebooks*
+13. NOTEBOOKS (MOLTEN / QUARTO)                       *nvim-keymaps-notebooks*
 
   <leader>mi    Initialize a Molten kernel (:MoltenInit, kernel picker)
   <leader>e     Evaluate operator (then a motion)
   <leader>r     (visual) Evaluate the visual selection
-  <leader>rc    Run the current cell (auto-selects the ```python fence)
+  <leader>rc    Run the current cell (auto-selects the ```python or ```{r}
+                fence)
   <leader>ra    Run all cells, top to bottom
   <leader>rk    Run every cell above the cursor
   <leader>rj    Run the current cell and everything below
@@ -276,8 +278,13 @@ Adapters: Python (debugpy via the neovim venv) and C/C++ (codelldb). For C/C++,
   <leader>md    Delete the cell
   <leader>oi    Open image output externally (:MoltenImagePopup)
   <localleader>mx  Open output in the browser (:MoltenOpenInBrowser)
+  <leader>op    Quarto: start live-reload preview (:QuartoPreview)
+  <leader>oP    Quarto: stop preview (:QuartoClosePreview)
 
-See |nvim-notebooks| for the full workflow.
+Cell keymaps work identically in `.qmd` files (Quarto's ```{r}/```{python}
+chunk headers are recognized the same as plain jupytext fences); .qmd files
+also get per-language LSP inside chunks via quarto-nvim + otter.nvim.
+See |nvim-notebooks| and |nvim-notebooks-quarto| for the full workflow.
 
 ==============================================================================
 14. CLAUDE CODE                                          *nvim-keymaps-claude*

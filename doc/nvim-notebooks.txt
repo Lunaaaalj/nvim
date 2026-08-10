@@ -13,6 +13,7 @@ and the `jkernel` helper. A longer prose version lives in `docs/molten.md`.
   4. Daily flow ................................ |nvim-notebooks-flow|
   5. Plots / images ............................ |nvim-notebooks-images|
   6. Troubleshooting ........................... |nvim-notebooks-trouble|
+  7. R / Quarto ................................ |nvim-notebooks-quarto|
 
 ==============================================================================
 1. KERNELS, NOT VENVS                                *nvim-notebooks-concept*
@@ -129,6 +130,44 @@ Wrong packages at runtime ~
   The kernel points at a specific venv. If you `pip install`ed into a different
   environment, install into the venv the kernel was registered from (or
   re-register it).
+
+==============================================================================
+7. R / QUARTO                                         *nvim-notebooks-quarto*
+
+`.qmd` (Quarto) documents get two things, from two different plugins:
+
+  - LSP-in-chunks — quarto-nvim + otter.nvim (lua/plugins/quarto.lua) give
+    diagnostics/completion/hover PER LANGUAGE inside each chunk (an {r} chunk
+    gets R's LSP, a {python} chunk gets Python's). Editing support only, does
+    not run anything.
+  - Execution — still goes through Molten, exactly like .ipynb/.py.
+    molten_cells() in lua/defaults/keymaps.lua recognizes both plain jupytext
+    fences (```python) and Quarto's curly-brace chunk headers (```{r},
+    ```{python}), so <leader>rc/ra/rk/rj work unchanged in .qmd files.
+
+Registering R as a kernel ~
+  Unlike Python, R has no per-project venv concept here — IRkernel
+  registration is a ONE-TIME, MACHINE-WIDE step, not something `jkernel`
+  handles: >
+     install.packages("IRkernel")
+     IRkernel::installspec()
+<
+  After that the R kernel shows up in <leader>mi (:MoltenInit) alongside any
+  Python kernels — pick it the same way. <leader>tR opens a plain, persistent
+  R REPL terminal (same pattern as <leader>tp/<leader>tN) for work outside
+  Molten cells.
+
+Preview ~
+     <leader>op   :QuartoPreview      Run `quarto preview`, open/refresh a
+                                       browser tab with live reload on save
+     <leader>oP   :QuartoClosePreview Stop the preview
+
+  This renders the whole document (all chunks, any language), unlike
+  per-cell Molten output.
+
+Plots ~
+  The Alacritty-vs-Kitty-protocol image handling from section 5 is generic —
+  it applies to R plots exactly like Python ones, no separate mechanism.
 
  vim:tw=78:ts=8:noet:ft=help:norl:
 </content>

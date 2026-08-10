@@ -111,6 +111,47 @@ startup:
   - `<leader>oi` — `:MoltenImagePopup` (external image viewer)
   - `<localleader>mx` — `:MoltenOpenInBrowser`
 
+## R / Quarto
+
+`.qmd` (Quarto) documents get two things, from two different plugins:
+
+- **LSP-in-chunks** — `quarto-nvim` + `otter.nvim` (`lua/plugins/quarto.lua`)
+  give you diagnostics/completion/hover *per language* inside each chunk
+  (an `{r}` chunk gets R's LSP, a `{python}` chunk gets Python's). This is
+  editing support only — it does not run anything.
+- **Execution** — still goes through Molten, exactly like `.ipynb`/`.py`.
+  `molten_cells()` in `lua/defaults/keymaps.lua` recognizes both plain
+  jupytext fences (```` ```python ````) and Quarto's curly-brace chunk
+  headers (```` ```{r} ````, ```` ```{python} ````), so `<leader>rc` /
+  `<leader>ra` / `<leader>rk` / `<leader>rj` work unchanged in `.qmd` files.
+
+### Registering R as a kernel
+
+Unlike Python, R has no per-project venv concept here — IRkernel registration
+is a **one-time, machine-wide** step, not something `jkernel` handles:
+
+```r
+install.packages("IRkernel")
+IRkernel::installspec()
+```
+
+After that, the R kernel shows up in `<leader>mi` (`:MoltenInit`) alongside
+any Python kernels — pick it the same way. `<leader>tR` also opens a plain,
+persistent R REPL terminal (same pattern as `<leader>tp`/`<leader>tN`) for
+work outside Molten cells.
+
+### Preview
+
+`<leader>op` — `:QuartoPreview`, runs `quarto preview` and opens/refreshes a
+browser tab with live reload as you save. `<leader>oP` — `:QuartoClosePreview`
+stops it. This renders the whole document (all chunks, any language), unlike
+per-cell Molten output.
+
+### Plots
+
+The Alacritty-vs-Kitty-protocol image handling described above is generic —
+it applies to R plots exactly like Python ones, no separate mechanism.
+
 ## Troubleshooting
 
 - **Kernel not in `:MoltenInit`** — it isn't registered. Run `jkernel add` in the

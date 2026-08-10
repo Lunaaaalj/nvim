@@ -51,6 +51,8 @@ A `.luarc.json` at the config root configures lua_ls for this repo: it declares 
 
 **Images / terminal:** inline image output (plots) only works in terminals speaking the Kitty graphics protocol (Kitty/WezTerm/Ghostty). `lua/plugins/molten.lua` detects the terminal at startup: in a capable terminal it uses `image.nvim` (loaded via `cond`); otherwise (e.g. **Alacritty**, the current terminal) it sets `molten_image_provider = "none"` and relies on virtual-text output. View plots externally with `<leader>oi` (`:MoltenImagePopup`) or `<localleader>mx` (`:MoltenOpenInBrowser`).
 
+**Quarto / R:** `.qmd` files get per-language LSP-in-chunks via `quarto-nvim` + `otter.nvim` (`lua/plugins/quarto.lua`, `ft = "quarto"`, `codeRunner.enabled = false`); `.qmd` is registered as filetype `quarto` defensively in `lua/defaults/init.lua`. Execution does **not** go through quarto-nvim's own runner — it reuses Molten exactly like Python: register R as a Jupyter kernel via IRkernel (`install.packages("IRkernel"); IRkernel::installspec()`, a one-time machine-wide step, unlike per-project `jkernel` venvs), then pick it from `<leader>mi`. `molten_cells()` in `lua/defaults/keymaps.lua` matches both plain jupytext fences (` ```python `) and Quarto's curly-brace chunk headers (` ```{r} `, ` ```{python} `), so `<leader>rc`/`ra`/`rk`/`rj` work unchanged in `.qmd`. `<leader>tR` opens a persistent R REPL terminal (same `named_term` pattern as `<leader>tp`/`<leader>tN`). `<leader>op`/`<leader>oP` (`:QuartoPreview`/`:QuartoClosePreview`) run a live-reload document preview in a browser. Full workflow in [`docs/molten.md`](docs/molten.md#r--quarto).
+
 ## Adding a plugin
 
 Create a new file in `lua/plugins/` returning a lazy.nvim spec:
@@ -84,7 +86,7 @@ The authoritative human-facing reference is the in-editor `:help` documentation 
 | `<leader>t` | Terminal: toggle shell #1 (vertical side panel) |
 | `<leader>tn` / `<leader>ts` | New shell / select-switch shell (`:TermSelect`) |
 | `<leader>tf` / `<leader>th` | Float / horizontal terminal |
-| `<leader>tp` / `<leader>tN` | Python / Node REPL terminal |
+| `<leader>tp` / `<leader>tN` / `<leader>tR` | Python / Node / R REPL terminal |
 | `2<C-\>` | Open numbered shell #2 (count-prefix `<C-\>` for any id) |
 | `<leader>ac` | Toggle ClaudeCode |
 | `<leader>z` | Toggle Zen Mode |
@@ -101,6 +103,7 @@ The authoritative human-facing reference is the in-editor `:help` documentation 
 | `<leader>md` | Molten delete cell |
 | `<localleader>mx` | Molten open output in browser |
 | `<leader>oi` | Molten open image output externally |
+| `<leader>op` / `<leader>oP` | Quarto: start / stop live-reload preview |
 | `<Tab>` / `<S-Tab>` | Next / previous buffer (bufferline) |
 | `<leader>x` | Close buffer (preserves window layout) |
 | `gd` / `gD` / `gr` / `gi` / `gy` | LSP definition / declaration / references / implementation / type def |
@@ -122,3 +125,6 @@ The authoritative human-facing reference is the in-editor `:help` documentation 
 - `~/.virtualenvs/neovim` venv with `pynvim`, `jupyter_client`, `jupytext` (Neovim Python host / Molten / jupytext.nvim)
 - `~/.local/bin/jkernel` helper script for registering/removing per-project Jupyter kernels (see [`docs/molten.md`](docs/molten.md)). Not part of this repo — lives in `~/.local/bin`.
 - A Kitty-graphics terminal (Kitty/WezTerm/Ghostty) is only needed for inline Molten images; Alacritty works for everything else
+- `r` and `quarto` (both via Homebrew: `brew install r quarto`) for R/Quarto (`.qmd`) support
+- R package `languageserver` for the `r_language_server` LSP (Mason's `r-languageserver` installs its own bootstrapped R environment, so a system-wide `install.packages("languageserver")` isn't strictly required, but is a fallback if Mason's bootstrap fails)
+- R package `IRkernel` (`install.packages("IRkernel"); IRkernel::installspec()`) registers R as a Jupyter kernel for Molten — a one-time, machine-wide step, unlike Python's per-project `jkernel` venv registration; `jkernel` itself is Python-venv-specific and does not handle R

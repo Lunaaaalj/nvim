@@ -22,7 +22,7 @@ local sections = {
     { "<leader>t", "Terminal: toggle shell #1 (side panel)" },
     { "<leader>tn / ts", "New shell / select-switch shell" },
     { "<leader>tf / th", "Float / horizontal terminal" },
-    { "<leader>tp / tN", "Python / Node REPL terminal" },
+    { "<leader>tp / tN / tR", "Python / Node / R REPL terminal" },
     { "2<C-\\>", "Open numbered shell #2 (count-prefixed)" },
     { "<leader>ut", "Toggle treesitter context" },
     { "<leader>up", "Toggle precognition motion hints" },
@@ -110,7 +110,7 @@ local sections = {
     { "<leader>qS", "Select session" },
     { "<leader>qd", "Don't save session on exit" },
   } },
-  { "Molten / Notebooks", {
+  { "Molten / Notebooks / Quarto", {
     { "<leader>mi", "Init kernel" },
     { "<leader>e", "Evaluate operator" },
     { "<leader>r", "Evaluate selection (visual)" },
@@ -124,6 +124,7 @@ local sections = {
     { "<leader>md", "Delete cell" },
     { "<leader>oi", "Open image output externally" },
     { "<localleader>mx", "Open output in browser" },
+    { "<leader>op / oP", "Quarto: start / stop live preview" },
   } },
   { "Claude Code", {
     { "<leader>ac", "Toggle Claude" },

@@ -208,6 +208,17 @@ jupytext.nvim ~  (GCBallesteros/jupytext.nvim)
   so notebooks edit as plain markdown. Calls a bare `jupytext` resolved from
   the Neovim host venv on `$PATH`.
 
+quarto-nvim ~  (quarto-dev/quarto-nvim)
+  `.qmd` support: ft=quarto lazy-load, per-language LSP inside chunks via
+  otter.nvim (lspFeatures.chunks = "curly", matching ```{r}/```{python}
+  headers). codeRunner disabled — cell execution stays on Molten. Also
+  provides :QuartoPreview / :QuartoClosePreview (<leader>op / <leader>oP).
+  See |nvim-notebooks-quarto| for the full workflow.
+
+otter.nvim ~  (jmbuhr/otter.nvim)
+  Per-chunk LSP backend used by quarto-nvim; activated automatically when
+  quarto-nvim's lspFeatures are enabled, no separate setup() call.
+
 render-markdown.nvim ~  (MeanderingProgrammer/render-markdown.nvim)
   In-buffer rendering of markdown (headings, code blocks, tables, etc.).
 

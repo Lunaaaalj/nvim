@@ -42,6 +42,7 @@ A short tour — see `:help nvim-plugins` for the full catalog.
 - Test & debug: `neotest` (pytest), `nvim-dap` with UI and Python support
 - Sessions: `persistence.nvim`
 - Notebooks: `molten.nvim` (+ `image.nvim`, `jupytext.nvim`) — see `:help nvim-notebooks`
+- R / Quarto: `quarto-nvim` + `otter.nvim` for `.qmd` LSP-in-chunks; execution reuses Molten (register R via IRkernel) — see `:help nvim-notebooks-quarto`
 - Prose: `zen-mode.nvim`, `render-markdown.nvim`, `vimtex`
 - AI: `claudecode.nvim` integration
 - Persistent, transparent colorschemes: last used scheme is saved and restored on startup
@@ -65,6 +66,8 @@ Leader is `<Space>`, localleader is `\`. This is a subset — `:help nvim-keymap
 | `<leader>oh` | Molten hide output |
 | `<leader>md` | Molten delete cell |
 | `<localleader>mx` | Molten open output in browser |
+| `<leader>tR` | R REPL terminal |
+| `<leader>op` / `<leader>oP` | Quarto: start / stop live preview |
 | `<Tab>` / `<S-Tab>` | Next / previous buffer |
 | `<leader>x` | Close buffer |
 | `gd` / `K` / `gr` / `<leader>rn` | LSP definition / hover / references / rename |
