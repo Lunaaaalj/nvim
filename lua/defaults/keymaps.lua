@@ -22,11 +22,42 @@ vim.keymap.set("n", "<C-l>", "<C-w>l", { desc = "Move to right window" })
 
 vim.keymap.set('n','<leader>n', "<cmd>Neotree toggle<cr>", { desc = "Toogle Neo-Tree" })
 
-vim.keymap.set("n", "<leader>t", function()
-    vim.cmd("ToggleTerm direction=vertical size=80")
-end)
+-- Terminal: VSCode-like multiple shells via toggleterm. <leader>t toggles shell
+-- #1 in the side panel; numbered shells also open with a count prefix on <C-\>
+-- (e.g. 2<C-\>). <leader>ts lists/switches between open shells.
+vim.keymap.set("n", "<leader>t", "<cmd>1ToggleTerm direction=vertical<cr>", { desc = "Terminal: toggle shell #1" })
+vim.keymap.set("n", "<leader>tf", "<cmd>ToggleTerm direction=float<cr>", { desc = "Terminal: float" })
+vim.keymap.set("n", "<leader>th", "<cmd>ToggleTerm direction=horizontal size=15<cr>", { desc = "Terminal: horizontal panel" })
+vim.keymap.set("n", "<leader>ts", "<cmd>TermSelect<cr>", { desc = "Terminal: select / switch" })
+vim.keymap.set("n", "<leader>tn", function()
+    -- Open the next free terminal id (a brand-new shell).
+    local id = #require("toggleterm.terminal").get_all() + 1
+    vim.cmd(id .. "ToggleTerm direction=vertical")
+end, { desc = "Terminal: new shell" })
 
-vim.keymap.set("t", "<C-h>", [[<C-\><C-n><C-w>h]], { desc = "Exit terminal and go left" })
+-- Pinned REPL terminals: each toggles its own persistent instance.
+local function named_term(cmd, name)
+    return function()
+        local Terminal = require("toggleterm.terminal").Terminal
+        _G._named_terms = _G._named_terms or {}
+        local t = _G._named_terms[name]
+        if not t then
+            t = Terminal:new({ cmd = cmd, display_name = name, direction = "vertical", hidden = true })
+            _G._named_terms[name] = t
+        end
+        t:toggle()
+    end
+end
+vim.keymap.set("n", "<leader>tp", named_term("python3", "python"), { desc = "Terminal: Python REPL" })
+vim.keymap.set("n", "<leader>tN", named_term("node", "node"), { desc = "Terminal: Node REPL" })
+
+-- Terminal-mode escapes: jump to other windows or back to normal mode without
+-- getting trapped in insert. <Esc><Esc> leaves terminal-insert to normal mode.
+vim.keymap.set("t", "<Esc><Esc>", [[<C-\><C-n>]], { desc = "Terminal: to normal mode" })
+vim.keymap.set("t", "<C-h>", [[<C-\><C-n><C-w>h]], { desc = "Terminal: window left" })
+vim.keymap.set("t", "<C-j>", [[<C-\><C-n><C-w>j]], { desc = "Terminal: window down" })
+vim.keymap.set("t", "<C-k>", [[<C-\><C-n><C-w>k]], { desc = "Terminal: window up" })
+vim.keymap.set("t", "<C-l>", [[<C-\><C-n><C-w>l]], { desc = "Terminal: window right" })
 
 vim.keymap.set("n", "<leader>mi", ":MoltenInit<CR>", { desc = "init Molten kernel", silent = true })
 vim.keymap.set("n", "<leader>e", ":MoltenEvaluateOperator<CR>", { desc = "evaluate operator", silent = true })
@@ -149,8 +180,8 @@ vim.keymap.set("n", "<leader>x", function()
 end, { desc = "Close buffer (keep layout)" })
 
 -- claude keymaps live in lua/plugins/claude.lua (the `keys` table)
-
-vim.keymap.set("n", "<leader>z", "<cmd>ZenMode<cr>", { desc = "Toogle Zen mode" })
+-- <leader>z (Zen mode) lives in lua/plugins/zen.lua (the `keys` table) so the
+-- plugin lazy-loads on first use.
 
 -- Toggle spell-check in the current buffer
 vim.keymap.set("n", "<leader>us", function()

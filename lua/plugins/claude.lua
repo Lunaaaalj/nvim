@@ -4,7 +4,7 @@ return {
   opts = {
     terminal = {
       split_side = "right",
-      split_width_percentage = 0.32,
+      split_width_percentage = 0.4,
       provider = "snacks", -- snacks gives a nicer managed terminal than native
       auto_close = true,
     },

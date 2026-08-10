@@ -4,12 +4,12 @@ return {
     opts = {
         preset = "classic",
         delay = 200,
-        -- Anchor a narrow, tall panel to the bottom-left of the screen.
-        -- col = 0 / row = math.huge place it bottom-left; the small width keeps
-        -- it a vertical column rather than a wide bottom bar.
+        -- Anchor a narrow, tall panel to the bottom-right of the screen.
+        -- col = math.huge / row = math.huge place it bottom-right; the small
+        -- width keeps it a vertical column rather than a wide bottom bar.
         win = {
             no_overlap = true,
-            col = 0,
+            col = math.huge,
             row = math.huge,
             width = 0.3,
             height = { min = 4, max = 0.85 },
@@ -36,6 +36,7 @@ return {
             { "<leader>q", group = "Session" },
             { "<leader>r", group = "Run/Rename" },
             { "<leader>s", group = "Search/Replace" },
+            { "<leader>t", group = "Terminal" },
             { "<leader>T", group = "Test" },
             { "<leader>u", group = "UI" },
             { "<leader>x", group = "Trouble/Diagnostics" },

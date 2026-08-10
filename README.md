@@ -1,12 +1,20 @@
 # Neovim config
 
-Opinionated Neovim setup focused on a clean UI, fast navigation, and a small set of productive plugins. Written in Lua using `lazy.nvim` as the plugin manager. Targets macOS with Kitty terminal.
+Opinionated Neovim setup focused on a clean UI, fast navigation, and a small set of productive plugins. Written in Lua using `lazy.nvim` as the plugin manager. Targets macOS, primarily run in Alacritty.
+
+> **Full docs live in-editor.** Run `:help nvim-config` for the complete reference: `:help nvim-keymaps` (every keymap), `:help nvim-plugins` (every plugin), and `:help nvim-notebooks` (Molten/Jupyter workflow).
 
 ## Requirements
 - Neovim (recent version with Lua support)
 - Git
 - macOS (recommended)
-- Kitty terminal (for `image.nvim`)
+- Alacritty, or any terminal (light colorschemes need a light terminal background)
+- `make` (builds `telescope-fzf-native`)
+- `lazygit` binary (for `lazygit.nvim`)
+- `sioyek` (PDF viewer for `vimtex`)
+- Formatters used by `conform`: `stylua`, `black`, `isort`, `clang-format`
+- A Kitty-graphics terminal (Kitty/WezTerm/Ghostty) is only needed for inline Molten notebook images; everything else works in Alacritty
+- For notebooks: a `~/.virtualenvs/neovim` venv with `pynvim`, `jupyter_client`, `jupytext` (see `:help nvim-notebooks`)
 
 ## Install
 1. Clone the repo into your Neovim config path:
@@ -22,21 +30,24 @@ nvim
 ```
 
 ## Features
+A short tour — see `:help nvim-plugins` for the full catalog.
 - Plugin management via `lazy.nvim`
-- LSP support via `nvim-lspconfig` + `mason.nvim` (`clangd`, `pyright` ensured)
-- Completion via `nvim-cmp` with autopairs
-- Treesitter with common language parsers
-- UI polish: `lualine`, `noice`, `notify`, `barbecue`, `nvim-navic`, `bufferline`, `smear-cursor`
-- Navigation: `telescope` + `telescope-fzf-native`, `neo-tree`
+- LSP via `nvim-lspconfig` + `mason.nvim` (`clangd`, `pyright` auto-installed), completion via `nvim-cmp` + `luasnip`, formatting via `conform.nvim`
+- Treesitter with sticky context; diagnostics/symbols via `trouble.nvim`
+- Editing: `flash` motions, `nvim-surround`, `Comment.nvim`, `mini.ai`, `treesj`, `nvim-ufo` folds, `nvim-autopairs`
+- Navigation: `telescope` + `telescope-fzf-native`, `neo-tree`, `oil.nvim`, `harpoon`, `grug-far` search/replace, `which-key`
+- UI polish: `lualine`, `noice`, `nvim-notify`, `barbecue` + `nvim-navic`, `bufferline`, `smear-cursor`, `mini.indentscope`
 - Terminal: `toggleterm`
-- Git: `lazygit.nvim`, `gitsigns.nvim`
-- Notebook-style evaluation: `molten.nvim` with `image.nvim`, `jupytext.nvim`
+- Git: `lazygit.nvim`, `gitsigns.nvim`, `diffview.nvim`, `git-conflict.nvim`
+- Test & debug: `neotest` (pytest), `nvim-dap` with UI and Python support
+- Sessions: `persistence.nvim`
+- Notebooks: `molten.nvim` (+ `image.nvim`, `jupytext.nvim`) — see `:help nvim-notebooks`
 - Prose: `zen-mode.nvim`, `render-markdown.nvim`, `vimtex`
-- AI: `claude-code` integration
-- Persistent colorscheme: last used colorscheme is saved and restored on startup
+- AI: `claudecode.nvim` integration
+- Persistent, transparent colorschemes: last used scheme is saved and restored on startup
 
 ## Keymaps (core)
-Leader is `<Space>`, localleader is `\`.
+Leader is `<Space>`, localleader is `\`. This is a subset — `:help nvim-keymaps` is the complete reference, `<leader>?` searches all maps live, and `<leader>k` opens an in-editor cheatsheet.
 
 | Key | Action |
 |-----|--------|
@@ -63,6 +74,8 @@ Leader is `<Space>`, localleader is `\`.
 - `init.lua` loads the defaults
 - `lua/defaults/` — options, keymaps, LSP, and lazy bootstrapping
 - `lua/plugins/` — one file per plugin spec
+- `doc/` — in-editor `:help` documentation (`:help nvim-config`)
+- `docs/` — long-form prose guides (e.g. `docs/molten.md`)
 - `lazy-lock.json` — locked plugin versions
 - `.colorscheme` — persisted colorscheme name
 

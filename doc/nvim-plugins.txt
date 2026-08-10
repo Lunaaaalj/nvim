@@ -1,0 +1,256 @@
+*nvim-plugins.txt*        Catalog of every plugin in this Neovim config
+
+==============================================================================
+CONTENTS                                                       *nvim-plugins*
+
+Plugins are managed by `lazy.nvim`; each lives in its own file under
+`lua/plugins/`. Keymaps below are summarized — see |nvim-keymaps| for the
+authoritative, grouped reference.
+
+  1. LSP & completion .......................... |nvim-plugins-lsp|
+  2. Editing ................................... |nvim-plugins-editing|
+  3. Navigation & files ........................ |nvim-plugins-navigation|
+  4. UI ........................................ |nvim-plugins-ui|
+  5. Git ....................................... |nvim-plugins-git|
+  6. Test & debug .............................. |nvim-plugins-testdebug|
+  7. Notebooks & markdown ...................... |nvim-plugins-notebooks|
+  8. Prose & LaTeX ............................. |nvim-plugins-prose|
+  9. Colorschemes .............................. |nvim-plugins-colorschemes|
+  10. AI ....................................... |nvim-plugins-ai|
+
+==============================================================================
+1. LSP & COMPLETION                                        *nvim-plugins-lsp*
+
+nvim-lspconfig ~  (neovim/nvim-lspconfig)
+  LSP client configuration framework. `lua/defaults/lsp.lua` sets up
+  `tsserver` with cmp capabilities and the on_attach maps gd / K / gr /
+  <leader>rn (K is then overridden by hover.nvim).
+
+mason.nvim + mason-lspconfig.nvim ~  (williamboman/*)
+  Installs and manages LSP servers. Ensures `clangd` (C/C++) and `pyright`
+  (Python); a handler auto-sets-up each installed server with cmp
+  capabilities. Build hook: `:MasonUpdate`.
+
+nvim-cmp ~  (hrsh7th/nvim-cmp)
+  Completion engine, loaded on InsertEnter. Sources: nvim_lsp, luasnip
+  (priority group), then buffer and path. Maps: <C-Space> complete, <C-e>
+  abort, <CR> confirm, <Tab>/<S-Tab> next/prev or snippet jump.
+
+LuaSnip ~  (L3MON4D3/LuaSnip, + friendly-snippets)
+  Snippet engine driving cmp expansion. Loads VSCode-format snippets and
+  custom Lua snippets; autosnippets enabled.
+
+conform.nvim ~  (stevearc/conform.nvim)
+  Formatter runner. Formats on save (2s timeout, LSP fallback) and on
+  <leader>cf. Formatters: python = isort+black, lua = stylua, c/cpp =
+  clang_format.
+
+trouble.nvim ~  (folke/trouble.nvim)
+  Pretty list for diagnostics, symbols, references and quickfix. Diagnostics
+  view auto-closes when empty. Maps: <leader>xx/xb/xs/xl/xq (and <leader>xt
+  for TODOs via todo-comments).
+
+==============================================================================
+2. EDITING                                             *nvim-plugins-editing*
+
+nvim-treesitter ~  (nvim-treesitter/nvim-treesitter)
+  Syntax parsing/highlighting. Loaded eagerly; build hook `:TSUpdate`. Ensured
+  parsers: lua, vim, vimdoc, bash, python, cpp, c, markdown, markdown_inline.
+  Legacy regex highlighting disabled. Parsers install to stdpath("data")/parsers.
+
+nvim-treesitter-context ~  (nvim-treesitter/nvim-treesitter-context)
+  Sticky header showing the enclosing scope (max 3 lines, cursor mode).
+  Toggle with <leader>ut.
+
+mini.ai ~  (echasnovski/mini.ai)
+  Extended a/i text objects (n_lines = 500). Used inside operators/visual.
+
+nvim-surround ~  (kylechui/nvim-surround)
+  Add/change/delete surroundings with ys / cs / ds (default mappings).
+
+Comment.nvim ~  (numToStr/Comment.nvim)
+  Toggle comments with gcc / gbc / gc{motion} / gb{motion}.
+
+nvim-autopairs ~  (windwp/nvim-autopairs)
+  Auto-closes brackets, quotes and parens.
+
+treesj ~  (Wansmer/treesj)
+  Toggle split/join of code blocks (max_join_length = 150). Map: <leader>j.
+
+nvim-ufo ~  (kevinhwang91/nvim-ufo)
+  Treesitter+indent folding. foldcolumn = 1, folds start open (foldlevel 99).
+  Maps: zR open all, zM close all, zr open-except-kinds, K peek-fold-then-hover.
+
+flash.nvim ~  (folke/flash.nvim)
+  Labeled jump motions. `s` jump, `S` treesitter select, `r` remote,
+  <C-s> toggle in search. Default `/` search is left unmodified.
+
+grug-far.nvim ~  (MagicDuck/grug-far.nvim)
+  Project-wide search & replace with live preview. <leader>sr (prefills a
+  `*.<ext>` filter), <leader>sR on a visual selection.
+
+todo-comments.nvim ~  (folke/todo-comments.nvim)
+  Highlights FIX/TODO/HACK/NOTE comments. <leader>ft Telescope, <leader>xt
+  Trouble, ]t / [t to jump.
+
+==============================================================================
+3. NAVIGATION & FILES                               *nvim-plugins-navigation*
+
+telescope.nvim ~  (nvim-telescope/telescope.nvim, + fzf-native)
+  Fuzzy finder for files, keymaps, colorschemes, TODOs, etc. fzf-native needs
+  `make`. Used by <leader>ff, <leader>?, <leader>cs, <leader>ft.
+
+neo-tree.nvim ~  (nvim-neo-tree/neo-tree.nvim)
+  Sidebar file explorer (width 40), the default explorer. Toggle: <leader>n.
+
+oil.nvim ~  (stevearc/oil.nvim)
+  Edit the filesystem as a buffer; shown in a float, hidden files visible.
+  Not the default explorer. Open parent dir with `-`.
+
+harpoon ~  (ThePrimeagen/harpoon, branch harpoon2)
+  Pin a handful of files for instant jumps. <leader>Ha add, <leader>Hh menu,
+  <leader>1-4 jump.
+
+bufferline.nvim ~  (akinsho/bufferline.nvim)
+  Buffer tab bar with diagnostics, thin separators, neo-tree offset. Navigate
+  with <Tab>/<S-Tab>, close with <leader>x.
+
+toggleterm.nvim ~  (akinsho/toggleterm.nvim)
+  Multiple toggleable terminals, VSCode-style. <leader>t toggles shell #1 in a
+  vertical side panel; numbered shells open with a count prefix on <C-\> (e.g.
+  2<C-\> -> shell #2), and :TermSelect (<leader>ts) lists/switches between them.
+  <leader>tn opens a fresh shell, <leader>tf/th give float/horizontal terminals,
+  and <leader>tp / <leader>tN toggle pinned Python / Node REPLs. Each terminal
+  window carries a winbar tab-strip of every open shell with the current one
+  bracketed. Terminals stay transparent (shade_terminals off). See also the
+  terminal-mode window-nav maps in :help nvim-keymaps.
+
+which-key.nvim ~  (folke/which-key.nvim)
+  Popup of pending keybindings after a 500ms delay, with named groups for the
+  leader prefixes (AI, Code, Debug, Find, Git, Harpoon, Molten, Output,
+  Session, Run/Rename, Search, Test, UI, Trouble).
+
+==============================================================================
+4. UI                                                       *nvim-plugins-ui*
+
+lualine.nvim ~  (nvim-lualine/lualine.nvim)
+  Statusline (auto theme). Sections: mode | branch+diff | filename | LSP
+  diagnostics+filetype | progress+location. ~60fps refresh, tabline always on.
+
+noice.nvim ~  (folke/noice.nvim)
+  Replaces the cmdline, messages and popupmenu UI. Popup cmdline, LSP
+  progress/hover/signature, presets: bottom_search, command_palette,
+  long_message_to_split, lsp_doc_border.
+
+nvim-notify ~  (rcarriga/nvim-notify)
+  Animated notifications (fade, 2s timeout) used as `vim.notify`.
+
+barbecue.nvim ~  (utilyre/barbecue.nvim)
+  Winbar breadcrumbs of the code location, powered by nvim-navic.
+
+nvim-navic ~  (SmiteshP/nvim-navic)
+  LSP-driven location provider feeding barbecue's breadcrumbs.
+
+smear-cursor.nvim ~  (sphamba/smear-cursor.nvim)
+  Animated cursor trail.
+
+mini.indentscope ~  (echasnovski/mini.indentscope)
+  Indent-scope guide (│), no draw animation. Disabled in neo-tree, toggleterm,
+  lazy, mason, help, noice and trouble buffers.
+
+==============================================================================
+5. GIT                                                     *nvim-plugins-git*
+
+gitsigns.nvim ~  (lewis6991/gitsigns.nvim)
+  Gutter signs, hunk staging/reset, blame, diff, hunk text object. Full map
+  list under |nvim-keymaps-git| (]c/[c, <leader>h*, <leader>tb/tw, ih).
+
+lazygit.nvim ~  (kdheepak/lazygit.nvim)
+  Embeds the LazyGit TUI (requires the `lazygit` binary). Open with <leader>lg.
+  Commands: LazyGit, LazyGitConfig, LazyGitCurrentFile, LazyGitFilter,
+  LazyGitFilterCurrentFile.
+
+diffview.nvim ~  (sindrets/diffview.nvim)
+  Multi-window diffs and file/repo history. <leader>gd/gh/gH/gc.
+
+git-conflict.nvim ~  (akinsho/git-conflict.nvim)
+  Highlights merge conflicts and resolves them: co/ct/cb/c0 and ]x/[x.
+  Provides `:GitConflict*` commands. incoming=DiffAdd, current=DiffText.
+
+==============================================================================
+6. TEST & DEBUG                                       *nvim-plugins-testdebug*
+
+neotest ~  (nvim-neotest/neotest, + neotest-python)
+  Test runner. Adapter: neotest-python with the pytest runner; DAP strategy
+  uses justMyCode = false. Maps: <leader>Tr/Tf/Ts/To/TX/Td.
+
+nvim-dap ~  (mfussenegger/nvim-dap + dap-ui, nvim-nio, dap-python,
+            dap-virtual-text)
+  Debugger. Python adapter points at `~/.virtualenvs/neovim/bin/python`. The
+  DAP UI auto-opens/closes with the session; virtual text shows inline values.
+  Maps: <leader>db/dB/dc/di/dn/de/dr/du/dx.
+
+==============================================================================
+7. NOTEBOOKS & MARKDOWN                               *nvim-plugins-notebooks*
+
+molten-nvim ~  (benlubas/molten-nvim, pinned <2.0.0)
+  Runs code in Jupyter kernels. Build hook `:UpdateRemotePlugins`. Detects the
+  terminal at startup: image-capable terminals (Kitty/WezTerm/Ghostty) use
+  image.nvim for inline plots; otherwise `molten_image_provider = "none"` and
+  output is virtual text. Output window max height 20, wrap on, auto-open off.
+  See |nvim-notebooks| for the full workflow.
+
+image.nvim ~  (3rd/image.nvim)
+  Kitty-graphics image backend; loaded ONLY when the terminal supports it.
+
+jupytext.nvim ~  (GCBallesteros/jupytext.nvim)
+  Converts `.ipynb` <-> markdown on the fly (style = markdown, ft = markdown)
+  so notebooks edit as plain markdown. Calls a bare `jupytext` resolved from
+  the Neovim host venv on `$PATH`.
+
+render-markdown.nvim ~  (MeanderingProgrammer/render-markdown.nvim)
+  In-buffer rendering of markdown (headings, code blocks, tables, etc.).
+
+==============================================================================
+8. PROSE & LATEX                                         *nvim-plugins-prose*
+
+zen-mode.nvim ~  (folke/zen-mode.nvim)
+  Distraction-free centered editing (90-col window). Toggle with <leader>z.
+  Inside zen it hides line numbers, the sign/fold columns, cursorline, git
+  signs and the statusline, and keeps the transparent background (no backdrop
+  dim). Pairs with twilight.nvim to dim everything except the section under the
+  cursor, and pauses the ambience plugins (illuminate, mini.indentscope,
+  satellite, precognition) for the duration, restoring them on exit.
+
+vimtex ~  (lervag/vimtex)
+  LaTeX editing/compilation. Loaded eagerly; view method = sioyek, forward
+  search on start disabled. Provides its own extensive `\l...` maps.
+
+==============================================================================
+9. COLORSCHEMES                                   *nvim-plugins-colorschemes*
+
+All are lazy-loaded at priority 1000 and render transparently (native option
+where available, otherwise the global transparency autocmd — see
+|nvim-config-colorscheme|). Pick and persist one with <leader>cs.
+
+  catppuccin        (catppuccin/nvim)            transparent_background
+  kanagawa          (rebelot/kanagawa.nvim)      transparent
+  kanso             (webhooked/kanso.nvim)       transparent  (default fallback)
+  lackluster        (slugbyte/lackluster.nvim)   transparent normal bg
+  nightfox          (EdenEast/nightfox.nvim)     transparent
+  everforest        (neanias/everforest-nvim)    full transparency
+  melange           (savq/melange-nvim)          via global autocmd only
+  gruvbox-material  (sainnhe/gruvbox-material)   full transparency
+  zenbones          (zenbones-theme/zenbones.nvim)  transparent; variants
+                    forestbones / neobones / kanagawabones / seoulbones
+
+==============================================================================
+10. AI                                                      *nvim-plugins-ai*
+
+claudecode.nvim ~  (coder/claudecode.nvim, + snacks.nvim)
+  Claude Code integration. Terminal: right split, 32% width, snacks provider,
+  auto-close. Diffs reviewed in a vertical split, auto-close on accept. Maps:
+  <leader>ac/af/ar/aC/am/ab/as/aa/ad — see |nvim-keymaps-claude|.
+
+ vim:tw=78:ts=8:noet:ft=help:norl:
+</content>

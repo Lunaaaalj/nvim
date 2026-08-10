@@ -81,7 +81,11 @@ The authoritative human-facing reference is the in-editor `:help` documentation 
 | `<Esc>` | Clear search highlight |
 | `<leader>cs` | Pick colorscheme (live preview, persisted) |
 | `<leader>n` | Toggle Neo-tree |
-| `<leader>t` | Toggle vertical terminal (size 80) |
+| `<leader>t` | Terminal: toggle shell #1 (vertical side panel) |
+| `<leader>tn` / `<leader>ts` | New shell / select-switch shell (`:TermSelect`) |
+| `<leader>tf` / `<leader>th` | Float / horizontal terminal |
+| `<leader>tp` / `<leader>tN` | Python / Node REPL terminal |
+| `2<C-\>` | Open numbered shell #2 (count-prefix `<C-\>` for any id) |
 | `<leader>ac` | Toggle ClaudeCode |
 | `<leader>z` | Toggle Zen Mode |
 | `<leader>d` | Show diagnostic float |

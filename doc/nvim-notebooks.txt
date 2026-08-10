@@ -1,0 +1,134 @@
+*nvim-notebooks.txt*       Molten / Jupyter notebook workflow
+
+==============================================================================
+CONTENTS                                                     *nvim-notebooks*
+
+Run code in Jupyter kernels from Neovim with molten-nvim. This covers the one
+concept that trips people up — kernels vs. venvs — plus the day-to-day flow
+and the `jkernel` helper. A longer prose version lives in `docs/molten.md`.
+
+  1. Kernels, not venvs ........................ |nvim-notebooks-concept|
+  2. Registering a kernel ...................... |nvim-notebooks-register|
+  3. Managing kernels (jkernel) ................ |nvim-notebooks-jkernel|
+  4. Daily flow ................................ |nvim-notebooks-flow|
+  5. Plots / images ............................ |nvim-notebooks-images|
+  6. Troubleshooting ........................... |nvim-notebooks-trouble|
+
+==============================================================================
+1. KERNELS, NOT VENVS                                *nvim-notebooks-concept*
+
+`:MoltenInit` does NOT browse for virtual environments. It lists the Jupyter
+kernels registered on your machine. A venv is not automatically a kernel — you
+register it once, and from then on it appears in the `:MoltenInit` picker.
+
+  project venv  --(register once)-->  Jupyter kernel  --(:MoltenInit)-->  Molten
+
+Molten reads the kernel list through `jupyter_client` in the Neovim host venv
+`~/.virtualenvs/neovim`, so anything `jupyter kernelspec list` shows, Molten
+sees too.
+
+==============================================================================
+2. REGISTERING A KERNEL                             *nvim-notebooks-register*
+
+Use the `jkernel` helper (`~/.local/bin/jkernel`, already on `$PATH`): >
+     cd /path/to/project
+     source .venv/bin/activate     # or have .venv/ , venv/ , or env/ present
+     jkernel add
+<
+`jkernel add`:
+  1. Finds the venv — an activated $VIRTUAL_ENV first, else .venv/, venv/ or
+     env/ in the current directory.
+  2. Prompts for a kernel name (defaults to the folder name) and display name.
+  3. Installs `ipykernel` into the venv if missing.
+  4. Registers the kernel under `~/Library/Jupyter/kernels/`.
+
+This is a one-time step per project: the kernelspec stores the absolute path
+to that venv's Python, so everything you `pip install` in the venv is
+available when you run cells.
+
+Doing it manually (no helper): >
+     source .venv/bin/activate
+     pip install ipykernel
+     python -m ipykernel install --user --name my-project \
+       --display-name "My Project"
+<
+==============================================================================
+3. MANAGING KERNELS (JKERNEL)                        *nvim-notebooks-jkernel*
+
+  jkernel add          Register the current directory's venv (prompts for name)
+  jkernel rm           Remove a kernel — interactive numbered picker
+  jkernel rm <name>    Remove a kernel by name directly
+  jkernel list         List registered kernels
+
+Notes:
+  - `jkernel` uses the Neovim host's `jupyter`
+    (`~/.virtualenvs/neovim/bin/jupyter`) so its list matches what Molten sees.
+    Override with `NVIM_JUPYTER=/path/to/jupyter jkernel ...`.
+  - The "Native kernel (python3) is not available" warning from
+    `jupyter kernelspec list` is harmless — the host venv has no kernel of its
+    own.
+
+==============================================================================
+4. DAILY FLOW                                           *nvim-notebooks-flow*
+
+1. Open your `.ipynb` or `.py` in Neovim. `.ipynb` is converted to markdown on
+   the fly by jupytext.nvim, so a "cell" is a fenced ```python code block.
+2. `<leader>mi` (:MoltenInit), then pick the kernel for this project.
+3. Evaluate code:
+     <leader>rc   Run the whole cell the cursor is in (auto-selects the
+                  enclosing ```python fence — the fast path)
+     <leader>rr   Re-evaluate the current cell
+     <leader>r    (visual) Evaluate an arbitrary visual selection
+     <leader>e    Evaluate operator (e.g. <leader>e then a motion)
+
+   Bulk execution (like VSCode run-all / above / below):
+     <leader>ra   Run all cells, top to bottom
+     <leader>rk   Run every cell above the current one (k = up)
+     <leader>rj   Run the current cell and everything below (j = down)
+
+   Cells run in order: the kernel queues evaluations, so outputs land in the
+   right cells even though the requests fire at once. If the cursor is in prose
+   between cells, the split falls on the cursor line.
+4. Manage output:
+     <leader>os   Open the output window
+     <leader>oh   Hide output
+     <leader>md   Delete the cell
+
+Cells without inline images show their results as virtual text (e.g. in
+Alacritty).
+
+==============================================================================
+5. PLOTS / IMAGES                                     *nvim-notebooks-images*
+
+Inline images only work in terminals speaking the Kitty graphics protocol
+(Kitty / WezTerm / Ghostty). `lua/plugins/molten.lua` detects the terminal at
+startup:
+
+  - Capable terminal -> uses image.nvim, plots render inline.
+  - Alacritty (the usual setup) -> molten_image_provider = "none", output is
+    virtual text. View plots externally:
+      <leader>oi       :MoltenImagePopup     (external image viewer)
+      <localleader>mx  :MoltenOpenInBrowser
+
+==============================================================================
+6. TROUBLESHOOTING                                   *nvim-notebooks-trouble*
+
+Kernel not in `:MoltenInit` ~
+  It isn't registered. Run `jkernel add` in the project, or check
+  `jkernel list`.
+
+`:MoltenInit` errors about remote plugins ~
+  Run `:UpdateRemotePlugins` and restart Neovim (required after installing or
+  updating molten-nvim).
+
+`jupytext` / `pynvim` not found ~
+  The Neovim Python host venv `~/.virtualenvs/neovim` is missing deps; it needs
+  `pynvim`, `jupyter_client`, `jupytext`. See the Molten section of CLAUDE.md.
+
+Wrong packages at runtime ~
+  The kernel points at a specific venv. If you `pip install`ed into a different
+  environment, install into the venv the kernel was registered from (or
+  re-register it).
+
+ vim:tw=78:ts=8:noet:ft=help:norl:
+</content>

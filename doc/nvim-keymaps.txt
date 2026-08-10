@@ -35,6 +35,8 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
   <leader>cs    Pick colorscheme with live preview (persisted)
   <leader>ut    Toggle treesitter sticky context header
   <leader>up    Toggle precognition motion hints
+  <leader>sn    Show notification history (Noice)
+  <leader>sd    Dismiss visible notifications
   <leader>fml   Make it rain (cellular-automaton, just for fun)
   <leader>flife Game of Life (cellular-automaton)
 
@@ -57,7 +59,16 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
   <leader>ff    Telescope find files
   <leader>ft    Find TODO/FIX/HACK/NOTE comments (Telescope)
   <leader>n     Toggle Neo-tree file explorer
-  <leader>t     Toggle a vertical terminal (width 80)
+  <leader>t     Terminal: toggle shell #1 in the side panel
+  <leader>tn    Terminal: open a new shell (next free id)
+  <leader>ts    Terminal: select / switch between open shells (:TermSelect)
+  <leader>tf    Terminal: floating terminal
+  <leader>th    Terminal: horizontal (bottom) terminal
+  <leader>tp    Terminal: Python REPL    <leader>tN  Node REPL
+  2<C-\>        Open numbered shell #2 (prefix <C-\> with a count for any id)
+                Each terminal's winbar shows a tab-strip of all open shells,
+                with the current one bracketed. In terminal mode, <C-h/j/k/l>
+                jump to other windows and <Esc><Esc> returns to normal mode.
   -             Oil: open the parent directory as an editable buffer
   <leader>sr    Search & replace across files (grug-far); prefills a
                 `*.<ext>` filter from the current file
