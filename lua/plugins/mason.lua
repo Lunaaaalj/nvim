@@ -45,6 +45,7 @@ return {
           "emmet_language_server",  -- Emmet expansion
           "texlab",                 -- LaTeX
           "lua_ls",                 -- Lua (this config)
+          "r_language_server",      -- R / Quarto .qmd R chunks
         },
         handlers = {
           function(server_name)
