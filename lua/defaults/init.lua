@@ -3,6 +3,12 @@ require("defaults.keymaps")
 require("defaults.lsp")
 require("defaults.lazy")
 
+-- Register .qmd as filetype "quarto" defensively: quarto-nvim registers this
+-- itself, but doing it here too avoids any ordering issue with its `ft=`-based
+-- lazy loading (a filetype plugin can't lazy-load off a filetype it hasn't
+-- registered yet). Idempotent to call twice.
+vim.filetype.add({ extension = { qmd = "quarto" } })
+
 -- Universal transparency: after ANY colorscheme loads, strip the background of
 -- the core editor groups so the Alacritty background shows through. This works
 -- even for colorschemes without a built-in transparency option (e.g. melange).

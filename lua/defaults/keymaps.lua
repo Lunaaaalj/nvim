@@ -158,6 +158,11 @@ vim.keymap.set("n", "<localleader>mx", ":MoltenOpenInBrowser<CR>", { desc = "ope
 -- open the current cell's image output in an external viewer (use in Alacritty)
 vim.keymap.set("n", "<leader>oi", ":MoltenImagePopup<CR>", { desc = "open image output externally", silent = true })
 
+-- Quarto: live-reload preview (runs `quarto preview` in an integrated
+-- terminal tab and opens/refreshes a browser); QuartoClosePreview stops it.
+vim.keymap.set("n", "<leader>op", ":QuartoPreview<CR>", { desc = "Quarto: start preview" })
+vim.keymap.set("n", "<leader>oP", ":QuartoClosePreview<CR>", { desc = "Quarto: stop preview" })
+
 vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, { desc = "Show diagnostic" })
 
 -- bufferline navigation
