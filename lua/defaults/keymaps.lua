@@ -62,9 +62,26 @@ vim.keymap.set("t", "<C-l>", [[<C-\><C-n><C-w>l]], { desc = "Terminal: window ri
 
 vim.keymap.set("n", "<leader>mi", ":MoltenInit<CR>", { desc = "init Molten kernel", silent = true })
 vim.keymap.set("n", "<leader>e", ":MoltenEvaluateOperator<CR>", { desc = "evaluate operator", silent = true })
-vim.keymap.set("n", "<leader>os", ":noautocmd MoltenEnterOutput<CR>", { desc = "open output window", silent = true })
-vim.keymap.set("n", "<leader>rr", ":MoltenReevaluateCell<CR>", { desc = "re-eval cell", silent = true })
-vim.keymap.set("v", "<leader>r", ":<C-u>MoltenEvaluateVisual<CR>gv", { desc = "execute visual selection", silent = true })
+-- Output goes to a docked pane (right column, above the REPL when one is open)
+-- instead of Molten's floating window. See lua/defaults/molten_pane.lua.
+local pane = require("defaults.molten_pane")
+vim.keymap.set("n", "<leader>os", function()
+    pane.open(true)
+    pane.refresh()
+end, { desc = "open output pane", silent = true })
+vim.keymap.set("n", "<leader>ot", pane.toggle, { desc = "toggle output pane", silent = true })
+vim.keymap.set("n", "<leader>rr", function()
+    vim.cmd("MoltenReevaluateCell")
+    pane.follow()
+end, { desc = "re-eval cell", silent = true })
+-- Keep the cmdline form: `<C-u>` clears the automatic '<,'> range, and `gv`
+-- restores the selection. Only the pane call is appended.
+vim.keymap.set(
+    "v",
+    "<leader>r",
+    ":<C-u>MoltenEvaluateVisual<CR>gv<Cmd>lua require('defaults.molten_pane').follow()<CR>",
+    { desc = "execute visual selection", silent = true }
+)
 
 -- Run whole notebook cells with a single keystroke. Notebooks open as jupytext
 -- markdown, so a "cell" is a fenced code block: opening fence carries a language
@@ -89,7 +106,8 @@ local function molten_cells()
     return cells
 end
 
--- Evaluate a list of {open, close} cells, skipping empties.
+-- Evaluate a list of {open, close} cells, skipping empties. Output is
+-- asynchronous, so the pane is told to follow along rather than read once.
 local function molten_run(cells)
     local ran = 0
     for _, c in ipairs(cells) do
@@ -97,6 +115,9 @@ local function molten_run(cells)
             vim.fn.MoltenEvaluateRange(c.open + 1, c.close - 1)
             ran = ran + 1
         end
+    end
+    if ran > 0 then
+        pane.follow()
     end
     return ran
 end
@@ -150,7 +171,10 @@ vim.keymap.set("n", "<leader>rj", function()
     local _, below = molten_split()
     molten_run(below)
 end, { desc = "Molten run current cell and below", silent = true })
-vim.keymap.set("n", "<leader>oh", ":MoltenHideOutput<CR>", { desc = "close output window", silent = true })
+vim.keymap.set("n", "<leader>oh", function()
+    pane.close()
+    pcall(vim.cmd, "MoltenHideOutput")
+end, { desc = "close output pane", silent = true })
 vim.keymap.set("n", "<leader>md", ":MoltenDelete<CR>", { desc = "delete Molten cell", silent = true })
 
 -- if you work with html outputs:
