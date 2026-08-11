@@ -472,10 +472,19 @@ local function collect_here(dirty)
         return { cells = { { lines = lines, paths = paths } }, deferred = false }
     end
 
+    local token = dirty and run_token or nil
+
+    -- Re-walk when the cells may have moved OR when the set of them may have
+    -- changed. Editing shifts positions, which changedtick catches -- but
+    -- *evaluating* a cell creates one in Molten without touching the buffer at
+    -- all, so changedtick alone left the pane working from the cell list as it
+    -- was at the first run, and nothing you ran afterwards ever appeared. The
+    -- token changes once per evaluation, so this walks once per run, not once
+    -- per poll.
     local buf = vim.api.nvim_get_current_buf()
     local tick = vim.api.nvim_buf_get_changedtick(buf)
-    if cache.buf ~= buf or cache.tick ~= tick or cache.pos == nil then
-        cache.buf, cache.tick = buf, tick
+    if cache.buf ~= buf or cache.tick ~= tick or cache.pos == nil or cache.token ~= token then
+        cache.buf, cache.tick, cache.token = buf, tick, token
         cache.pos = walk_positions()
     end
     local pos = cache.pos
@@ -497,27 +506,34 @@ local function collect_here(dirty)
     -- Choose what to spend the budget on before reading anything. Two
     -- priorities, both in buffer (= execution) order:
     --
-    --   1. cells we have never read, or that were still pending last time --
-    --      this is the frontier of the run, and what makes the log grow;
-    --   2. cells that are settled and cached but were named by `dirty`, i.e.
-    --      just re-evaluated.
+    --   1. cells you just evaluated that we have not read yet -- the whole
+    --      point of the refresh, so they must not queue behind anything;
+    --   2. cells never read or still pending from an earlier run, which is
+    --      what makes the log fill in;
+    --   3. cells settled and cached but named by `dirty`, i.e. re-evaluated.
     --
     -- Priority matters: under <leader>ra every cell is dirty for the whole run,
     -- so a naive scan would spend the entire budget re-reading the first few
     -- cells on every poll and never reach the rest. The token stops a cell
     -- being re-read over and over for the same evaluation.
-    local token = dirty and run_token or nil
-    local want, urgent, stale = {}, 0, 0
+    local want, wanted = {}, 0
     for i, p in ipairs(pos) do
         local entry = cache.out[p[1]]
-        if entry == nil or entry.pending or entry.recheck then
-            want[i], urgent = 1, urgent + 1
-        elseif is_dirty(pos, i, dirty) and entry.token ~= token then
-            want[i], stale = 2, stale + 1
+        local unread = entry == nil or entry.pending or entry.recheck
+        local evaluated = is_dirty(pos, i, dirty)
+        if unread and evaluated then
+            want[i] = 1 -- the cell you just ran: read it before anything else
+        elseif unread then
+            want[i] = 2 -- the frontier of an earlier run, still filling in
+        elseif evaluated and entry.token ~= token then
+            want[i] = 3 -- settled and cached, but re-run since we last looked
+        end
+        if want[i] then
+            wanted = wanted + 1
         end
     end
     local read, left = {}, budget
-    for priority = 1, 2 do
+    for priority = 1, 3 do
         for i = 1, #pos do
             if want[i] == priority and left > 0 then
                 read[i], left = true, left - 1
@@ -525,7 +541,7 @@ local function collect_here(dirty)
         end
     end
     -- Anything we wanted but could not afford: come back for it next poll.
-    local deferred = urgent + stale > budget
+    local deferred = wanted > budget
 
     local view, cursor, moved = vim.fn.winsaveview(), vim.api.nvim_win_get_cursor(0), false
     local cells, fresh = {}, {}
@@ -727,7 +743,11 @@ end
 -- wall time on it: each interval is the last refresh's cost divided by the
 -- budget, so 40ms polls every 500ms and 300ms backs off to 3s. Molten's own
 -- sync tick is what made the editor unusable once before; this cannot.
-local POLL_MS = 500 -- floor
+-- The floor only needs to be low enough to feel immediate: the budget below is
+-- what actually protects the UI, scaling the wait with what a refresh costs. A
+-- one-cell notebook refreshes in ~13ms and so polls at ~150ms; a 40-cell one
+-- costs ~80ms and backs off to ~800ms on its own.
+local POLL_MS = 150 -- floor
 local POLL_MAX_MS = 3000 -- ceiling
 local POLL_BUDGET = 0.1 -- at most ~10% of wall time spent refreshing
 -- Long enough for a real run: a 40-cell notebook took over two minutes to work
