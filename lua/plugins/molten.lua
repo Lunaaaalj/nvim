@@ -28,9 +28,19 @@ return {
                 vim.g.molten_image_provider = "none"
             end
             vim.g.molten_output_win_max_height = 20
-            vim.g.molten_auto_open_output = false -- needed when image_provider = none
+            -- The floating output window is never shown: output goes to the
+            -- docked pane instead (lua/defaults/molten_pane.lua, <leader>os).
+            -- The pane still asks Molten to build the float momentarily to get
+            -- at the content, but it closes it in the same callback, so it is
+            -- never drawn.
+            vim.g.molten_auto_open_output = false
             vim.g.molten_wrap_output = true
-            vim.g.molten_virt_text_output = true -- show text output as virtual text
+            vim.g.molten_virt_text_output = true -- keep text results inline under the cell
+            -- Figures go to the float only -- which is never drawn, but is what
+            -- the pane harvests image paths from. Without this ("both" is the
+            -- default) every plot also renders as virtual lines inside the code
+            -- buffer, pushing the code around and duplicating the pane.
+            vim.g.molten_image_location = "float"
             vim.g.molten_virt_lines_off_by_1 = true
         end,
     },
