@@ -229,9 +229,17 @@ local function fit(img, avail_cols, avail_rows)
     return math.max(1, math.floor(cols * scale)), math.max(1, math.floor(rows * scale))
 end
 
+-- Flattening is async, so a refresh that arrives while one is in flight must
+-- not have its result drawn over. `generation` makes the stale callback a no-op.
+local generation = 0
+
+local DRAW_RETRIES = 4 -- attempts to get a refused render to land
+local DRAW_RETRY_MS = 80 -- long enough for a redraw to have happened
+
 -- Make our own image.nvim objects for Molten's figures so they belong to this
 -- window rather than the float's.
-local function draw(anchors)
+local function draw(anchors, retries)
+    retries = retries or 0
     local ok, image = pcall(require, "image")
     if not ok or not M.is_open() then
         return
@@ -258,12 +266,29 @@ local function draw(anchors)
             state.images[#state.images + 1] = img
         end
     end
-    state.drawn = { anchors = anchors, w = avail_cols, h = avail_rows }
-end
 
--- Flattening is async, so a refresh that arrives while one is in flight must
--- not have its result drawn over. `generation` makes the stale callback a no-op.
-local generation = 0
+    -- image.nvim decides an image is off-screen from the window state as it
+    -- stands *now*, and nothing has redrawn since we rewrote the buffer and
+    -- scrolled -- so the first attempt right after an evaluation is often
+    -- refused even though the line is plainly visible. Retry after letting
+    -- Neovim redraw. Bounded, and it stops as soon as everything is up.
+    local complete = true
+    for _, img in ipairs(state.images) do
+        if not img.is_rendered then
+            complete = false
+        end
+    end
+    state.drawn = { anchors = anchors, w = avail_cols, h = avail_rows, complete = complete }
+
+    if not complete and retries < DRAW_RETRIES then
+        local gen = generation
+        vim.defer_fn(function()
+            if gen == generation and M.is_open() then
+                draw(anchors, retries + 1)
+            end
+        end, DRAW_RETRY_MS)
+    end
+end
 
 -- Re-rendering an image is not free (~6ms each) and makes the plot visibly
 -- blink, yet most refreshes -- every poll while a cell runs -- only change the
@@ -274,8 +299,8 @@ local generation = 0
 -- below it lost the extmark holding their virtual padding and must be redrawn,
 -- images above it are untouched.
 local function anchors_match(a, b, first_changed)
-    if not b or #a ~= #b then
-        return false
+    if not b or #a ~= #b or not b.complete then
+        return false -- never skip on top of a draw that didn't actually land
     end
     for i = 1, #a do
         if a[i].path ~= b[i].path or a[i].row ~= b[i].row then
@@ -469,7 +494,7 @@ local function collect_here(dirty)
         if lines == nil then
             return nil
         end
-        return { cells = { { lines = lines, paths = paths } }, deferred = false }
+        return { cells = { { lines = lines, paths = paths } }, deferred = false, focus = 1 }
     end
 
     local token = dirty and run_token or nil
@@ -532,11 +557,16 @@ local function collect_here(dirty)
             wanted = wanted + 1
         end
     end
-    local read, left = {}, budget
+    local read, left, focus = {}, budget, nil
     for priority = 1, 3 do
         for i = 1, #pos do
             if want[i] == priority and left > 0 then
                 read[i], left = true, left - 1
+                -- The last cell read because you just evaluated it is what the
+                -- pane should be looking at when this refresh lands.
+                if priority == 1 then
+                    focus = i
+                end
             end
         end
     end
@@ -601,7 +631,7 @@ local function collect_here(dirty)
     if #cells == 0 then
         return nil
     end
-    return { cells = cells, deferred = deferred }
+    return { cells = cells, deferred = deferred, focus = focus }
 end
 
 -- Run the collection in the notebook's window (see `remember_source`), so the
@@ -655,7 +685,8 @@ function M.refresh(dirty)
     -- the log needs no separator of its own beyond a blank line.
     local pending = got.deferred
     local body, anchors = {}, {}
-    for _, cell in ipairs(cells) do
+    local focus_line, focus_anchor = nil, nil
+    for index, cell in ipairs(cells) do
         if cell.pending or cell.recheck then
             pending = true
         end
@@ -667,6 +698,9 @@ function M.refresh(dirty)
             if #body > 0 then
                 body[#body + 1] = ""
             end
+            if index == got.focus then
+                focus_line = #body + 1
+            end
             vim.list_extend(body, lines)
             -- One real line per image for image.nvim to anchor to: the space
             -- the plot occupies is virtual padding hung below that line, so
@@ -674,6 +708,9 @@ function M.refresh(dirty)
             for _, path in ipairs(cell.paths) do
                 body[#body + 1] = ""
                 anchors[#anchors + 1] = { path = path, row = #body - 1 }
+                if index == got.focus then
+                    focus_anchor = anchors[#anchors]
+                end
             end
         end
     end
@@ -700,10 +737,16 @@ function M.refresh(dirty)
         -- off-screen and skips it. Put the plot at the top instead and let it
         -- have the window; only fall back to the bottom for plain text.
         local last_line = vim.api.nvim_buf_line_count(state.buf)
-        local newest = anchors[#anchors]
         local line, where = last_line, "zb"
-        if newest and newest.row + 1 >= last_line - 1 then
-            line, where = newest.row + 1, "zt"
+        if focus_anchor then
+            -- The cell you just ran drew a figure: put the figure at the top so
+            -- it gets the whole pane. Sticking to the end of the log instead
+            -- would scroll straight past it whenever a later cell has output.
+            line, where = focus_anchor.row + 1, "zt"
+        elseif focus_line and focus_line < last_line - 1 then
+            line, where = focus_line, "zt"
+        elseif anchors[#anchors] and anchors[#anchors].row + 1 >= last_line - 1 then
+            line, where = anchors[#anchors].row + 1, "zt"
         end
         pcall(vim.api.nvim_win_set_cursor, state.win, { line, 0 })
         -- Scroll for the same reason as the grab loop: moving the cursor does

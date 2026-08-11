@@ -55,7 +55,24 @@ return {
             max_height_window_percentage = math.huge,
             max_width_window_percentage = math.huge,
             window_overlap_clear_enabled = true, -- toggles images when windows are overlapped
-            window_overlap_clear_ft_ignore = { "cmp_menu", "cmp_docs", "" },
+            -- Transient popups must not count as "overlap": image.nvim refuses
+            -- to render into a window it thinks is covered, so a notification
+            -- sitting on screen silently stops the output pane's plots from
+            -- drawing at all (measured -- an ft=notify float was the mask).
+            -- image.nvim's own defaults list the notifier and scrollbar
+            -- filetypes; this overrides that list, so they have to be repeated
+            -- here alongside the completion menus.
+            window_overlap_clear_ft_ignore = {
+                "cmp_menu",
+                "cmp_docs",
+                "",
+                "notify",
+                "snacks_notif",
+                "snacks_notif_history",
+                "noice",
+                "scrollview",
+                "scrollview_sign",
+            },
         },
     },
 }
