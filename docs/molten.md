@@ -93,11 +93,81 @@ Notes:
    cells (in prose), the split falls on the cursor line: `rk` runs cells fully
    above it, `rj` runs cells at or below it.
 4. Manage output:
-   - `<leader>os` — open the output window
-   - `<leader>oh` — hide output
+   - `<leader>os` — open the output pane (see below)
+   - `<leader>ot` / `<leader>oh` — toggle / close the pane
    - `<leader>md` — delete the cell
 
-Cells without inline images show their results as virtual text in Alacritty.
+## Output pane
+
+Output does not appear in a floating window. It goes to a docked pane in the
+right-hand column — stacked *above* the REPL terminal when one is open
+(`<leader>tR` / `<leader>tp`), so the layout reads like RStudio:
+
+```
+┌──────────────────────┬───────────┐
+│                      │ ─ output ─│
+│   report.qmd         │  <plot>   │
+│                      │ mean:4.21 │
+│                      ├───────────┤
+│                      │ R REPL    │
+└──────────────────────┴───────────┘
+```
+
+| Key | Action |
+|-----|--------|
+| `<leader>os` | Open the pane and focus it (refreshes to the current cell) |
+| `<leader>ot` | Toggle the pane |
+| `<leader>oh` | Close the pane |
+
+The pane refreshes itself after every evaluation — `<leader>rc`, `<leader>ra`,
+`<leader>rk`, `<leader>rj`, `<leader>rr` and visual `<leader>r` all update it.
+
+Text results still appear inline under the cell as virtual text; plots do not
+(`molten_image_location = "float"`), so figures show up only in the pane
+instead of pushing your code around.
+
+Opening a REPL terminal (`<leader>tR` / `<leader>tp` / `<leader>tN`) while the
+pane is up moves it *under* the pane rather than adding a third column, so the
+layout above holds whichever you open first. `<leader>th` (horizontal panel)
+and `<leader>tf` (float) are left where you asked for them.
+
+The pane itself is transparent like every other window, so it picks up your
+terminal's colour and opacity. Plots get a solid **white** background baked
+into the image instead — otherwise matplotlib's transparent PNGs composite
+straight onto the terminal background and the axes are unreadable. To change
+it, set `require("defaults.molten_pane").plot_background` (any ImageMagick
+colour, e.g. `"#eeeeee"`); to give the pane a surface of its own, override the
+`MoltenPaneNormal` highlight group.
+
+### How it works
+
+Implemented in `lua/defaults/molten_pane.lua`. Two things about Molten shape it:
+
+- **Text.** Molten only builds a cell's output buffer while it renders its
+  float. So a refresh runs `MoltenShowOutput`, copies the buffer Molten built,
+  and runs `MoltenHideOutput` — all inside a single callback. Neovim doesn't
+  redraw in between, so the float is never actually visible.
+- **Plots.** Molten writes each figure to a temp PNG and binds the image to the
+  *float's* window (`add_image(..., bufnr, winnr)`). That binding is why the
+  plots don't follow the buffer into another window. The pane asks image.nvim
+  for those image objects, takes their `.path`, and renders its own copies
+  bound to the pane's window — which is the "show the figure file in the output
+  buffer" approach. Each PNG is first flattened onto the background colour with
+  ImageMagick (`magick … -alpha remove`), cached under
+  `stdpath("cache")/molten_pane/`. ImageMagick is already required by
+  image.nvim's default processor, so this adds no new dependency; without it
+  the plot simply renders untouched.
+- **Size.** image.nvim's `max_width`/`max_height` are *global* options — there
+  is no per-image version — so every pane plot was being capped at the
+  `max_height = 12` set for inline output. The pane opts out
+  (`ignore_global_max_size`) and computes explicit cell dimensions from the
+  terminal's cell size, scaling the figure to fill the pane in whichever
+  direction runs out first.
+
+Because output arrives asynchronously, a refresh after a run polls on Molten's
+own status header (`On Hold` / `Running` → `Done` / `Failed`) every 500ms and
+stops the moment the cell settles. That polling is the only repeating work, and
+it only runs while a cell is actually pending (hard cap: 2 minutes).
 
 ## Plots / images
 

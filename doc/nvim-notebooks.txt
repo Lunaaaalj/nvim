@@ -11,9 +11,10 @@ and the `jkernel` helper. A longer prose version lives in `docs/molten.md`.
   2. Registering a kernel ...................... |nvim-notebooks-register|
   3. Managing kernels (jkernel) ................ |nvim-notebooks-jkernel|
   4. Daily flow ................................ |nvim-notebooks-flow|
-  5. Plots / images ............................ |nvim-notebooks-images|
-  6. Troubleshooting ........................... |nvim-notebooks-trouble|
-  7. R / Quarto ................................ |nvim-notebooks-quarto|
+  5. Output pane ............................... |nvim-notebooks-pane|
+  6. Plots / images ............................ |nvim-notebooks-images|
+  7. Troubleshooting ........................... |nvim-notebooks-trouble|
+  8. R / Quarto ................................ |nvim-notebooks-quarto|
 
 ==============================================================================
 1. KERNELS, NOT VENVS                                *nvim-notebooks-concept*
@@ -91,15 +92,80 @@ Notes:
    right cells even though the requests fire at once. If the cursor is in prose
    between cells, the split falls on the cursor line.
 4. Manage output:
-     <leader>os   Open the output window
-     <leader>oh   Hide output
+     <leader>os   Open the output pane (see |nvim-notebooks-pane|)
+     <leader>ot   Toggle the output pane
+     <leader>oh   Close the output pane
      <leader>md   Delete the cell
 
 Cells without inline images show their results as virtual text (e.g. in
 Alacritty).
 
 ==============================================================================
-5. PLOTS / IMAGES                                     *nvim-notebooks-images*
+5. OUTPUT PANE                                          *nvim-notebooks-pane*
+
+Output does not use a floating window. It goes to a docked pane in the
+right-hand column, stacked *above* the REPL terminal when one is open
+(`<leader>tR` / `<leader>tp`), so the layout reads like RStudio:
+
+    +----------------------+-----------+
+    |                      | - output -|
+    |   report.qmd         |  <plot>   |
+    |                      | mean:4.21 |
+    |                      +-----------+
+    |                      | R REPL    |
+    +----------------------+-----------+
+
+    <leader>os   Open the pane and focus it (refreshes to the current cell)
+    <leader>ot   Toggle the pane
+    <leader>oh   Close the pane
+
+It refreshes itself after every evaluation: <leader>rc, <leader>ra,
+<leader>rk, <leader>rj, <leader>rr and visual <leader>r all update it.
+
+Text results still show inline under the cell as virtual text; plots do not
+(`molten_image_location = "float"`), so figures appear only in the pane
+instead of pushing your code around.
+
+Opening a REPL terminal (<leader>tR / <leader>tp / <leader>tN) while the pane
+is up moves it UNDER the pane instead of adding a third column, so the layout
+above holds whichever you open first. <leader>th (horizontal panel) and
+<leader>tf (float) are left where you asked for them.
+
+Colours ~
+
+The pane is transparent like every other window, so it takes the terminal's
+colour and opacity. Plots instead get a solid white background baked into the
+image: matplotlib's Jupyter backend saves figures transparent, and the Kitty
+protocol composites them onto whatever is behind, which makes dark axes
+unreadable. To change these: >
+     require("defaults.molten_pane").plot_background = "#eeeeee"
+     vim.api.nvim_set_hl(0, "MoltenPaneNormal", { bg = "#1b1b1b" })
+<
+How it works ~
+
+Implemented in `lua/defaults/molten_pane.lua`.
+
+  - Text. Molten only builds a cell's output buffer while rendering its float,
+    so a refresh runs MoltenShowOutput, copies that buffer, then runs
+    MoltenHideOutput — all in one callback. Neovim never redraws in between,
+    so the float is never visible. The grab runs in the notebook's window, so
+    it keeps working while the cursor sits in the REPL below.
+  - Plots. Molten writes each figure to a temp PNG and binds the image to the
+    *float's* window, which is why plots don't follow the buffer elsewhere.
+    The pane reads those image objects' paths from image.nvim, flattens each
+    PNG onto the background colour with ImageMagick (already required by
+    image.nvim), and renders its own copies bound to the pane's window.
+  - Size. image.nvim's max_width/max_height are global, so pane plots were
+    capped at the max_height set for inline output. The pane opts out and
+    scales each figure to fill the pane instead.
+
+Output is asynchronous, so a refresh after a run polls on Molten's own status
+header (On Hold / Running -> Done / Failed) every 500ms and stops as soon as
+the cell settles. That is the only repeating work, and only while a cell is
+pending (hard cap 2 minutes).
+
+==============================================================================
+6. PLOTS / IMAGES                                     *nvim-notebooks-images*
 
 Inline images only work in terminals speaking the Kitty graphics protocol
 (Kitty / WezTerm / Ghostty). `lua/plugins/molten.lua` detects the terminal at
@@ -112,7 +178,7 @@ startup:
       <localleader>mx  :MoltenOpenInBrowser
 
 ==============================================================================
-6. TROUBLESHOOTING                                   *nvim-notebooks-trouble*
+7. TROUBLESHOOTING                                   *nvim-notebooks-trouble*
 
 Kernel not in `:MoltenInit` ~
   It isn't registered. Run `jkernel add` in the project, or check
@@ -132,7 +198,7 @@ Wrong packages at runtime ~
   re-register it).
 
 ==============================================================================
-7. R / QUARTO                                         *nvim-notebooks-quarto*
+8. R / QUARTO                                         *nvim-notebooks-quarto*
 
 `.qmd` (Quarto) documents get two things, from two different plugins:
 

@@ -1,3 +1,5 @@
+above	nvim-notebooks.txt	/*above*
+float's	nvim-notebooks.txt	/*float's*
 nvim-config	nvim-config.txt	/*nvim-config*
 nvim-config-architecture	nvim-config.txt	/*nvim-config-architecture*
 nvim-config-colorscheme	nvim-config.txt	/*nvim-config-colorscheme*
@@ -28,6 +30,8 @@ nvim-notebooks-concept	nvim-notebooks.txt	/*nvim-notebooks-concept*
 nvim-notebooks-flow	nvim-notebooks.txt	/*nvim-notebooks-flow*
 nvim-notebooks-images	nvim-notebooks.txt	/*nvim-notebooks-images*
 nvim-notebooks-jkernel	nvim-notebooks.txt	/*nvim-notebooks-jkernel*
+nvim-notebooks-pane	nvim-notebooks.txt	/*nvim-notebooks-pane*
+nvim-notebooks-quarto	nvim-notebooks.txt	/*nvim-notebooks-quarto*
 nvim-notebooks-register	nvim-notebooks.txt	/*nvim-notebooks-register*
 nvim-notebooks-trouble	nvim-notebooks.txt	/*nvim-notebooks-trouble*
 nvim-notebooks.txt	nvim-notebooks.txt	/*nvim-notebooks.txt*
