@@ -115,9 +115,16 @@ right-hand column, stacked *above* the REPL terminal when one is open
     |                      | R REPL    |
     +----------------------+-----------+
 
-    <leader>os   Open the pane and focus it (refreshes to the current cell)
+    <leader>os   Open the pane and focus it (re-reads every cell)
     <leader>ot   Toggle the pane
     <leader>oh   Close the pane
+
+The pane shows EVERY cell you have run, newest at the bottom, like a console
+log — not just the cell under the cursor. Each entry keeps Molten's own header
+(Out[3]: ✓ Done 0.4s), and plots appear under the cell that produced them. For
+the old cursor-cell-only behaviour: >
+     require("defaults.molten_pane").all_cells = false
+<
 
 It refreshes itself after every evaluation: <leader>rc, <leader>ra,
 <leader>rk, <leader>rj, <leader>rr and visual <leader>r all update it.
@@ -158,11 +165,26 @@ Implemented in `lua/defaults/molten_pane.lua`.
   - Size. image.nvim's max_width/max_height are global, so pane plots were
     capped at the max_height set for inline output. The pane opts out and
     scales each figure to fill the pane instead.
+  - Which cells. MoltenGoto walks Molten's own sorted cell list and wraps
+    modulo its length, so stepping n = 1, 2, ... until the cursor returns to
+    the start enumerates every cell — including ones made by a visual
+    selection, which have no ``` fence to find.
 
 Output is asynchronous, so a refresh after a run polls on Molten's own status
-header (On Hold / Running -> Done / Failed) every 500ms and stops as soon as
-the cell settles. That is the only repeating work, and only while a cell is
-pending (hard cap 2 minutes).
+header (On Hold / Running -> Done / Failed) and stops as soon as every cell
+settles. That is the only repeating work, and only while something is pending
+(hard cap 2 minutes).
+
+Reading one cell costs ~13ms, because Molten has to build and tear down its
+float, so re-reading a whole notebook on every poll would stall the editor.
+The pane caches what each cell printed and re-reads only cells that are still
+pending or that you just evaluated (the keymaps pass the line ranges they
+ran). Cell positions are cached separately, keyed on the buffer's change
+count, so editing your code does not throw away output. An empty reading is
+never cached — it means the cell is queued and hasn't started, not that it has
+nothing to say. The poll interval is derived from the last refresh's cost,
+aiming to spend ~10% of wall time refreshing (between 500ms and 3s), so a long
+notebook backs off on its own.
 
 ==============================================================================
 6. PLOTS / IMAGES                                     *nvim-notebooks-images*

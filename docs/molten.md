@@ -115,9 +115,19 @@ right-hand column — stacked *above* the REPL terminal when one is open
 
 | Key | Action |
 |-----|--------|
-| `<leader>os` | Open the pane and focus it (refreshes to the current cell) |
+| `<leader>os` | Open the pane and focus it (re-reads every cell) |
 | `<leader>ot` | Toggle the pane |
 | `<leader>oh` | Close the pane |
+
+The pane shows **every cell you have run**, newest at the bottom, like a console
+log — not just the cell under the cursor. Each entry keeps Molten's own header
+(`Out[3]: ✓ Done 0.4s`) so you can tell them apart, and plots appear inline
+under the cell that produced them. If you preferred the old behaviour of showing
+only the cell the cursor is in:
+
+```lua
+require("defaults.molten_pane").all_cells = false
+```
 
 The pane refreshes itself after every evaluation — `<leader>rc`, `<leader>ra`,
 `<leader>rk`, `<leader>rj`, `<leader>rr` and visual `<leader>r` all update it.
@@ -164,10 +174,27 @@ Implemented in `lua/defaults/molten_pane.lua`. Two things about Molten shape it:
   terminal's cell size, scaling the figure to fill the pane in whichever
   direction runs out first.
 
+- **Which cells.** `MoltenGoto n` walks Molten's own sorted cell list and wraps
+  modulo its length, so stepping `n = 1, 2, …` until the cursor returns to the
+  start enumerates every cell — including ones created by a visual selection,
+  which have no ` ``` ` fence to find.
+
 Because output arrives asynchronously, a refresh after a run polls on Molten's
-own status header (`On Hold` / `Running` → `Done` / `Failed`) every 500ms and
-stops the moment the cell settles. That polling is the only repeating work, and
-it only runs while a cell is actually pending (hard cap: 2 minutes).
+own status header (`On Hold` / `Running` → `Done` / `Failed`) and stops the
+moment every cell settles. That polling is the only repeating work, and it only
+runs while something is actually pending (hard cap: 2 minutes).
+
+Reading a cell means making Molten build and tear down its float, which costs
+about 13ms — so re-reading a whole notebook on every poll would stall the editor
+for half a second at a time. Instead the pane caches what each cell printed and
+re-reads only cells that are still pending or that you just evaluated (the
+keymaps tell it which line ranges they ran). Cell *positions* are cached
+separately, keyed on the buffer's change count, so editing your code doesn't
+throw away output. An empty reading is never cached, because it means the cell
+is queued and hasn't started rather than that it has nothing to say. Finally,
+the poll interval is derived from how long the last refresh took — it aims to
+spend at most ~10% of wall time refreshing, between 500ms and 3s — so a big
+notebook backs off instead of bogging the editor down.
 
 ## Plots / images
 

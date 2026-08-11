@@ -70,16 +70,20 @@ vim.keymap.set("n", "<leader>os", function()
     pane.refresh()
 end, { desc = "open output pane", silent = true })
 vim.keymap.set("n", "<leader>ot", pane.toggle, { desc = "toggle output pane", silent = true })
+-- The pane re-reads only the cells it is told were evaluated, so each of these
+-- passes the line range it just ran (see molten_pane.follow).
 vim.keymap.set("n", "<leader>rr", function()
+    local line = vim.api.nvim_win_get_cursor(0)[1]
     vim.cmd("MoltenReevaluateCell")
-    pane.follow()
+    pane.follow({ { line, line } })
 end, { desc = "re-eval cell", silent = true })
 -- Keep the cmdline form: `<C-u>` clears the automatic '<,'> range, and `gv`
 -- restores the selection. Only the pane call is appended.
 vim.keymap.set(
     "v",
     "<leader>r",
-    ":<C-u>MoltenEvaluateVisual<CR>gv<Cmd>lua require('defaults.molten_pane').follow()<CR>",
+    ":<C-u>MoltenEvaluateVisual<CR>gv"
+        .. [[<Cmd>lua require('defaults.molten_pane').follow({{vim.fn.line("'<"), vim.fn.line("'>")}})<CR>]],
     { desc = "execute visual selection", silent = true }
 )
 
@@ -109,17 +113,17 @@ end
 -- Evaluate a list of {open, close} cells, skipping empties. Output is
 -- asynchronous, so the pane is told to follow along rather than read once.
 local function molten_run(cells)
-    local ran = 0
+    local ran = {}
     for _, c in ipairs(cells) do
         if c.close - 1 >= c.open + 1 then
             vim.fn.MoltenEvaluateRange(c.open + 1, c.close - 1)
-            ran = ran + 1
+            ran[#ran + 1] = { c.open, c.close }
         end
     end
-    if ran > 0 then
-        pane.follow()
+    if #ran > 0 then
+        pane.follow(ran)
     end
-    return ran
+    return #ran
 end
 
 -- Split all cells into those above the cursor and those at/below it. If the

@@ -231,7 +231,7 @@ end
 
 -- Make our own image.nvim objects for Molten's figures so they belong to this
 -- window rather than the float's.
-local function draw(paths, first_row)
+local function draw(anchors)
     local ok, image = pcall(require, "image")
     if not ok or not M.is_open() then
         return
@@ -240,58 +240,80 @@ local function draw(paths, first_row)
     local win = state.win
     local avail_cols = math.max(10, vim.api.nvim_win_get_width(win) - 1)
     local avail_rows = math.max(5, vim.api.nvim_win_get_height(win) - 2)
-    local row = first_row
-    for _, path in ipairs(paths) do
-        local made, img = pcall(image.from_file, flat[path] or path, {
+    for _, anchor in ipairs(anchors) do
+        local path = flat[anchor.path] or anchor.path
+        local made, img = pcall(image.from_file, path, {
             window = win,
             buffer = state.buf,
             with_virtual_padding = true,
             x = 0,
-            y = row,
+            y = anchor.row,
         })
         if made and img then
             img.ignore_global_max_size = true -- set here: from_file drops it
             local w, h = fit(img, avail_cols, avail_rows)
             pcall(function()
-                img:render({ x = 0, y = row, width = w, height = h })
+                img:render({ x = 0, y = anchor.row, width = w, height = h })
             end)
             state.images[#state.images + 1] = img
-            local drawn = 0
-            pcall(function()
-                drawn = img.rendered_geometry and img.rendered_geometry.height or 0
-            end)
-            row = row + math.max(drawn, 1) + 1
         end
     end
-    state.drawn = { paths = paths, row = first_row, w = avail_cols, h = avail_rows }
+    state.drawn = { anchors = anchors, w = avail_cols, h = avail_rows }
 end
 
 -- Flattening is async, so a refresh that arrives while one is in flight must
 -- not have its result drawn over. `generation` makes the stale callback a no-op.
 local generation = 0
 
-local function render_images(paths, first_row)
+-- Re-rendering an image is not free (~6ms each) and makes the plot visibly
+-- blink, yet most refreshes -- every poll while a cell runs -- only change the
+-- elapsed time in one header and leave the plots exactly where they were. Skip
+-- the redraw when neither the images nor the buffer under them moved.
+--
+-- `first_changed` is the first buffer line `set_body` rewrote: images at or
+-- below it lost the extmark holding their virtual padding and must be redrawn,
+-- images above it are untouched.
+local function anchors_match(a, b, first_changed)
+    if not b or #a ~= #b then
+        return false
+    end
+    for i = 1, #a do
+        if a[i].path ~= b[i].path or a[i].row ~= b[i].row then
+            return false
+        end
+        if first_changed and a[i].row >= first_changed then
+            return false
+        end
+    end
+    return true
+end
+
+local function render_images(anchors, first_changed)
+    if state.drawn and anchors_match(anchors, state.drawn.anchors, first_changed) then
+        return -- nothing moved
+    end
     generation = generation + 1
     state.drawn = nil
-    if #paths == 0 or not has_image_nvim() then
+    if #anchors == 0 or not has_image_nvim() then
+        M.clear_images()
         return
     end
     local gen = generation
     local pending = 0
-    for _, path in ipairs(paths) do
-        if flat[path] == nil then
+    for _, anchor in ipairs(anchors) do
+        if flat[anchor.path] == nil then
             pending = pending + 1
         end
     end
     if pending == 0 then
-        return draw(paths, first_row)
+        return draw(anchors)
     end
-    for _, path in ipairs(paths) do
-        if flat[path] == nil then
-            flatten(path, function()
+    for _, anchor in ipairs(anchors) do
+        if flat[anchor.path] == nil then
+            flatten(anchor.path, function()
                 pending = pending - 1
                 if pending == 0 and gen == generation then
-                    draw(paths, first_row)
+                    draw(anchors)
                 end
             end)
         end
@@ -344,23 +366,6 @@ local function grab_here()
     return lines, paths
 end
 
--- Same, but evaluated in the notebook's window (see `remember_source`), so the
--- pane keeps updating while you sit in the REPL below it.
-local function grab()
-    local src = state.src
-    if src and src ~= state.win and vim.api.nvim_win_is_valid(src) then
-        local ok, res = pcall(vim.api.nvim_win_call, src, function()
-            local lines, paths = grab_here()
-            return { lines, paths }
-        end)
-        if ok and res then
-            return res[1], res[2]
-        end
-        return nil
-    end
-    return grab_here()
-end
-
 -- Molten writes the cell's state into the output header (outputbuffer.py:50):
 -- "* On Hold", "... Running", "✓ Done", "✗ Failed". That is a far better
 -- signal than guessing when output has settled, so `follow()` polls on it.
@@ -373,45 +378,216 @@ local function is_pending(lines)
             return false
         end
     end
-    -- No header yet: the cell hasn't produced anything, so keep looking.
+    -- Nothing at all. Molten doesn't build the output buffer until a cell has
+    -- produced something, so this is a cell that is queued behind another and
+    -- hasn't started -- exactly the case worth waiting for. (Under `<leader>ra`
+    -- the tail of the notebook reads like this for as long as the kernel takes
+    -- to get there.)
     return #lines == 0
 end
 
--- Returns whether the cell is still pending, so `follow()` knows to look again.
-function M.refresh()
+-- Set to false to show only the cell under the cursor, as this pane originally
+-- did.
+M.all_cells = true
+
+local MAX_CELLS = 200 -- runaway guard; the walk below is bounded by the wrap anyway
+
+-- Collect every cell Molten knows about, in buffer order.
+--
+-- `MoltenGoto n` jumps to the nth entry of Molten's own sorted cell list and
+-- indexes it modulo the list length (`__init__.py:441`), so walking n = 1, 2,
+-- ... until the cursor lands back on the first position enumerates exactly the
+-- cells that exist. Going through Molten rather than scanning for ```fences
+-- also picks up cells created by a visual selection or the evaluate operator,
+-- which have no fence to find.
+local function walk_positions()
+    local view = vim.fn.winsaveview()
+    -- The walk drives the cursor through every cell, so put it back exactly:
+    -- winrestview alone restores the scroll position but not reliably the
+    -- column, and this is the user's cursor.
+    local cursor = vim.api.nvim_win_get_cursor(0)
+    local pos, first = {}, nil
+    for n = 1, MAX_CELLS do
+        if not pcall(vim.cmd, "noautocmd silent! MoltenGoto " .. n) then
+            break
+        end
+        local p = vim.api.nvim_win_get_cursor(0)
+        local key = p[1] .. ":" .. p[2]
+        if first == nil then
+            first = key
+        elseif key == first then
+            break -- wrapped around: we have seen them all
+        end
+        pos[#pos + 1] = p
+    end
+    vim.fn.winrestview(view)
+    pcall(vim.api.nvim_win_set_cursor, 0, cursor)
+    return pos
+end
+
+-- Reading one cell costs ~13ms (Molten builds and tears down the float), so
+-- re-reading every cell on every poll does not scale: a 40-cell notebook takes
+-- 620ms per refresh, which is the kind of synchronous stall that made the
+-- editor unusable before. Almost all of that work is wasted -- a cell Molten
+-- reports as Done cannot change until it is re-run -- so cache the settled
+-- output and re-read only cells that are still pending or that the caller says
+-- it just evaluated.
+--
+-- Positions are cached separately from output, keyed on the buffer's
+-- changedtick: editing moves cells (so the walk must be redone) without
+-- invalidating anything they printed. Output is keyed on a cell's start line
+-- rather than its index, so evaluating a new cell doesn't renumber, and
+-- therefore discard, all the others.
+local cache = { buf = nil, tick = nil, pos = nil, out = {} }
+
+function M.forget()
+    cache.buf, cache.tick, cache.pos, cache.out = nil, nil, nil, {}
+end
+
+-- `dirty` is an optional list of {first, last} line ranges that were just
+-- evaluated; nil means "assume everything changed". Cell i owns the lines from
+-- its own start up to the next cell's start.
+local function is_dirty(pos, i, dirty)
+    if dirty == nil then
+        return true
+    end
+    local from = pos[i][1]
+    local to = pos[i + 1] and pos[i + 1][1] - 1 or math.huge
+    for _, range in ipairs(dirty) do
+        if range[1] <= to and range[2] >= from then
+            return true
+        end
+    end
+    return false
+end
+
+local function collect_here(dirty)
+    if not M.all_cells or vim.fn.exists(":MoltenGoto") ~= 2 then
+        local lines, paths = grab_here()
+        return lines and { { lines = lines, paths = paths } } or nil
+    end
+
+    local buf = vim.api.nvim_get_current_buf()
+    local tick = vim.api.nvim_buf_get_changedtick(buf)
+    if cache.buf ~= buf or cache.tick ~= tick or cache.pos == nil then
+        cache.buf, cache.tick = buf, tick
+        cache.pos = walk_positions()
+    end
+    local pos = cache.pos
+
+    local view, cursor, moved = vim.fn.winsaveview(), vim.api.nvim_win_get_cursor(0), false
+    local cells, fresh = {}, {}
+    local ok, err = pcall(function()
+        for i, p in ipairs(pos) do
+            local entry = cache.out[p[1]]
+            if entry == nil or entry.pending or is_dirty(pos, i, dirty) then
+                if pcall(vim.api.nvim_win_set_cursor, 0, p) then
+                    moved = true
+                    local lines, paths = grab_here()
+                    entry = { lines = lines or {}, paths = paths or {} }
+                    entry.pending = is_pending(entry.lines)
+                else
+                    entry = entry or { lines = {}, paths = {}, pending = false }
+                end
+            end
+            -- Never cache an empty reading: it means the cell hasn't produced
+            -- anything *yet*, so remembering it would permanently hide the
+            -- output of every cell still queued when the pane last looked.
+            -- It stays pending instead, and the poll picks it up when it lands.
+            if #entry.lines > 0 or #entry.paths > 0 then
+                fresh[p[1]] = entry -- keyed by line, so cells that moved are dropped
+            end
+            cells[#cells + 1] = entry
+        end
+    end)
+    cache.out = fresh
+    if moved then
+        vim.fn.winrestview(view)
+        pcall(vim.api.nvim_win_set_cursor, 0, cursor)
+    end
+    if not ok then
+        error(err)
+    end
+    return #cells > 0 and cells or nil
+end
+
+-- Run the collection in the notebook's window (see `remember_source`), so the
+-- pane keeps updating while you sit in the REPL below it.
+local function collect(dirty)
+    local src = state.src
+    if src and src ~= state.win and vim.api.nvim_win_is_valid(src) then
+        local ok, res = pcall(vim.api.nvim_win_call, src, function()
+            return collect_here(dirty)
+        end)
+        return ok and res or nil
+    end
+    return collect_here(dirty)
+end
+
+-- Rewrite only the lines that actually differ, so extmarks -- and with them the
+-- images' virtual padding -- survive elsewhere in the buffer. Returns the first
+-- line rewritten, or nil if the buffer already matched.
+local function set_body(body)
+    local old = vim.api.nvim_buf_get_lines(state.buf, 0, -1, false)
+    local head = 0
+    while head < #old and head < #body and old[head + 1] == body[head + 1] do
+        head = head + 1
+    end
+    local tail = 0
+    while tail < #old - head and tail < #body - head and old[#old - tail] == body[#body - tail] do
+        tail = tail + 1
+    end
+    if head == #old and head == #body then
+        return nil -- identical
+    end
+    vim.bo[state.buf].modifiable = true
+    vim.api.nvim_buf_set_lines(state.buf, head, #old - tail, false, vim.list_slice(body, head + 1, #body - tail))
+    vim.bo[state.buf].modifiable = false
+    return head
+end
+
+-- Returns whether any cell is still pending, so `follow()` knows to look again.
+-- `dirty` is passed straight to `collect_here` -- see `is_dirty`.
+function M.refresh(dirty)
     if not M.is_open() then
         return nil
     end
-    local lines, paths = grab()
-    if lines == nil then
+    local cells = collect(dirty)
+    if cells == nil then
         return nil
     end
-    local pending = is_pending(lines)
 
-    -- Drop trailing blanks so the plots sit right under the text.
-    while #lines > 0 and lines[#lines]:match("^%s*$") do
-        table.remove(lines)
+    -- Molten's own header ("Out[3]: ✓ Done 0.4s") already labels each cell, so
+    -- the log needs no separator of its own beyond a blank line.
+    local pending = false
+    local body, anchors = {}, {}
+    for _, cell in ipairs(cells) do
+        if cell.pending == nil and is_pending(cell.lines) or cell.pending then
+            pending = true
+        end
+        local lines = vim.list_extend({}, cell.lines)
+        while #lines > 0 and lines[#lines]:match("^%s*$") do
+            table.remove(lines)
+        end
+        if #lines > 0 or #cell.paths > 0 then
+            if #body > 0 then
+                body[#body + 1] = ""
+            end
+            vim.list_extend(body, lines)
+            -- One real line per image for image.nvim to anchor to: the space
+            -- the plot occupies is virtual padding hung below that line, so
+            -- consecutive images sit on consecutive lines.
+            for _, path in ipairs(cell.paths) do
+                body[#body + 1] = ""
+                anchors[#anchors + 1] = { path = path, row = #body - 1 }
+            end
+        end
     end
-
-    M.clear_images()
-    local body = vim.list_extend({}, lines)
     if #body == 0 then
         body = { "-- no output --" }
     end
-    -- image.nvim needs real lines under the images to hang virtual padding on.
-    local image_row = #body + 1
-    if #paths > 0 then
-        body[#body + 1] = ""
-        for _ = 1, #paths do
-            body[#body + 1] = ""
-        end
-    end
 
-    vim.bo[state.buf].modifiable = true
-    vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, body)
-    vim.bo[state.buf].modifiable = false
-
-    render_images(paths, image_row)
+    render_images(anchors, set_body(body))
     return pending
 end
 
@@ -433,30 +609,66 @@ end
 -- is actually pending: it stops on the first settled reading, if the pane is
 -- closed, or at a hard cap (a kernel that never becomes ready would otherwise
 -- leave it polling forever).
-local POLL_MS = 500
-local POLL_CAP = 240 -- 2 minutes
+--
+-- A refresh costs one MoltenGoto plus a show/hide pair per cell -- all
+-- synchronous RPCs into the Python host, ~3.5ms per cell -- so a long notebook
+-- is much more expensive to poll than a short one. Rather than pick an
+-- interval that is wrong at one end or the other, spend a fixed *fraction* of
+-- wall time on it: each interval is the last refresh's cost divided by the
+-- budget, so 40ms polls every 500ms and 300ms backs off to 3s. Molten's own
+-- sync tick is what made the editor unusable once before; this cannot.
+local POLL_MS = 500 -- floor
+local POLL_MAX_MS = 3000 -- ceiling
+local POLL_BUDGET = 0.1 -- at most ~10% of wall time spent refreshing
+local POLL_CAP_MS = 120000 -- give up after 2 minutes
 
-function M.follow()
+-- `dirty` is the list of {first, last} line ranges just evaluated, so the
+-- refresh can skip re-reading cells that cannot have changed. Omit it and every
+-- cell is re-read.
+function M.follow(dirty)
     stop_timer()
     remember_source()
     M.open(false)
-    -- Only `true` means "pending". `false` is settled and `nil` means Molten
-    -- has nothing to show (no kernel attached, command unavailable) -- neither
-    -- is worth polling for.
-    if M.refresh() ~= true then
+    -- `nil` means Molten has nothing to show at all (no kernel attached,
+    -- command unavailable), which no amount of waiting fixes. Otherwise always
+    -- arm one look: output is asynchronous, so a cell can read as settled here
+    -- purely because it hasn't started producing anything yet.
+    if M.refresh(dirty) == nil then
         return
     end
 
-    local ticks = 0
-    state.timer = vim.uv.new_timer()
-    state.timer:start(POLL_MS, POLL_MS, function()
-        vim.schedule(function()
-            ticks = ticks + 1
-            if not M.is_open() or ticks > POLL_CAP or M.refresh() ~= true then
-                stop_timer()
-            end
-        end)
-    end)
+    local started = vim.uv.now()
+    local timer = vim.uv.new_timer()
+    state.timer = timer
+
+    local tick
+    local function arm(ms)
+        if state.timer == timer and not timer:is_closing() then
+            timer:start(ms, 0, function()
+                vim.schedule(tick)
+            end)
+        end
+    end
+
+    tick = function()
+        if state.timer ~= timer then
+            return -- superseded by a newer follow()
+        end
+        if not M.is_open() or vim.uv.now() - started > POLL_CAP_MS then
+            return stop_timer()
+        end
+        local t0 = vim.uv.hrtime()
+        -- Same `dirty` every poll: these are the cells being evaluated, so they
+        -- are exactly the ones worth re-reading until they settle.
+        local pending = M.refresh(dirty)
+        local cost_ms = (vim.uv.hrtime() - t0) / 1e6
+        if pending ~= true then
+            return stop_timer()
+        end
+        arm(math.min(POLL_MAX_MS, math.max(POLL_MS, math.floor(cost_ms / POLL_BUDGET))))
+    end
+
+    arm(POLL_MS)
 end
 
 --------------------------------------------------------------------------------
@@ -544,7 +756,7 @@ vim.api.nvim_create_autocmd("WinResized", {
         local w = math.max(10, vim.api.nvim_win_get_width(state.win) - 1)
         local h = math.max(5, vim.api.nvim_win_get_height(state.win) - 2)
         if w ~= drawn.w or h ~= drawn.h then
-            draw(drawn.paths, drawn.row)
+            draw(drawn.anchors)
         end
     end,
 })
