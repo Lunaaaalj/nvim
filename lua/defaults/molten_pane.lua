@@ -391,6 +391,8 @@ end
 M.all_cells = true
 
 local MAX_CELLS = 200 -- runaway guard; the walk below is bounded by the wrap anyway
+local POLL_READ_BUDGET = 6 -- cells one poll may re-read; see collect_here
+local run_token = 0 -- bumped per follow(), so a cell is re-read once per evaluation
 
 -- Collect every cell Molten knows about, in buffer order.
 --
@@ -464,7 +466,10 @@ end
 local function collect_here(dirty)
     if not M.all_cells or vim.fn.exists(":MoltenGoto") ~= 2 then
         local lines, paths = grab_here()
-        return lines and { { lines = lines, paths = paths } } or nil
+        if lines == nil then
+            return nil
+        end
+        return { cells = { { lines = lines, paths = paths } }, deferred = false }
     end
 
     local buf = vim.api.nvim_get_current_buf()
@@ -475,17 +480,86 @@ local function collect_here(dirty)
     end
     local pos = cache.pos
 
+    -- Cap how many cells one poll may re-read. Molten's commands are
+    -- synchronous RPCs into the same Python host that runs MoltenTick, and the
+    -- tick is what pumps messages from the kernel -- so re-reading 40 cells on
+    -- every poll starves the kernel and a <leader>ra run simply never
+    -- progresses (measured: every cell stuck "On Hold" for a minute, all of
+    -- them Done in the same time with the pane's polling disabled).
+    --
+    -- Cells are re-read in buffer order, which is also execution order, so the
+    -- budget is spent on the frontier: the cells that are actually running.
+    -- Anything skipped stays uncached and pending, so the next poll picks it
+    -- up. An explicit refresh (dirty == nil, i.e. <leader>os) is not a poll and
+    -- reads everything.
+    local budget = dirty and POLL_READ_BUDGET or math.huge
+
+    -- Choose what to spend the budget on before reading anything. Two
+    -- priorities, both in buffer (= execution) order:
+    --
+    --   1. cells we have never read, or that were still pending last time --
+    --      this is the frontier of the run, and what makes the log grow;
+    --   2. cells that are settled and cached but were named by `dirty`, i.e.
+    --      just re-evaluated.
+    --
+    -- Priority matters: under <leader>ra every cell is dirty for the whole run,
+    -- so a naive scan would spend the entire budget re-reading the first few
+    -- cells on every poll and never reach the rest. The token stops a cell
+    -- being re-read over and over for the same evaluation.
+    local token = dirty and run_token or nil
+    local want, urgent, stale = {}, 0, 0
+    for i, p in ipairs(pos) do
+        local entry = cache.out[p[1]]
+        if entry == nil or entry.pending or entry.recheck then
+            want[i], urgent = 1, urgent + 1
+        elseif is_dirty(pos, i, dirty) and entry.token ~= token then
+            want[i], stale = 2, stale + 1
+        end
+    end
+    local read, left = {}, budget
+    for priority = 1, 2 do
+        for i = 1, #pos do
+            if want[i] == priority and left > 0 then
+                read[i], left = true, left - 1
+            end
+        end
+    end
+    -- Anything we wanted but could not afford: come back for it next poll.
+    local deferred = urgent + stale > budget
+
     local view, cursor, moved = vim.fn.winsaveview(), vim.api.nvim_win_get_cursor(0), false
     local cells, fresh = {}, {}
     local ok, err = pcall(function()
         for i, p in ipairs(pos) do
             local entry = cache.out[p[1]]
-            if entry == nil or entry.pending or is_dirty(pos, i, dirty) then
+            if not read[i] then
+                -- Not read this time: keep whatever we already had. Replacing
+                -- it with a placeholder would throw away output we have already
+                -- shown.
+                entry = entry or { lines = {}, paths = {}, pending = false }
+            else
                 if pcall(vim.api.nvim_win_set_cursor, 0, p) then
                     moved = true
+                    -- Molten cannot build the output for a cell the window's
+                    -- view doesn't cover, and nvim_win_set_cursor alone doesn't
+                    -- update the view -- no redraw happens in this loop. Without
+                    -- the scroll, cells far from where the cursor started (in
+                    -- practice the newest ones, which is where the plot you just
+                    -- made lives) silently read back empty.
+                    pcall(vim.cmd, "noautocmd normal! zz")
+                    local was = entry
                     local lines, paths = grab_here()
                     entry = { lines = lines or {}, paths = paths or {} }
                     entry.pending = is_pending(entry.lines)
+                    entry.token = token
+                    -- Molten reports a cell Done slightly before it attaches
+                    -- the figure to the output buffer, so caching the first
+                    -- settled reading loses the plot. Read a newly-settled cell
+                    -- once more -- exactly once, since the re-read clears the
+                    -- flag -- to pick up an image that landed late.
+                    if not entry.pending and (was == nil or was.pending) then
+                        entry.recheck = true
+                    end
                 else
                     entry = entry or { lines = {}, paths = {}, pending = false }
                 end
@@ -508,7 +582,10 @@ local function collect_here(dirty)
     if not ok then
         error(err)
     end
-    return #cells > 0 and cells or nil
+    if #cells == 0 then
+        return nil
+    end
+    return { cells = cells, deferred = deferred }
 end
 
 -- Run the collection in the notebook's window (see `remember_source`), so the
@@ -552,17 +629,18 @@ function M.refresh(dirty)
     if not M.is_open() then
         return nil
     end
-    local cells = collect(dirty)
-    if cells == nil then
+    local got = collect(dirty)
+    if got == nil then
         return nil
     end
+    local cells = got.cells
 
     -- Molten's own header ("Out[3]: ✓ Done 0.4s") already labels each cell, so
     -- the log needs no separator of its own beyond a blank line.
-    local pending = false
+    local pending = got.deferred
     local body, anchors = {}, {}
     for _, cell in ipairs(cells) do
-        if cell.pending == nil and is_pending(cell.lines) or cell.pending then
+        if cell.pending or cell.recheck then
             pending = true
         end
         local lines = vim.list_extend({}, cell.lines)
@@ -587,7 +665,39 @@ function M.refresh(dirty)
         body = { "-- no output --" }
     end
 
-    render_images(anchors, set_body(body))
+    -- Keep the newest output in view, like a console. This matters more than it
+    -- looks: image.nvim does not render an image that is below the window's
+    -- viewport, so without this the plot from the cell you just ran silently
+    -- fails to appear once the log grows past one screen. Stick to the bottom
+    -- only if the pane is unfocused or its cursor was already on the last line,
+    -- so scrolling back through the log isn't yanked away from you.
+    local was = vim.api.nvim_buf_line_count(state.buf)
+    local stick = vim.api.nvim_get_current_win() ~= state.win
+        or vim.api.nvim_win_get_cursor(state.win)[1] >= was
+
+    local first_changed = set_body(body)
+
+    if stick then
+        -- An image's height is virtual lines hanging *below* its anchor line,
+        -- so if the newest output is a plot, parking that line at the bottom of
+        -- the window (zb) leaves nowhere to draw it -- image.nvim decides it is
+        -- off-screen and skips it. Put the plot at the top instead and let it
+        -- have the window; only fall back to the bottom for plain text.
+        local last_line = vim.api.nvim_buf_line_count(state.buf)
+        local newest = anchors[#anchors]
+        local line, where = last_line, "zb"
+        if newest and newest.row + 1 >= last_line - 1 then
+            line, where = newest.row + 1, "zt"
+        end
+        pcall(vim.api.nvim_win_set_cursor, state.win, { line, 0 })
+        -- Scroll for the same reason as the grab loop: moving the cursor does
+        -- not move the view without a redraw, and image.nvim skips any image it
+        -- believes is outside the viewport.
+        pcall(vim.api.nvim_win_call, state.win, function()
+            vim.cmd("noautocmd normal! " .. where)
+        end)
+    end
+    render_images(anchors, first_changed)
     return pending
 end
 
@@ -620,13 +730,19 @@ end
 local POLL_MS = 500 -- floor
 local POLL_MAX_MS = 3000 -- ceiling
 local POLL_BUDGET = 0.1 -- at most ~10% of wall time spent refreshing
-local POLL_CAP_MS = 120000 -- give up after 2 minutes
+-- Long enough for a real run: a 40-cell notebook took over two minutes to work
+-- through, and a shorter cap left the pane showing "On Hold" for the last cell
+-- forever. The cost of waiting is bounded by the budget above, so this is cheap
+-- insurance; it exists only so a kernel that never becomes ready cannot leave
+-- the timer running for the rest of the session.
+local POLL_CAP_MS = 600000 -- 10 minutes
 
 -- `dirty` is the list of {first, last} line ranges just evaluated, so the
 -- refresh can skip re-reading cells that cannot have changed. Omit it and every
 -- cell is re-read.
 function M.follow(dirty)
     stop_timer()
+    run_token = run_token + 1
     remember_source()
     M.open(false)
     -- `nil` means Molten has nothing to show at all (no kernel attached,
@@ -660,9 +776,14 @@ function M.follow(dirty)
         local t0 = vim.uv.hrtime()
         -- Same `dirty` every poll: these are the cells being evaluated, so they
         -- are exactly the ones worth re-reading until they settle.
-        local pending = M.refresh(dirty)
+        --
+        -- Guarded: an error in here would skip the re-arm below and kill the
+        -- poll silently, leaving the pane stuck on whatever it last drew (in
+        -- practice "On Hold" for the cell that was running). One bad reading
+        -- should cost a tick, not the rest of the run.
+        local ok, pending = pcall(M.refresh, dirty)
         local cost_ms = (vim.uv.hrtime() - t0) / 1e6
-        if pending ~= true then
+        if ok and pending ~= true then
             return stop_timer()
         end
         arm(math.min(POLL_MAX_MS, math.max(POLL_MS, math.floor(cost_ms / POLL_BUDGET))))
