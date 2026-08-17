@@ -79,6 +79,7 @@ local sections = {
     { "<leader>1-4", "Jump to harpoon file 1-4" },
   } },
   { "Git (Diffview)", {
+    { "<leader>gg", "Open LazyGit" },
     { "<leader>gd", "Diffview: open diff" },
     { "<leader>gh", "Diffview: current file history" },
     { "<leader>gH", "Diffview: repo history" },

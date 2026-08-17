@@ -195,7 +195,7 @@ nvim-cmp mappings, active during insert:
 9. GIT                                                      *nvim-keymaps-git*
 
 LazyGit:
-  <leader>lg    Open LazyGit
+  <leader>gg    Open LazyGit
 
 Diffview:
   <leader>gd    Open the diff view

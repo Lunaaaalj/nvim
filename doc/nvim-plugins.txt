@@ -166,7 +166,7 @@ gitsigns.nvim ~  (lewis6991/gitsigns.nvim)
   list under |nvim-keymaps-git| (]c/[c, <leader>h*, <leader>tb/tw, ih).
 
 lazygit.nvim ~  (kdheepak/lazygit.nvim)
-  Embeds the LazyGit TUI (requires the `lazygit` binary). Open with <leader>lg.
+  Embeds the LazyGit TUI (requires the `lazygit` binary). Open with <leader>gg.
   Commands: LazyGit, LazyGitConfig, LazyGitCurrentFile, LazyGitFilter,
   LazyGitFilterCurrentFile.
 
