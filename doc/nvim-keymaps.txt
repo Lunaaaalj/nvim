@@ -18,7 +18,8 @@ Leader is <Space>; localleader is "\". Modes are noted where not normal mode.
   11. Debug (DAP) .............................. |nvim-keymaps-debug|
   12. Session (Persistence) .................... |nvim-keymaps-session|
   13. Notebooks (Molten) ....................... |nvim-keymaps-notebooks|
-  14. Claude Code .............................. |nvim-keymaps-claude|
+  14. LaTeX (VimTeX) ........................... |nvim-keymaps-latex|
+  15. Claude Code .............................. |nvim-keymaps-claude|
 
 Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
 `<leader>k` opens a curated floating cheatsheet.
@@ -287,7 +288,67 @@ also get per-language LSP inside chunks via quarto-nvim + otter.nvim.
 See |nvim-notebooks| and |nvim-notebooks-quarto| for the full workflow.
 
 ==============================================================================
-14. CLAUDE CODE                                          *nvim-keymaps-claude*
+14. LATEX (VIMTEX)                                        *nvim-keymaps-latex*
+
+All maps in this section are buffer-local to TeX buffers.
+
+Compile & view ~
+
+  <leader>ll    Toggle continuous compilation (:VimtexCompile)
+  <leader>lo    Compile once, single shot (:VimtexCompileSS)
+  <leader>lv    View the PDF, forward-searching to the cursor (:VimtexView)
+  <leader>lk    Stop compilation for this project (:VimtexStop)
+  <leader>lK    Stop every running compilation (:VimtexStopAll)
+  <leader>lc    Clean auxiliary files (:VimtexClean)
+  <leader>lC    Clean auxiliary files and the PDF (:VimtexClean!)
+
+Inspect & debug ~
+
+  <leader>le    Toggle the error / quickfix list (:VimtexErrors)
+  <leader>lg    Show raw compiler output (:VimtexCompileOutput)
+  <leader>lt    Toggle the table of contents (:VimtexTocToggle)
+  <leader>ls    Compiler status (:VimtexStatus)
+  <leader>li    Project info; start here when something misbehaves
+                (:VimtexInfo)
+  <leader>lw    Word count (:VimtexCountWords)
+  <leader>ld    Open documentation for the package under the cursor
+                (:VimtexDocPackage)
+  <leader>lm    List the insert-mode math maps (:VimtexImapsList)
+  <leader>lx    Reload VimTeX state (:VimtexReload)
+
+VimTeX's own maps on localleader ("\") remain available, so \ll and
+<leader>ll do the same thing.
+
+Text objects & surroundings ~
+
+  ie / ae       Inside / around the current environment
+  i$ / a$       Inside / around the current math zone
+  id / ad       Inside / around the current delimiter pair
+  cse / dse     Change / delete the surrounding environment
+  csc / dsc     Change / delete the surrounding command
+  csd / dsd     Change / delete the surrounding delimiter
+  ]] / [[       Jump to the next / previous section
+  tsd           Toggle delimiter size (\left( vs plain "(")
+
+Snippets ~
+
+LuaSnip snippets for LaTeX live in `lua/snippets/tex.lua`. Math-mode ones
+fire only inside a math zone, detected via `vimtex#syntax#in_mathzone()`:
+
+  mk / dm       Inline $...$ / display \[...\] math (text mode)
+  //            \frac{}{}; "x/" expands to \frac{x}{}
+  @a .. @w      Lowercase Greek (\alpha .. \omega)
+  @G .. @W      Uppercase Greek (\Gamma .. \Omega)
+  xhat, xbar    Postfix decorations -> \hat{x}, \bar{x}
+  x2            Auto-subscript -> x_{2}
+  template      Full document skeleton
+  beg, fig, tab, eqn, ali, pmat   Common environments
+
+Because the math-zone check is a VimTeX function, these snippets go silent if
+VimTeX fails to initialise. See |nvim-plugins-vimtex|.
+
+==============================================================================
+15. CLAUDE CODE                                          *nvim-keymaps-claude*
 
   <leader>ac    Toggle the Claude panel
   <leader>af    Focus the Claude panel

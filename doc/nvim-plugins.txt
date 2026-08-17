@@ -233,9 +233,35 @@ zen-mode.nvim ~  (folke/zen-mode.nvim)
   cursor, and pauses the ambience plugins (illuminate, mini.indentscope,
   satellite, precognition) for the duration, restoring them on exit.
 
-vimtex ~  (lervag/vimtex)
-  LaTeX editing/compilation. Loaded eagerly; view method = sioyek, forward
-  search on start disabled. Provides its own extensive `\l...` maps.
+vimtex ~  (lervag/vimtex)                              *nvim-plugins-vimtex*
+  LaTeX editing and compilation. Loaded eagerly (`lazy = false`) -- VimTeX
+  must register its ftplugin before the first `.tex` buffer opens.
+
+  Pinned to tag v2.18. VimTeX's HEAD raised its floor to Neovim 0.12.4 on
+  2026-07-22; on an older Neovim the version gate `finish`es ftplugin/tex.vim
+  *before* `vimtex#init()`, which silently removes every mapping, the latexmk
+  compiler, and `vimtex#syntax#in_mathzone()` -- and losing that last one
+  disables all math autosnippets in `lua/snippets/tex.lua`. v2.18 is the last
+  tag accepting Neovim 0.10+. Drop the pin after upgrading to 0.12.4.
+
+  Viewer: Skim, with forward search, window activation and the reading bar
+  enabled; `vimtex_view_forward_search_on_start` is off, so `<leader>lv` is
+  the explicit way to open the PDF. Skim is driven over AppleScript/JXA
+  rather than CLI flags, so macOS may ask for automation permission the first
+  time Neovim controls it (Settings -> Privacy & Security -> Automation);
+  denying it makes `<leader>lv` fail silently.
+
+  Note that VimTeX starts viewers detached, so *any* viewer failure is
+  invisible from inside Neovim. When `<leader>lv` appears to do nothing, run
+  `<leader>li` (:VimtexInfo) and try the printed viewer command in a shell,
+  where stderr is actually visible.
+
+  Treesitter highlighting is disabled for `latex` in
+  `lua/plugins/treesitter.lua` so VimTeX owns syntax and conceal; the parser
+  stays installed for folding, text objects and context.
+
+  Maps: see |nvim-keymaps-latex| for the `<leader>l...` group, text objects
+  and snippets. VimTeX's own `\l...` maps remain available too.
 
 ==============================================================================
 9. COLORSCHEMES                                   *nvim-plugins-colorschemes*
