@@ -83,7 +83,7 @@
   "trouble.nvim": { "branch": "main", "commit": "bd67efe408d4816e25e8491cc5ad4088e708a69a" },
   "twilight.nvim": { "branch": "main", "commit": "664e752f4a219801265cc3fc18782b457b58c1e1" },
   "vim-illuminate": { "branch": "master", "commit": "91313e598ca62e110bc71535c49069b66b9883c9" },
-  "vimtex": { "branch": "master", "commit": "154eca8f68a5ad54eb12308bb378e88bdd0dfb3e" },
+  "vimtex": { "branch": "master", "commit": "cb1374f1f3f9717ea91787c54dc11031d673aea5" },
   "which-key.nvim": { "branch": "main", "commit": "3aab2147e74890957785941f0c1ad87d0a44c15a" },
   "zen-mode.nvim": { "branch": "main", "commit": "8564ce6d29ec7554eb9df578efa882d33b3c23a7" },
   "zenbones.nvim": { "branch": "main", "commit": "8304d8df9b823ff11e103afa62f38c39f534abe6" }
