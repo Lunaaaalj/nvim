@@ -163,6 +163,39 @@ vim.keymap.set("n", "<leader>oi", ":MoltenImagePopup<CR>", { desc = "open image 
 vim.keymap.set("n", "<leader>op", ":QuartoPreview<CR>", { desc = "Quarto: start preview" })
 vim.keymap.set("n", "<leader>oP", ":QuartoClosePreview<CR>", { desc = "Quarto: stop preview" })
 
+-- LaTeX (VimTeX). VimTeX already ships its own `\l*` maps on localleader; these
+-- mirror the ones worth memorising under <leader>l so LaTeX reads like every
+-- other group in this config (<leader>g git, <leader>T test, ...). They are
+-- buffer-local on purpose: <leader>l means nothing outside a TeX buffer, and
+-- registering them globally would show dead entries in <leader>? everywhere.
+local vimtex_maps = {
+  { "ll", "<cmd>VimtexCompile<cr>",       "LaTeX: toggle continuous compile" },
+  { "lo", "<cmd>VimtexCompileSS<cr>",     "LaTeX: compile once (single shot)" },
+  { "lv", "<cmd>VimtexView<cr>",          "LaTeX: view PDF (forward search)" },
+  { "lk", "<cmd>VimtexStop<cr>",          "LaTeX: stop compilation" },
+  { "lK", "<cmd>VimtexStopAll<cr>",       "LaTeX: stop all compilations" },
+  { "lc", "<cmd>VimtexClean<cr>",         "LaTeX: clean aux files" },
+  { "lC", "<cmd>VimtexClean!<cr>",        "LaTeX: clean aux files + PDF" },
+  { "le", "<cmd>VimtexErrors<cr>",        "LaTeX: toggle error/quickfix list" },
+  { "lg", "<cmd>VimtexCompileOutput<cr>", "LaTeX: raw compiler output" },
+  { "lt", "<cmd>VimtexTocToggle<cr>",     "LaTeX: toggle table of contents" },
+  { "ls", "<cmd>VimtexStatus<cr>",        "LaTeX: compiler status" },
+  { "li", "<cmd>VimtexInfo<cr>",          "LaTeX: project info (debug)" },
+  { "lm", "<cmd>VimtexImapsList<cr>",     "LaTeX: list insert-mode math maps" },
+  { "lw", "<cmd>VimtexCountWords<cr>",    "LaTeX: word count" },
+  { "ld", "<cmd>VimtexDocPackage<cr>",    "LaTeX: open docs for package under cursor" },
+  { "lx", "<cmd>VimtexReload<cr>",        "LaTeX: reload VimTeX state" },
+}
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "tex", "plaintex", "latex" },
+  group = vim.api.nvim_create_augroup("VimtexKeymaps", { clear = true }),
+  callback = function(ev)
+    for _, m in ipairs(vimtex_maps) do
+      vim.keymap.set("n", "<leader>" .. m[1], m[2], { buffer = ev.buf, silent = true, desc = m[3] })
+    end
+  end,
+})
+
 vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, { desc = "Show diagnostic" })
 
 -- bufferline navigation

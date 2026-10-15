@@ -53,6 +53,17 @@ A `.luarc.json` at the config root configures lua_ls for this repo: it declares 
 
 **Quarto / R:** `.qmd` files get per-language LSP-in-chunks via `quarto-nvim` + `otter.nvim` (`lua/plugins/quarto.lua`, `ft = "quarto"`, `codeRunner.enabled = false`); `.qmd` is registered as filetype `quarto` defensively in `lua/defaults/init.lua`. Execution does **not** go through quarto-nvim's own runner — it reuses Molten exactly like Python: register R as a Jupyter kernel via IRkernel (`install.packages("IRkernel"); IRkernel::installspec()`, a one-time machine-wide step, unlike per-project `jkernel` venvs), then pick it from `<leader>mi`. `molten_cells()` in `lua/defaults/keymaps.lua` matches both plain jupytext fences (` ```python `) and Quarto's curly-brace chunk headers (` ```{r} `, ` ```{python} `), so `<leader>rc`/`ra`/`rk`/`rj` work unchanged in `.qmd`. `<leader>tR` opens a persistent R REPL terminal (same `named_term` pattern as `<leader>tp`/`<leader>tN`). `<leader>op`/`<leader>oP` (`:QuartoPreview`/`:QuartoClosePreview`) run a live-reload document preview in a browser. Full workflow in [`docs/molten.md`](docs/molten.md#r--quarto).
 
+### LaTeX
+Four layers, all of which hang off VimTeX initialising correctly:
+- **`lua/plugins/vimtex.lua`** — VimTeX itself, `lazy = false` (its ftplugin must register before the first `.tex` buffer). **Pinned to `tag = "v2.18"`**: VimTeX HEAD raised its floor to Neovim 0.12.4 on 2026-07-22, and on an older Neovim the version gate `finish`es `ftplugin/tex.vim` *before* `vimtex#init()` — killing every mapping, the latexmk compiler, and `vimtex#syntax#in_mathzone()`. Drop the pin once Neovim is 0.12.4+.
+- **Viewer: Skim** (`vimtex_view_method = "skim"`, sync/activate/reading-bar on). Not sioyek — sioyek ships unsigned, so Gatekeeper kills it, and Homebrew deprecated the cask (disabled 2026-09-01). VimTeX drives Skim over AppleScript/JXA, so macOS may prompt for automation permission on first use.
+- **LSP/format** — `texlab` (mason `ensure_installed`) and `latexindent` for `tex` in conform.
+- **Snippets** — `lua/snippets/tex.lua`, a Castel-style set loaded by LuaSnip's `from_lua` loader. Math-mode autosnippets gate on `vimtex#syntax#in_mathzone()`, so **they die silently whenever VimTeX fails to init** — check VimTeX first if snippets stop firing.
+
+Treesitter highlighting is deliberately `disable`d for `latex` (`lua/plugins/treesitter.lua`) so VimTeX owns syntax + conceal; the parser stays installed for folding/textobjects/context.
+
+Debugging tip: VimTeX starts viewers **detached**, so viewer failures are invisible inside Neovim (`<leader>lv` just does nothing). Run `<leader>li` (`:VimtexInfo`) and reproduce the printed viewer command in a shell, where stderr is visible.
+
 ## Adding a plugin
 
 Create a new file in `lua/plugins/` returning a lazy.nvim spec:
@@ -104,6 +115,11 @@ The authoritative human-facing reference is the in-editor `:help` documentation 
 | `<localleader>mx` | Molten open output in browser |
 | `<leader>oi` | Molten open image output externally |
 | `<leader>op` / `<leader>oP` | Quarto: start / stop live-reload preview |
+| `<leader>ll` / `<leader>lo` | LaTeX: compile continuous / once |
+| `<leader>lv` / `<leader>lk` | LaTeX: view PDF / stop compile |
+| `<leader>lc` / `<leader>lC` | LaTeX: clean aux / aux + PDF |
+| `<leader>le` / `<leader>lt` | LaTeX: error list / table of contents |
+| `<leader>li` | LaTeX: project info (first stop when debugging) |
 | `<Tab>` / `<S-Tab>` | Next / previous buffer (bufferline) |
 | `<leader>x` | Close buffer (preserves window layout) |
 | `gd` / `gD` / `gr` / `gi` / `gy` | LSP definition / declaration / references / implementation / type def |
