@@ -6,6 +6,24 @@ return {
       "nvim-lua/plenary.nvim",
       "MunifTanjim/nui.nvim",
       "nvim-tree/nvim-web-devicons",
+      -- Powers `open_with_window_picker` (`w`): letters pop up over each window
+      -- and you press one to open the file there. Without this plugin neo-tree
+      -- silently falls back to a plain open.
+      {
+        "s1n7ax/nvim-window-picker",
+        version = "2.*",
+        opts = {
+          hint = "floating-big-letter",
+          filter_rules = {
+            include_current_win = false,
+            autoselect_one = true, -- only one candidate → open there, no prompt
+            bo = {
+              filetype = { "neo-tree", "neo-tree-popup", "notify", "noice" },
+              buftype = { "terminal", "quickfix" },
+            },
+          },
+        },
+      },
     },
     lazy = false,
 
@@ -81,6 +99,12 @@ return {
             ["h"] = "close_node",
             ["l"] = "open",
             ["."] = "set_root",               -- make node the new tree root
+            -- Open in another window. Neo-tree has these by default; listed
+            -- here so they're discoverable and survive upstream default changes.
+            ["w"] = "open_with_window_picker", -- pick an existing window by letter
+            ["s"] = "open_vsplit",
+            ["S"] = "open_split",
+            ["t"] = "open_tabnew",
           },
         },
 
