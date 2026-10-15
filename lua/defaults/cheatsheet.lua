@@ -19,6 +19,8 @@ local sections = {
     { "<leader>sr / sR", "Search & replace / replace selection (grug-far)" },
     { "<leader>cs", "Pick colorscheme (live preview)" },
     { "<leader>n", "Toggle Neo-tree" },
+    { "w (neo-tree)", "Open file in a picked window (letter hints)" },
+    { "s / S / t (neo-tree)", "Open in vsplit / split / new tab" },
     { "<leader>t", "Terminal: toggle shell #1 (side panel)" },
     { "<leader>tn / ts", "New shell / select-switch shell" },
     { "<leader>tf / th", "Float / horizontal terminal" },
