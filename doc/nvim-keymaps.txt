@@ -60,6 +60,11 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
   <leader>ff    Telescope find files
   <leader>ft    Find TODO/FIX/HACK/NOTE comments (Telescope)
   <leader>n     Toggle Neo-tree file explorer
+                Inside the tree, on a file:
+                  w   open in a window you pick (letters appear over windows;
+                      auto-opens if only one other window exists)
+                  s   open in a vertical split    S  horizontal split
+                  t   open in a new tab
   <leader>t     Terminal: toggle shell #1 in the side panel
   <leader>tn    Terminal: open a new shell (next free id)
   <leader>ts    Terminal: select / switch between open shells (:TermSelect)

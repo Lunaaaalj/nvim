@@ -102,6 +102,8 @@ telescope.nvim ~  (nvim-telescope/telescope.nvim, + fzf-native)
 
 neo-tree.nvim ~  (nvim-neo-tree/neo-tree.nvim)
   Sidebar file explorer (width 40), the default explorer. Toggle: <leader>n.
+  Depends on nvim-window-picker (s1n7ax/nvim-window-picker) so `w` in the tree
+  opens the file in a window you choose by letter.
 
 oil.nvim ~  (stevearc/oil.nvim)
   Edit the filesystem as a buffer; shown in a float, hidden files visible.
