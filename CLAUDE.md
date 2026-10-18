@@ -29,7 +29,7 @@ A layer of plugins exists purely for a pleasant feel (one file each under `lua/p
 - **`snacks.lua`** — enables the snacks `dashboard` and `scroll` modules (snacks itself comes in via `claudecode.nvim`). The dashboard is **static** (no animation) and **transparent** — its `SnacksDashboardNormal` group is in the `transparent_groups` list in `lua/defaults/init.lua`. The header art is read verbatim from `dashboard-header.txt` in the config root if that file exists (paste any ASCII art there to swap it), otherwise a built-in Python snake is used. Sections: header, a date/version subtitle, quick-action keys (find/recent/grep/projects/session/config/lazy/mason), **GitHub contribution heatmap**, **GitHub PR/review/issue counts**, **Claude token-usage sparkline**, a **local git summary** (branch + dirty state + recent commits), recent files, and a startup footer.
 - **`lua/defaults/dashboard_data.lua`** — the async/cached data layer behind those live sections. It fetches the GitHub contribution calendar + PR/issue counts via `gh` (authenticated `viewer`, no hardcoded username) and Claude per-day token totals via `scripts/claude_usage.py` (pure-stdlib aggregation of `~/.claude/projects/**/*.jsonl`). Results are written to `stdpath('cache')/dashboard/*.json` with a 30-min TTL; sections read the cache instantly (never blocking startup) and a debounced `Snacks.dashboard.update()` refreshes the view when each source returns. Everything degrades gracefully (no `gh`/not authed/no logs → that section renders nothing). The heatmap/sparkline use hardcoded GitHub-green `GhContrib0..4` highlight groups (re-applied on `ColorScheme`) as a deliberate homage.
 - **`mini-animate.lua`** — window resize/open/close animations. Its cursor + scroll animations are disabled on purpose (smear_cursor handles the cursor, snacks.scroll handles scrolling) to avoid double-animating.
-- **`colorizer.lua`**, **`rainbow-delimiters.lua`**, **`tiny-devicons.lua`**, **`satellite.lua`** (scrollbar with git/diagnostic/search marks), **`illuminate.lua`** (word-under-cursor), **`precognition.lua`** (motion hints), **`cellular-automaton.lua`** (fun screensaver).
+- **`colorizer.lua`**, **`rainbow-delimiters.lua`**, **`tiny-devicons.lua`**, **`satellite.lua`** (scrollbar with git/diagnostic/search marks), **`illuminate.lua`** (word-under-cursor), **`precognition.lua`** (motion hints), **`cellular-automaton.lua`** (fun screensaver), **`typr.lua`** (typing practice + stats, via `nvzone/volt`).
 
 When adding cursor/scroll-animating plugins, check this list first — multiple plugins animating the same thing will conflict.
 
@@ -41,6 +41,9 @@ Two-layer setup:
 `lua/plugins/lsp.lua` just pulls in `nvim-lspconfig`. Add new LSP servers to `ensure_installed` (and `servers` for overrides) in `mason.lua`.
 
 A `.luarc.json` at the config root configures lua_ls for this repo: it declares `vim` and `Snacks` as globals so editing the config produces no spurious "undefined global" warnings (LuaJIT runtime, third-party checks off). Add to its `diagnostics.globals` if another runtime global trips lua_ls.
+
+### Claude chats in buffers
+`lua/claude_chats/` (not a lazy spec — a plain module) runs `claude` in ordinary terminal buffers, any number at once, as an alternative to claudecode.nvim's single split. Each buffer gets the same env claudecode gives its own terminal (`ENABLE_IDE_INTEGRATION`, `CLAUDE_CODE_SSE_PORT` from `claudecode.server.init`'s port, loopback `no_proxy`), so IDE features keep working. New chats are spawned with a pre-generated `--session-id` and tagged `b:claude_chat`, which is how running buffers are matched to their session logs. Past sessions are read from `~/.claude/projects/<cwd with non-alnum → "-">/*.jsonl`; titles come from `custom-title` > `ai-title` > `last-prompt` lines (tail of file, cached by mtime). `claude_chats/neotree/` is a custom neo-tree source (`name = "claude"`) registered in `sources` in `lua/plugins/neo-tree.lua`; its commands module overrides neo-tree's filesystem-mutating commands because chat nodes carry the `.jsonl` as `path` (stock `delete` would remove the log).
 
 ### Molten / notebooks
 `molten.nvim` runs code in Jupyter kernels and `jupytext.nvim` handles `.ipynb` ↔ markdown conversion. Requires `:UpdateRemotePlugins` after install.
@@ -100,6 +103,7 @@ The authoritative human-facing reference is the in-editor `:help` documentation 
 | `<leader>tp` / `<leader>tN` / `<leader>tR` | Python / Node / R REPL terminal |
 | `2<C-\>` | Open numbered shell #2 (count-prefix `<C-\>` for any id) |
 | `<leader>ac` | Toggle ClaudeCode |
+| `<leader>an` / `<leader>aR` / `<leader>al` | New / resume Claude chat in a buffer / chat list (neo-tree Claude tab) |
 | `<leader>z` | Toggle Zen Mode |
 | `<leader>d` | Show diagnostic float |
 | `<leader>mi` | Molten init kernel |
@@ -131,6 +135,7 @@ The authoritative human-facing reference is the in-editor `:help` documentation 
 | `<C-h/j/k/l>` | Move between windows |
 | `<leader>up` | Toggle precognition motion hints |
 | `<leader>fml` | Make it rain (cellular-automaton, fun) |
+| `<leader>ty` / `<leader>tY` | Typing practice / stats (typr) |
 
 ## External dependencies
 

@@ -19,6 +19,11 @@ return {
     { "<leader>af", "<cmd>ClaudeCodeFocus<cr>", desc = "Focus Claude" },
     { "<leader>ar", "<cmd>ClaudeCode --resume<cr>", desc = "Resume Claude" },
     { "<leader>aC", "<cmd>ClaudeCode --continue<cr>", desc = "Continue Claude" },
+    -- Chats as regular buffers (lua/claude_chats/): any number at once, in the
+    -- current window, still IDE-connected. Listed in neo-tree's Claude tab.
+    { "<leader>an", function() require("claude_chats").new() end, desc = "New Claude chat (buffer)" },
+    { "<leader>aR", function() require("claude_chats").pick() end, desc = "Resume Claude chat (buffer)" },
+    { "<leader>al", "<cmd>Neotree claude<cr>", desc = "List Claude chats (neo-tree)" },
     { "<leader>am", "<cmd>ClaudeCodeSelectModel<cr>", desc = "Select Claude model" },
     { "<leader>ab", "<cmd>ClaudeCodeAdd %<cr>", desc = "Add current buffer to context" },
     { "<leader>as", "<cmd>ClaudeCodeSend<cr>", mode = "v", desc = "Send selection to Claude" },

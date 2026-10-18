@@ -34,7 +34,11 @@ return {
         enable_git_status = true,
         enable_diagnostics = true,
 
-        -- Tabs at the top of the tree to switch filesystem / buffers / git views.
+        -- "claude_chats.neotree" is a local custom source (lua/claude_chats/)
+        -- listing running + recent Claude Code chats for the cwd.
+        sources = { "filesystem", "buffers", "git_status", "claude_chats.neotree" },
+
+        -- Tabs at the top of the tree to switch filesystem / buffers / git / claude views.
         source_selector = {
           winbar = true,
           statusline = false,
@@ -43,6 +47,7 @@ return {
             { source = "filesystem", display_name = "  Files" },
             { source = "buffers", display_name = "  Bufs" },
             { source = "git_status", display_name = "  Git" },
+            { source = "claude", display_name = " \u{f086} Claude" },
           },
         },
 

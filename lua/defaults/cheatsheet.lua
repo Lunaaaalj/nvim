@@ -34,6 +34,7 @@ local sections = {
   { "Fun", {
     { "<leader>fml", "Make it rain (cellular automaton)" },
     { "<leader>flife", "Game of Life (cellular automaton)" },
+    { "<leader>ty / tY", "Typing practice / typing stats (typr)" },
   } },
   { "Windows / Buffers", {
     { "<C-h/j/k/l>", "Move between windows" },
@@ -152,6 +153,8 @@ local sections = {
     { "<leader>ac", "Toggle Claude" },
     { "<leader>af", "Focus Claude" },
     { "<leader>ar / aC", "Resume / continue session" },
+    { "<leader>an / aR", "New / resume chat in a buffer" },
+    { "<leader>al", "Chat list (neo-tree Claude tab)" },
     { "<leader>am", "Select model" },
     { "<leader>ab", "Add current buffer to context" },
     { "<leader>as", "Send selection (v) / add file (tree)" },

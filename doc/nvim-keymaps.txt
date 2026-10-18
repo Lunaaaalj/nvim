@@ -40,6 +40,8 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
   <leader>sd    Dismiss visible notifications
   <leader>fml   Make it rain (cellular-automaton, just for fun)
   <leader>flife Game of Life (cellular-automaton)
+  <leader>ty    Typing practice (typr)
+  <leader>tY    Typing stats dashboard (typr)
 
 ==============================================================================
 2. WINDOWS & BUFFERS                                   *nvim-keymaps-windows*
@@ -365,6 +367,21 @@ VimTeX fails to initialise. See |nvim-plugins-vimtex|.
   <leader>as    (neo-tree/oil/minifiles) Add the file under cursor to context
   <leader>aa    Accept Claude's proposed diff
   <leader>ad    Reject Claude's proposed diff
+
+Chats in buffers (lua/claude_chats/) — any number at once, each in a normal
+terminal buffer in the current window, still connected to the IDE server:
+
+  <leader>an    New Claude chat in the current window
+  <leader>aR    Pick a past session and resume it in the current window
+  <leader>al    Open neo-tree's Claude tab (running + recent chats)
+
+In neo-tree's Claude tab:
+
+  <CR> / l      Open chat (focus if running, else resume); toggle group
+  a / n         New chat
+  d             Stop a running chat (stays resumable under Recent)
+  w / s / S / t Open in picked window / vsplit / split / new tab
+  R             Refresh
 
  vim:tw=78:ts=8:noet:ft=help:norl:
 </content>
