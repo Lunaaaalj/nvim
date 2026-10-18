@@ -33,7 +33,7 @@ return {
             { "<leader>H", group = "Harpoon" },
             { "<leader>m", group = "Molten" },
             { "<leader>o", group = "Output/Open" },
-            { "<leader>q", group = "Session" },
+            { "<leader>q", group = "Session / quit" },
             { "<leader>r", group = "Run/Rename" },
             { "<leader>s", group = "Search/Replace" },
             { "<leader>t", group = "Terminal" },

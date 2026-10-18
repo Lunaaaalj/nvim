@@ -44,6 +44,9 @@ Two-layer setup:
 
 A `.luarc.json` at the config root configures lua_ls for this repo: it declares `vim` and `Snacks` as globals so editing the config produces no spurious "undefined global" warnings (LuaJIT runtime, third-party checks off). Add to its `diagnostics.globals` if another runtime global trips lua_ls.
 
+### Buffer-centric quitting
+`lua/defaults/bufclose.lua` (required from `keymaps.lua`) makes `:q` close the **buffer**, not Neovim. It is wired as a command-line `<CR>` `expr` mapping that rewrites a whole-line `q` / `q!` / `wq` / `wq!` to `:BufQuit[!]` / `:BufWriteQuit[!]` — **not** `:cabbrev`: a `q` abbreviation doesn't expand when `!` follows, and a `q!` abbreviation never matches, so `:q!` would still exit. `:quit`, `:qa`, searches and `<cmd>q<cr>` inside mappings are untouched. In a split / float / neo-tree / multi-tab, BufQuit is a plain `:quit`; in the last editing window (floats and neo-tree don't count) it switches to the next listed buffer (files before terminals, then MRU) or opens the dashboard **in that window** (`Snacks.dashboard.open({ buf, win })` — without `win` snacks opens a float), and `:q` on that dashboard runs `:qall`. Terminal/unlisted buffers are only hidden (jobs survive); modified buffers prompt Save/Discard/Cancel. `<leader>x` calls the same `close_buffer()`.
+
 ### Claude chats in buffers
 `lua/claude_chats/` (not a lazy spec — a plain module) runs `claude` in ordinary terminal buffers, any number at once, as an alternative to claudecode.nvim's single split. Each buffer gets the same env claudecode gives its own terminal (`ENABLE_IDE_INTEGRATION`, `CLAUDE_CODE_SSE_PORT` from `claudecode.server.init`'s port, loopback `no_proxy`), so IDE features keep working. New chats are spawned with a pre-generated `--session-id` and tagged `b:claude_chat`, which is how running buffers are matched to their session logs. Past sessions are read from `~/.claude/projects/<cwd with non-alnum → "-">/*.jsonl`; titles come from `custom-title` > `ai-title` > `last-prompt` lines (tail of file, cached by mtime). `claude_chats/neotree/` is a custom neo-tree source (`name = "claude"`) registered in `sources` in `lua/plugins/neo-tree.lua` (its tab icon/name, like every source's, lives in `lua/neotree_tabs.lua` — the selector shows icons only and bufferline's neo-tree offset shows the active source's name, both from that one table; keep glyphs as BMP `\u{}` escapes); its commands module overrides neo-tree's filesystem-mutating commands because chat nodes carry the `.jsonl` as `path` (stock `delete` would remove the log).
 
@@ -129,7 +132,8 @@ The authoritative human-facing reference is the in-editor `:help` documentation 
 | `<leader>le` / `<leader>lt` | LaTeX: error list / table of contents |
 | `<leader>li` | LaTeX: project info (first stop when debugging) |
 | `<Tab>` / `<S-Tab>` | Next / previous buffer (bufferline) |
-| `<leader>x` | Close buffer (preserves window layout) |
+| `<leader>x` / `:q` | Close buffer, keep the window (next buffer, else dashboard; `:q` on the dashboard quits) |
+| `<leader>qq` | Quit Neovim (`<leader>q` is the persistence session group, so not bound alone) |
 | `gd` / `gD` / `gr` / `gi` / `gy` | LSP definition / declaration / references / implementation / type def |
 | `K` | Peek fold, else hover docs (ufo → hover.nvim) |
 | `<leader>rn` / `<leader>ca` | LSP rename / code action |

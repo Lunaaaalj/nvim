@@ -61,6 +61,17 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
   <Tab>         Next buffer        (bufferline)
   <S-Tab>       Previous buffer    (bufferline)
   <leader>x     Close the current buffer (preserves window layout)
+  :q            Close the current BUFFER, not Neovim      *nvim-keymaps-quit*
+                (`lua/defaults/bufclose.lua`). In a split, a float, neo-tree
+                or with several tabs it just closes that window/tab. In the
+                last editing window it shows the next buffer (files before
+                terminals, then most recent), or the dashboard when none is
+                left; `:q` on that dashboard quits. Modified buffers prompt
+                Save / Discard / Cancel. Terminals and unlisted buffers are
+                hidden, not deleted, so their jobs keep running.
+  :q!  :wq  :wq!  Same, discarding / writing first.
+  :quit         The full word keeps Vim's normal behaviour (escape hatch).
+  <leader>qq    Quit Neovim (`:qall`; prompts for unsaved changes)
 
 ==============================================================================
 3. FIND, FILES & SEARCH                                   *nvim-keymaps-find*
@@ -275,6 +286,7 @@ Adapters: Python (debugpy via the neovim venv) and C/C++ (codelldb). For C/C++,
   <leader>ql    Restore the last session
   <leader>qS    Select a session to restore
   <leader>qd    Stop saving the session on exit
+  <leader>qq    Quit Neovim (see |nvim-keymaps-quit|)
 
 ==============================================================================
 13. NOTEBOOKS (MOLTEN / QUARTO)                       *nvim-keymaps-notebooks*

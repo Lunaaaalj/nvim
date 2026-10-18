@@ -69,7 +69,8 @@ Leader is `<Space>`, localleader is `\`. This is a subset — `:help nvim-keymap
 | `<leader>tR` | R REPL terminal |
 | `<leader>op` / `<leader>oP` | Quarto: start / stop live preview |
 | `<Tab>` / `<S-Tab>` | Next / previous buffer |
-| `<leader>x` | Close buffer |
+| `<leader>x` / `:q` | Close buffer (next buffer, or the dashboard if it was the last) |
+| `<leader>qq` | Quit Neovim |
 | `gd` / `K` / `gr` / `<leader>rn` | LSP definition / hover / references / rename |
 | `<C-h/j/k/l>` | Move between windows |
 

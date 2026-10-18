@@ -42,6 +42,8 @@ local sections = {
     { "<C-h/j/k/l>", "Move between windows" },
     { "<Tab> / <S-Tab>", "Next / previous buffer" },
     { "<leader>x", "Close buffer (keep layout)" },
+    { ":q", "Close buffer (dashboard if last); :quit = real quit" },
+    { "<leader>qq", "Quit Neovim" },
   } },
   { "LSP / Diagnostics", {
     { "gd / gD", "Go to definition / declaration" },
@@ -110,7 +112,7 @@ local sections = {
     { "<leader>dr", "Open REPL" },
     { "<leader>dx", "Terminate session" },
   } },
-  { "Session (Persistence)", {
+  { "Session (Persistence) / Quit", {
     { "<leader>qs", "Restore session (cwd)" },
     { "<leader>ql", "Restore last session" },
     { "<leader>qS", "Select session" },

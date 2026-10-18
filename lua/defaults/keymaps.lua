@@ -201,24 +201,13 @@ vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, { desc = "Show diagn
 -- bufferline navigation
 vim.keymap.set("n", "<Tab>", "<cmd>BufferLineCycleNext<cr>", { desc = "Next buffer" })
 vim.keymap.set("n", "<S-Tab>", "<cmd>BufferLineCyclePrev<cr>", { desc = "Prev buffer" })
--- Close the current buffer without destroying the window layout: switch the
--- window to the alternate/previous buffer first, then delete the original.
-vim.keymap.set("n", "<leader>x", function()
-  local cur = vim.api.nvim_get_current_buf()
-  local alt = vim.fn.bufnr("#")
-  if alt > 0 and vim.fn.buflisted(alt) == 1 then
-    vim.cmd("buffer #")
-  else
-    vim.cmd("bprevious")
-  end
-  -- If nothing else was open we may still be on the same buffer; only delete
-  -- when we actually moved away from it.
-  if vim.api.nvim_get_current_buf() ~= cur then
-    vim.cmd("bdelete " .. cur)
-  else
-    vim.cmd("bdelete")
-  end
-end, { desc = "Close buffer (keep layout)" })
+-- Buffer-centric closing (lua/defaults/bufclose.lua): `:q` closes the buffer,
+-- not Neovim, falling back to the next buffer or the dashboard. <leader>x is the
+-- same close as a key; <leader>qq quits Neovim (sits in the <leader>q session
+-- group, so <leader>q itself stays a prefix).
+local bufclose = require("defaults.bufclose")
+vim.keymap.set("n", "<leader>x", function() bufclose.close_buffer(false) end, { desc = "Close buffer (keep layout)" })
+vim.keymap.set("n", "<leader>qq", "<cmd>qall<cr>", { desc = "Quit Neovim" })
 
 -- claude keymaps live in lua/plugins/claude.lua (the `keys` table)
 -- <leader>z (Zen mode) lives in lua/plugins/zen.lua (the `keys` table) so the
