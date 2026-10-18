@@ -80,10 +80,9 @@ Leader is `<Space>`, localleader is `\`. This is a subset — `:help nvim-keymap
 - `doc/` — in-editor `:help` documentation (`:help nvim-config`)
 - `docs/` — long-form prose guides (e.g. `docs/molten.md`)
 - `lazy-lock.json` — locked plugin versions
-- `.colorscheme` — persisted colorscheme name
 
 ## Notes and Dependencies
-- Colorscheme is persisted to `.colorscheme`; use `<leader>cs` to pick with live preview.
+- Colorscheme is persisted to `stdpath("state")/colorscheme` (untracked); use `<leader>cs` to pick with live preview.
 - `telescope-fzf-native` requires `make`.
 - `lazygit.nvim` requires the `lazygit` binary.
 - `image.nvim` is configured for the Kitty terminal backend.
@@ -91,4 +90,4 @@ Leader is `<Space>`, localleader is `\`. This is a subset — `:help nvim-keymap
 ## Troubleshooting
 - If a plugin fails to load, run `:Lazy sync`.
 - For `molten.nvim`, run `:UpdateRemotePlugins` after install.
-- If the colorscheme looks off, check `.colorscheme` or run `<leader>cs` to repick.
+- If the colorscheme looks off, check `~/.local/state/nvim/colorscheme` or run `<leader>cs` to repick.

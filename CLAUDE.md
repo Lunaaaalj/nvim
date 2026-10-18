@@ -16,7 +16,7 @@ Opinionated Neovim config written in Lua using `lazy.nvim` as the plugin manager
 - `lua/plugins/` — one file per plugin (or tightly related group), each returning a lazy.nvim spec table
 
 ### Colorscheme
-The last used colorscheme is persisted to `.colorscheme` (in the config root) and restored on startup via `lua/defaults/init.lua`. Any `:colorscheme` call triggers an autocmd that writes the name to that file. `<leader>cs` opens Telescope with live colorscheme preview.
+The last used colorscheme is persisted to `stdpath("state")/colorscheme` (machine-local, **not** in the repo — `.colorscheme` is gitignored and only read once as a legacy migration) and restored on startup via `lua/defaults/init.lua`. Any `:colorscheme` call triggers an autocmd that writes the name to that file. The startup load is wrapped in `pcall` and falls back to `kanso`, so a missing/uninstalled scheme never aborts startup. `<leader>cs` opens Telescope with live colorscheme preview.
 
 Installed schemes (one file each under `lua/plugins/`): catppuccin, kanagawa, kanso, lackluster, nightfox, everforest, melange, gruvbox-material, zenbones (+ its variants forestbones/neobones/kanagawabones/seoulbones). The palette leans earthy (grays/greens/browns), minimalist, with dark and light variants.
 

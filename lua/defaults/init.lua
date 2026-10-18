@@ -46,10 +46,21 @@ if vim.fn.filereadable(doc_dir .. "/tags") == 0 and vim.fn.isdirectory(doc_dir) 
   pcall(vim.cmd, "helptags " .. doc_dir)
 end
 
--- Load persisted colorscheme, fallback to kanso
-local cs_file = vim.fn.stdpath("config") .. "/.colorscheme"
+-- Load persisted colorscheme, fallback to kanso. It lives in stdpath("state")
+-- (machine-local, untracked) rather than the config repo. A missing scheme (a
+-- removed plugin, a typo, a fresh machine) falls back instead of erroring.
+local cs_file = vim.fn.stdpath("state") .. "/colorscheme"
+local legacy_cs_file = vim.fn.stdpath("config") .. "/.colorscheme"
+if vim.fn.filereadable(cs_file) == 0 and vim.fn.filereadable(legacy_cs_file) == 1 then
+  -- one-time migration from the old in-repo location
+  vim.fn.mkdir(vim.fn.fnamemodify(cs_file, ":h"), "p")
+  vim.fn.writefile(vim.fn.readfile(legacy_cs_file), cs_file)
+end
 local ok, cs = pcall(vim.fn.readfile, cs_file)
-vim.cmd("colorscheme " .. (ok and cs[1] or "kanso"))
+local name = ok and cs[1] or "kanso"
+if not pcall(vim.cmd.colorscheme, name) then
+  vim.cmd.colorscheme("kanso")
+end
 
 -- Colorscheme picker: opens Telescope with live preview; selection is persisted
 vim.keymap.set("n", "<leader>cs", function()

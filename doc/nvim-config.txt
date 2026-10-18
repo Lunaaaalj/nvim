@@ -100,7 +100,6 @@ Directory layout:
                       returns a lazy.nvim spec table. lazy.nvim auto-imports
                       everything in this directory.
   - `lazy-lock.json`  Locked plugin versions.
-  - `.colorscheme`    Persisted colorscheme name (see below).
 
 To add a plugin, create a new file under `lua/plugins/` returning a spec: >
      return {
@@ -148,9 +147,13 @@ Python host (`lua/defaults/init.lua`): `g:python3_host_prog` points at
 6. COLORSCHEMES & TRANSPARENCY                     *nvim-config-colorscheme*
 
 Persistence ~
-The last-used colorscheme is written to `.colorscheme` in the config root and
-restored on startup (fallback: `kanso`). Any `:colorscheme` call triggers an
-autocmd that saves the name, so your choice survives restarts.
+The last-used colorscheme is written to `stdpath("state")/colorscheme`
+(machine-local, outside the config repo, so theme changes never show up in
+`git status`) and restored on startup. Any `:colorscheme` call triggers an
+autocmd that saves the name, so your choice survives restarts. If the saved
+scheme can't be loaded (removed plugin, typo, fresh machine), startup falls
+back to `kanso` instead of erroring. A legacy `.colorscheme` in the config
+root is migrated once, then ignored (it is in `.gitignore`).
 
 Picker ~
   - `<leader>cs`   Opens Telescope with live colorscheme preview; the
