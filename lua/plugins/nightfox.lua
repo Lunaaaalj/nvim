@@ -3,7 +3,7 @@ return {
     config = function()
         require("nightfox").setup({
             options = {
-                transparent = true, -- disable setting the background color
+                transparent = vim.g.ui_transparent, -- disable setting the background color (<leader>ub)
             },
         })
     end,

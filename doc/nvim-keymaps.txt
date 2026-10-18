@@ -34,6 +34,10 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
   <leader>z     Toggle Zen mode
   <leader>d     Show diagnostic float (line diagnostics)
   <leader>cs    Pick colorscheme with live preview (persisted)
+  <leader>ub    Toggle transparent / solid background (persisted;
+                also `:ToggleTransparency`)
+  <leader>uB    Toggle dark / light 'background' (persisted; also
+                `:ToggleBackground`). Light forces solid until you go dark.
   <leader>ut    Toggle treesitter sticky context header
   <leader>up    Toggle precognition motion hints
   <leader>sn    Show notification history (Noice)

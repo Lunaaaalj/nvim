@@ -26,6 +26,7 @@ local sections = {
     { "<leader>tf / th", "Float / horizontal terminal" },
     { "<leader>tp / tN / tR", "Python / Node / R REPL terminal" },
     { "2<C-\\>", "Open numbered shell #2 (count-prefixed)" },
+    { "<leader>ub / uB", "Toggle transparent bg / dark-light" },
     { "<leader>ut", "Toggle treesitter context" },
     { "<leader>up", "Toggle precognition motion hints" },
     { "<leader>sn", "Show notification history (Noice)" },

@@ -1,6 +1,9 @@
 require("defaults.options")
 require("defaults.keymaps")
 require("defaults.lsp")
+-- Transparency/background state must exist before lazy runs the theme specs,
+-- which read vim.g.ui_transparent in their setup().
+require("defaults.ui_toggle").restore()
 require("defaults.lazy")
 
 -- Register .qmd as filetype "quarto" defensively: quarto-nvim registers this
@@ -13,6 +16,8 @@ vim.filetype.add({ extension = { qmd = "quarto" } })
 -- the core editor groups so the Alacritty background shows through. This works
 -- even for colorschemes without a built-in transparency option (e.g. melange).
 -- Defined before the startup colorscheme load below so it also applies on boot.
+-- Skipped in solid mode (vim.g.ui_transparent = false, <leader>ub), where the
+-- scheme's own backgrounds are kept; see lua/defaults/ui_toggle.lua.
 local transparent_groups = {
   "Normal", "NormalNC", "NormalFloat", "FloatBorder", "FloatTitle",
   "SignColumn", "LineNr", "CursorLineNr", "FoldColumn", "EndOfBuffer",
@@ -30,6 +35,7 @@ local transparent_groups = {
 }
 vim.api.nvim_create_autocmd("ColorScheme", {
   callback = function()
+    if not vim.g.ui_transparent then return end
     for _, g in ipairs(transparent_groups) do
       -- only touch the bg attribute; fg/styles from the colorscheme are kept
       vim.cmd(("highlight %s guibg=NONE ctermbg=NONE"):format(g))

@@ -7,7 +7,7 @@ return {
     config = function()
         require("everforest").setup({
             background = "medium", -- "hard" | "medium" | "soft"
-            transparent_background_level = 2, -- 0 off, 1 partial, 2 fully transparent
+            transparent_background_level = vim.g.ui_transparent and 2 or 0, -- 0 off, 1 partial, 2 fully transparent
             italics = true,
         })
     end,

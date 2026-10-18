@@ -277,7 +277,9 @@ vimtex ~  (lervag/vimtex)                              *nvim-plugins-vimtex*
 
 All are lazy-loaded at priority 1000 and render transparently (native option
 where available, otherwise the global transparency autocmd — see
-|nvim-config-colorscheme|). Pick and persist one with <leader>cs.
+|nvim-config-colorscheme|). Pick and persist one with <leader>cs. Each native
+option below reads `g:ui_transparent`, so <leader>ub switches all of them to
+their solid backgrounds (|nvim-config-ui-toggle|).
 
   catppuccin        (catppuccin/nvim)            transparent_background
   kanagawa          (rebelot/kanagawa.nvim)      transparent

@@ -160,16 +160,31 @@ Picker ~
                    selection is persisted automatically.
 
 Universal transparency ~
-Every scheme renders with no editor background so the terminal background
-shows through. This is enforced two ways:
-  1. Native `transparent` options set per-plugin where supported.
+By default every scheme renders with no editor background so the terminal
+background shows through. This is enforced two ways, both driven by
+`g:ui_transparent`:
+  1. Native `transparent` options set per-plugin where supported (each theme
+     spec passes `vim.g.ui_transparent` instead of a literal `true`).
   2. A global `ColorScheme` autocmd in `lua/defaults/init.lua` strips the
      background of core highlight groups (`transparent_groups`) after ANY
      scheme loads — covering schemes without a transparency option (e.g.
      melange). Add new groups to that list if a plugin leaves a background.
+     It does nothing in solid mode.
 
-Note: light colorschemes only look right if the terminal background is also
-light, since transparency means the terminal background is what shows.
+Toggles ~                                             *nvim-config-ui-toggle*
+  `<leader>ub`  `:ToggleTransparency`  transparent <-> solid background
+  `<leader>uB`  `:ToggleBackground`    'background' dark <-> light
+Both live in `lua/defaults/ui_toggle.lua` and persist to
+`stdpath("state")/ui.json`, restored before lazy.nvim loads the themes. A
+toggle re-runs the active theme's lazy `init`/`config` (nightfox and
+catppuccin recompile automatically when their options change) and reloads it.
+
+Light colorschemes only look right over a light background, so switching to
+light while transparent forces solid mode, and switching back to dark restores
+transparency. A scheme that pins its own background (e.g. nightfox; use
+dayfox instead) is left as is, with a warning. In Alacritty, solid mode also
+sets `window.opacity=1` live via `alacritty msg config`; transparent mode and
+quitting Neovim reset it to the value in `alacritty.toml`.
 
 Installed schemes (one file each under `lua/plugins/`): catppuccin, kanagawa,
 kanso, lackluster, nightfox, everforest, melange, gruvbox-material, and
