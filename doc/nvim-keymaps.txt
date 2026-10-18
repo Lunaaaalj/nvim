@@ -150,10 +150,11 @@ ts_ls, html, cssls, emmet, texlab, lua_ls):
   <leader>ca    Code action            (normal / visual)
   <leader>uh    Toggle inlay hints     (enabled by default when supported)
 
-`K` is overridden globally by hover.nvim (and ufo) below.
+`K` is not bound here; it has a single global owner (ufo, below).
 
-Hover (hover.nvim):
-  K             Show hover docs (falls back from ufo fold-peek)
+Hover (ufo + hover.nvim):
+  K             Peek the fold under the cursor; otherwise show hover docs
+                via hover.nvim (LSP / man / dictionary providers)
   gK            Hover: choose a provider (LSP / man / dictionary)
   <C-n>         Hover: switch to the next provider
   <C-p>         Hover: switch to the previous provider

@@ -45,7 +45,7 @@ local sections = {
     { "gd / gD", "Go to definition / declaration" },
     { "gr / gi", "References / implementation" },
     { "gy", "Type definition" },
-    { "K", "Hover docs (cycle providers with <C-n>/<C-p>)" },
+    { "K", "Peek fold / hover docs (cycle providers with <C-n>/<C-p>)" },
     { "gK", "Hover: select provider" },
     { "<leader>rn", "Rename symbol" },
     { "<leader>ca", "Code action" },

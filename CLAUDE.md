@@ -36,7 +36,7 @@ When adding cursor/scroll-animating plugins, check this list first — multiple 
 ### LSP
 Two-layer setup:
 - `lua/plugins/mason.lua` ensures the servers are installed via mason-lspconfig (`clangd`, `pyright`, `ruff`, `ts_ls`, `html`, `cssls`, `emmet_language_server`, `texlab`, `lua_ls`) and configures them through Neovim 0.11's native API: shared cmp capabilities go on `vim.lsp.config("*")`, per-server overrides (capabilities/settings/filetypes/on_attach) live in the `servers` table and are applied with `vim.lsp.config(name, opts)`, and mason-lspconfig v2's `automatic_enable` calls `vim.lsp.enable` for each installed server (v2 has no `handlers` option — don't reintroduce one, and register configs *before* `mason-lspconfig.setup()`) — `clangd` pins utf-16 offset encoding, `pyright` defers import-organizing to `ruff`, `ruff` drops its hover so it doesn't duplicate pyright. The same file also registers **mason-tool-installer** to guarantee the non-LSP tools conform/dap call by name (`black`, `isort`, `stylua`, `clang-format`, `latexindent`, `prettier`, `codelldb`, `debugpy`).
-- `lua/defaults/lsp.lua` is a single global `LspAttach` autocmd that binds buffer-local keymaps (`gd`/`gD`/`gr`/`gi`/`gy`/`K`/`<leader>rn`/`<leader>ca`/`[d`/`]d`) for **any** attached server, and enables inlay hints (toggle `<leader>uh`) when the server supports them. It is `require`d from `lua/defaults/init.lua`. Do not add per-server `on_attach` keymaps — extend this autocmd instead.
+- `lua/defaults/lsp.lua` is a single global `LspAttach` autocmd that binds buffer-local keymaps (`gd`/`gD`/`gr`/`gi`/`gy`/`<leader>rn`/`<leader>ca`/`[d`/`]d`) for **any** attached server, and enables inlay hints (toggle `<leader>uh`) when the server supports them. It is `require`d from `lua/defaults/init.lua`. Do not add per-server `on_attach` keymaps — extend this autocmd instead. `K` is deliberately **not** bound there: its single owner is `lua/plugins/ufo.lua` (peek fold → hover.nvim, which includes the LSP provider), and a buffer-local map would shadow it.
 
 `lua/plugins/lsp.lua` just pulls in `nvim-lspconfig`. Add new LSP servers to `ensure_installed` (and `servers` for overrides) in `mason.lua`.
 
@@ -127,7 +127,8 @@ The authoritative human-facing reference is the in-editor `:help` documentation 
 | `<Tab>` / `<S-Tab>` | Next / previous buffer (bufferline) |
 | `<leader>x` | Close buffer (preserves window layout) |
 | `gd` / `gD` / `gr` / `gi` / `gy` | LSP definition / declaration / references / implementation / type def |
-| `K` / `<leader>rn` / `<leader>ca` | LSP hover / rename / code action |
+| `K` | Peek fold, else hover docs (ufo → hover.nvim) |
+| `<leader>rn` / `<leader>ca` | LSP rename / code action |
 | `[d` / `]d` | Previous / next diagnostic |
 | `<leader>uh` / `<leader>uf` / `<leader>us` | Toggle inlay hints / format-on-save / spell-check |
 | `af`/`if`, `ac`/`ic`, `aa`/`ia` | Treesitter text objects: function / class / parameter |

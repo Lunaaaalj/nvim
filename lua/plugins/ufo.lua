@@ -1,6 +1,6 @@
 return {
     "kevinhwang91/nvim-ufo",
-    dependencies = { "kevinhwang91/promise-async" },
+    dependencies = { "kevinhwang91/promise-async", "lewis6991/hover.nvim" },
     config = function()
         vim.o.foldcolumn = "1"
         vim.o.foldlevel = 99
