@@ -107,8 +107,20 @@ function M.toggle_transparency()
   vim.notify("Background: " .. (vim.g.ui_transparent and "transparent" or "solid"))
 end
 
+-- Whether the loaded scheme actually draws light. 'background' alone can lie:
+-- a dark-only scheme that never sets it (vesper) stays dark under "light".
+-- Judge by Normal's bg when there is one, else by its fg (transparent mode).
+local function scheme_is_light()
+  local hl = vim.api.nvim_get_hl(0, { name = "Normal", link = false })
+  local function luma(c) return (0.299 * math.floor(c / 65536) + 0.587 * (math.floor(c / 256) % 256) + 0.114 * (c % 256)) / 255 end
+  if hl.bg then return luma(hl.bg) > 0.5 end
+  if hl.fg then return luma(hl.fg) < 0.5 end
+  return vim.o.background == "light"
+end
+
 function M.toggle_background()
   local name, was_transparent, was_restore = vim.g.colors_name, vim.g.ui_transparent, restore_transparent
+  local was_bg = vim.o.background
   local light = vim.o.background == "dark"
   local target = light and "light" or "dark"
   if light and vim.g.ui_transparent then
@@ -119,11 +131,19 @@ function M.toggle_background()
     vim.g.ui_transparent = true
     restore_transparent = false
   end
+  -- Setting 'background' auto-reloads g:colors_name with the theme's OLD
+  -- config; a scheme that derives 'background' from its variant (evergarden)
+  -- would flip it straight back. Clearing the name skips that reload, so the
+  -- only load is reapply() below, after the spec has re-read the new value.
+  vim.g.colors_name = nil
   vim.o.background = target
   reapply(name)
-  if vim.o.background ~= target then
-    -- the scheme pins its own background (nightfox, lackluster, ...): undo
+  if vim.o.background ~= target or scheme_is_light() ~= light then
+    -- no variant for target: the scheme pinned 'background' back (nightfox) or
+    -- ignored it (vesper). Undo everything, 'background' included.
     vim.g.ui_transparent, restore_transparent = was_transparent, was_restore
+    vim.g.colors_name = nil
+    vim.o.background = was_bg
     reapply(name)
     vim.notify(("%s has no %s variant; pick one with <leader>cs"):format(name, target), vim.log.levels.WARN)
     return

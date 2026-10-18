@@ -195,8 +195,10 @@ catppuccin recompile automatically when their options change) and reloads it.
 
 Light colorschemes only look right over a light background, so switching to
 light while transparent forces solid mode, and switching back to dark restores
-transparency. A scheme that pins its own background (e.g. nightfox; use
-dayfox instead) is left as is, with a warning. In Alacritty, solid mode also
+transparency. A scheme with no variant for the target is left as is, with a
+warning: either it pins 'background' back (nightfox; use dayfox) or it just
+keeps drawing dark (vesper). The toggle checks the colors the scheme actually
+drew, not just 'background'. In Alacritty, solid mode also
 sets `window.opacity=1` live via `alacritty msg config`; transparent mode and
 quitting Neovim reset it to the value in `alacritty.toml`.
 
