@@ -28,6 +28,23 @@ return {
     lazy = false,
 
     config = function()
+      -- Tabs: no bg (transparent), muted inactive icons, accent + underline on
+      -- the active one. Set on every ColorScheme; neo-tree's own defaults only
+      -- fill groups that are still undefined, so these win.
+      local function tab_highlights()
+        local colors = require("defaults.colors")
+        local muted = colors.fg("Comment")
+        vim.api.nvim_set_hl(0, "NeoTreeTabInactive", { fg = muted })
+        vim.api.nvim_set_hl(0, "NeoTreeTabActive", { fg = colors.accent(), bold = true, underline = true, sp = colors.accent() })
+        vim.api.nvim_set_hl(0, "NeoTreeTabSeparatorInactive", { fg = muted })
+        vim.api.nvim_set_hl(0, "NeoTreeTabSeparatorActive", { fg = muted })
+      end
+      tab_highlights()
+      vim.api.nvim_create_autocmd("ColorScheme", {
+        group = vim.api.nvim_create_augroup("NeoTreeTabs", { clear = true }),
+        callback = tab_highlights,
+      })
+
       require("neo-tree").setup({
         close_if_last_window = true,
         popup_border_style = "rounded",
@@ -38,17 +55,16 @@ return {
         -- listing running + recent Claude Code chats for the cwd.
         sources = { "filesystem", "buffers", "git_status", "claude_chats.neotree" },
 
-        -- Tabs at the top of the tree to switch filesystem / buffers / git / claude views.
+        -- Icon-only tabs at the top of the tree (filesystem / buffers / git /
+        -- claude), evenly spread over the 34 cols; the active source's name is
+        -- shown in the bufferline offset instead. Defined in lua/neotree_tabs.lua.
         source_selector = {
           winbar = true,
           statusline = false,
+          tabs_layout = "equal",
           content_layout = "center",
-          sources = {
-            { source = "filesystem", display_name = "  Files" },
-            { source = "buffers", display_name = "  Bufs" },
-            { source = "git_status", display_name = "  Git" },
-            { source = "claude", display_name = " \u{f086} Claude" },
-          },
+          separator = { left = "", right = "" }, -- no ▏▕ chrome; spacing does the work
+          sources = require("neotree_tabs").selector(),
         },
 
         default_component_configs = {

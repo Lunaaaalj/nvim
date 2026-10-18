@@ -103,7 +103,12 @@ telescope.nvim ~  (nvim-telescope/telescope.nvim, + fzf-native)
   `make`. Used by <leader>ff, <leader>?, <leader>cs, <leader>ft.
 
 neo-tree.nvim ~  (nvim-neo-tree/neo-tree.nvim)
-  Sidebar file explorer (width 40), the default explorer. Toggle: <leader>n.
+  Sidebar file explorer (width 34), the default explorer. Toggle: <leader>n.
+  The winbar has four icon-only source tabs, spread evenly with no
+  separators: Files, Buffers, Git, Claude. The active one is underlined in
+  the scheme's accent. The name of the active source is shown in the
+  bufferline offset above the tree. Tabs are defined once in
+  `lua/neotree_tabs.lua` (BMP Nerd Font glyphs written as \u{} escapes).
   Depends on nvim-window-picker (s1n7ax/nvim-window-picker) so `w` in the tree
   opens the file in a window you choose by letter.
 
@@ -116,7 +121,8 @@ harpoon ~  (ThePrimeagen/harpoon, branch harpoon2)
   <leader>1-4 jump.
 
 bufferline.nvim ~  (akinsho/bufferline.nvim)
-  Buffer tab bar with diagnostics, thin separators, neo-tree offset. Navigate
+  Buffer tab bar with diagnostics, thin separators, and a neo-tree offset
+  labelled with the active neo-tree source (icon + name). Navigate
   with <Tab>/<S-Tab>, close with <leader>x.
 
 toggleterm.nvim ~  (akinsho/toggleterm.nvim)
@@ -304,7 +310,7 @@ claude_chats ~  (local: lua/claude_chats/)
   Runs `claude` in regular terminal buffers (many at once) with the same IDE
   env claudecode.nvim uses, so selections/diffs still work. Past sessions are
   read from ~/.claude/projects/<cwd>/*.jsonl (titles: /rename > AI title >
-  last prompt). Adds a "Claude" neo-tree source tab next to Files/Bufs/Git.
+  last prompt). Adds a Claude neo-tree source tab next to Files/Buffers/Git.
   Maps: <leader>an/aR/al — see |nvim-keymaps-claude|.
 
  vim:tw=78:ts=8:noet:ft=help:norl:
