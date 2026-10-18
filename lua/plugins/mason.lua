@@ -1,22 +1,22 @@
 return {
   {
-    "williamboman/mason.nvim",
+    "mason-org/mason.nvim",
     build = ":MasonUpdate",
     config = function()
       require("mason").setup()
 
-      local capabilities = require("cmp_nvim_lsp").default_capabilities()
+      -- Shared capabilities for every server. Neovim 0.11 layers configs as
+      -- vim.lsp.config("*") -> lspconfig's lsp/<name>.lua -> vim.lsp.config(name),
+      -- so per-server entries below only need to state what differs.
+      vim.lsp.config("*", { capabilities = require("cmp_nvim_lsp").default_capabilities() })
 
-      -- Per-server settings. Servers not listed here fall through to the
-      -- default handler below (just capabilities). on_attach keymaps are bound
-      -- globally via the LspAttach autocmd in lua/defaults/lsp.lua.
+      -- Per-server overrides. on_attach keymaps are bound globally via the
+      -- LspAttach autocmd in lua/defaults/lsp.lua.
       local servers = {
         clangd = {
           -- clangd defaults to utf-8 offsets; nvim/cmp expect utf-16. Pinning
           -- this silences the "multiple offset encodings" warning.
-          capabilities = vim.tbl_deep_extend("force", capabilities, {
-            offsetEncoding = { "utf-16" },
-          }),
+          capabilities = { offsetEncoding = { "utf-16" } },
         },
         pyright = {
           settings = {
@@ -33,7 +33,13 @@ return {
           filetypes = { "html", "css", "scss", "javascriptreact", "typescriptreact" },
         },
       }
+      for name, opts in pairs(servers) do
+        vim.lsp.config(name, opts)
+      end
 
+      -- mason-lspconfig v2 has no `handlers`: `automatic_enable` (default true)
+      -- calls vim.lsp.enable() for each installed server, picking up the configs
+      -- registered above. They must be registered before this setup() call.
       require("mason-lspconfig").setup({
         ensure_installed = {
           "clangd",                 -- C/C++
@@ -47,26 +53,19 @@ return {
           "lua_ls",                 -- Lua (this config)
           "r_language_server",      -- R / Quarto .qmd R chunks
         },
-        handlers = {
-          function(server_name)
-            local opts = servers[server_name] or {}
-            opts.capabilities = opts.capabilities or capabilities
-            require("lspconfig")[server_name].setup(opts)
-          end,
-        },
       })
     end,
   },
   {
-    "williamboman/mason-lspconfig.nvim",
-    dependencies = { "williamboman/mason.nvim", "neovim/nvim-lspconfig" },
+    "mason-org/mason-lspconfig.nvim",
+    dependencies = { "mason-org/mason.nvim", "neovim/nvim-lspconfig" },
   },
   {
     -- Guarantees the non-LSP tools that conform.nvim (formatters) and nvim-dap
     -- (debug adapters) call by name are actually installed, instead of silently
     -- relying on them being on PATH.
     "WhoIsSethDaniel/mason-tool-installer.nvim",
-    dependencies = { "williamboman/mason.nvim" },
+    dependencies = { "mason-org/mason.nvim" },
     config = function()
       require("mason-tool-installer").setup({
         ensure_installed = {

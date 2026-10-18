@@ -26,10 +26,12 @@ nvim-lspconfig ~  (neovim/nvim-lspconfig)
   `tsserver` with cmp capabilities and the on_attach maps gd / K / gr /
   <leader>rn (K is then overridden by hover.nvim).
 
-mason.nvim + mason-lspconfig.nvim ~  (williamboman/*)
-  Installs and manages LSP servers. Ensures `clangd` (C/C++) and `pyright`
-  (Python); a handler auto-sets-up each installed server with cmp
-  capabilities. Build hook: `:MasonUpdate`.
+mason.nvim + mason-lspconfig.nvim ~  (mason-org/*)
+  Installs and manages LSP servers (clangd, pyright, ruff, ts_ls, html,
+  cssls, emmet, texlab, lua_ls, r_language_server). cmp capabilities are set
+  for all servers via `vim.lsp.config("*")`, per-server overrides via
+  `vim.lsp.config(name)`, and mason-lspconfig's `automatic_enable` starts each
+  installed server. Build hook: `:MasonUpdate`.
 
 nvim-cmp ~  (hrsh7th/nvim-cmp)
   Completion engine, loaded on InsertEnter. Sources: nvim_lsp, luasnip
@@ -145,7 +147,8 @@ noice.nvim ~  (folke/noice.nvim)
   long_message_to_split, lsp_doc_border.
 
 nvim-notify ~  (rcarriga/nvim-notify)
-  Animated notifications (fade, 2s timeout) used as `vim.notify`.
+  Notification backend for Noice (configured only inside the Noice spec):
+  `static` stage, 3s timeout. Noice routes `vim.notify` through it.
 
 barbecue.nvim ~  (utilyre/barbecue.nvim)
   Winbar breadcrumbs of the code location, powered by nvim-navic.

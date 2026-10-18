@@ -11,8 +11,7 @@ return {
             preview_window = false,
             title = true,
         })
-        -- override K to use hover.nvim; scroll with gs/gS
-        vim.keymap.set("n", "K", require("hover").hover, { desc = "Hover docs" })
+        -- K itself is bound in ufo.lua (peek fold, else hover.nvim).
         vim.keymap.set("n", "gK", require("hover").hover_select, { desc = "Hover: select provider" })
         vim.keymap.set("n", "<C-p>", function() require("hover").hover_switch("previous") end, { desc = "Hover: prev provider" })
         vim.keymap.set("n", "<C-n>", function() require("hover").hover_switch("next") end, { desc = "Hover: next provider" })

@@ -15,7 +15,8 @@ local function on_attach(client, bufnr)
   map("n", "gr", vim.lsp.buf.references, "LSP: references")
   map("n", "gi", vim.lsp.buf.implementation, "LSP: implementation")
   map("n", "gy", vim.lsp.buf.type_definition, "LSP: type definition")
-  map("n", "K", vim.lsp.buf.hover, "LSP: hover")
+  -- K is owned by ufo (peek fold -> hover.nvim, whose LSP provider covers this);
+  -- a buffer-local map here would shadow it in every LSP buffer.
 
   -- Refactor / actions
   map("n", "<leader>rn", vim.lsp.buf.rename, "LSP: rename")
