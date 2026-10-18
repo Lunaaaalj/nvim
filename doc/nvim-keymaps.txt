@@ -38,6 +38,8 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
                 also `:ToggleTransparency`)
   <leader>uB    Toggle dark / light 'background' (persisted; also
                 `:ToggleBackground`). Light forces solid until you go dark.
+  <leader>uc    Cycle cursorline style: number / underline / band
+                (transparent mode)
   <leader>ut    Toggle treesitter sticky context header
   <leader>up    Toggle precognition motion hints
   <leader>sn    Show notification history (Noice)

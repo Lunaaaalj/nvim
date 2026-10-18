@@ -40,10 +40,11 @@ vim.api.nvim_create_autocmd("ColorScheme", {
       -- only touch the bg attribute; fg/styles from the colorscheme are kept
       vim.cmd(("highlight %s guibg=NONE ctermbg=NONE"):format(g))
     end
-    -- Transparent-friendly current line: no bg band, just a subtle underline.
-    vim.cmd("highlight CursorLine guibg=NONE ctermbg=NONE gui=underline cterm=underline")
   end,
 })
+-- Current-line styling + per-window cursorline; its ColorScheme handler must be
+-- registered after the strip above so it runs second.
+require("defaults.cursorline")
 
 -- Build help tags for this config's own docs so `:help nvim-config` resolves.
 -- Cheap and idempotent: only runs when doc/tags is missing (e.g. fresh clone).

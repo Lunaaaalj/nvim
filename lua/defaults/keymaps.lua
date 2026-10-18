@@ -231,6 +231,9 @@ vim.keymap.set("n", "<leader>ub", function() require("defaults.ui_toggle").toggl
 vim.keymap.set("n", "<leader>uB", function() require("defaults.ui_toggle").toggle_background() end,
   { desc = "Toggle dark / light background" })
 
+vim.keymap.set("n", "<leader>uc", function() require("defaults.cursorline").cycle() end,
+  { desc = "Cycle cursorline style (number / underline / band)" })
+
 -- Toggle spell-check in the current buffer
 vim.keymap.set("n", "<leader>us", function()
   vim.wo.spell = not vim.wo.spell

@@ -116,13 +116,13 @@ Set in `lua/defaults/options.lua`:
   - `autoindent` + `smartindent`  Automatic indentation.
   - `wrap` + `linebreak`          Soft-wrap long lines at word boundaries.
   - `netrw_banner = 0`            Hide the netrw banner.
-  - `cursorline` (number,line)    Active window only: the line number is
-                                  highlighted and the current line gets a
-                                  subtle underline. The `CursorLine` group's
-                                  background is stripped on ColorScheme (see
-                                  |nvim-config-colorscheme|) so it stays
-                                  transparent — the underline is what reads.
-                                  Autocmds toggle it off in inactive windows.
+  - `cursorline`                  Only in the focused regular-file window;
+                                  off in inactive splits, terminals, floats
+                                  (incl. Zen), the dashboard, lazy and mason.
+                                  neo-tree keeps its own selection line. Set
+                                  `w:no_cursorline` to opt a window out.
+                                  Styling lives in `lua/defaults/cursorline.lua`;
+                                  see |nvim-config-cursorline|.
   - `fillchars`                   Clean window chrome: blank `eob` (no `~` on
                                   empty lines), thin `│` window separator, `─`
                                   horizontal split, and fold arrows.
@@ -170,6 +170,20 @@ background shows through. This is enforced two ways, both driven by
      scheme loads — covering schemes without a transparency option (e.g.
      melange). Add new groups to that list if a plugin leaves a background.
      It does nothing in solid mode.
+
+Current line ~                                       *nvim-config-cursorline*
+In transparent mode the style comes from `g:cursorline_style`, cycled with
+`<leader>uc` (not persisted):
+  `number`     Accent, bold line number only, no line decoration (default).
+               The accent is the scheme's `Function` fg.
+  `underline`  One faint rule in a single colour (explicit `sp` = `LineNr`
+               fg, so it doesn't change colour under every token).
+  `band`       A soft tint (Normal fg blended ~7% into black/white). Over a
+               translucent Alacritty this needs
+               `colors.transparent_background_colors = true` in
+               `alacritty.toml`, otherwise it is drawn as an opaque stripe.
+In solid mode (|nvim-config-ui-toggle|) the scheme's own `CursorLine` band and
+`CursorLineNr` are kept as is.
 
 Toggles ~                                             *nvim-config-ui-toggle*
   `<leader>ub`  `:ToggleTransparency`  transparent <-> solid background
