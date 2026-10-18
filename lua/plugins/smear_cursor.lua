@@ -1,4 +1,4 @@
--- Animated cursor trail. Owns ALL cursor animation (mini.animate's cursor is off).
+-- Animated cursor trail. Owns ALL cursor animation.
 return {
   "sphamba/smear-cursor.nvim",
   opts = {

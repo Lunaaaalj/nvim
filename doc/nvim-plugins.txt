@@ -187,13 +187,6 @@ smear-cursor.nvim ~  (sphamba/smear-cursor.nvim)
   (settles faster). Its trail fades into `colors.terminal_bg` (#181818,
   Alacritty's default bg) because a transparent Normal has no bg to fade into.
 
-mini.animate ~  (echasnovski/mini.animate)
-  Window resize / open / close animations, 150ms quadratic ease-out; cursor
-  and scroll are off (smear-cursor and snacks.scroll own those). Open/close
-  are motion only: the window grows from / shrinks to its centre in a soft
-  tint with a constant 'winblend'. The stock version fades 'winblend' over a
-  bg-less float, which flashed dark against the transparent background.
-
 tiny-glimmer.nvim ~  (rachartier/tiny-glimmer.nvim)
   Flash on yank: the yanked text highlights (Visual) and fades out over
   ~300ms toward `colors.terminal_bg`. Paste/search/undo flashes are off so
