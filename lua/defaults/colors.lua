@@ -22,6 +22,12 @@ function M.blend(a, b, alpha)
   return out
 end
 
+-- What actually shows behind a transparent editor: Alacritty's background.
+-- alacritty.toml sets no colors.primary.background, so this is Alacritty's
+-- default. Animations that fade (smear trail, yank flash) fade toward it; if you
+-- change the terminal background, change this too.
+M.terminal_bg = "#181818"
+
 -- The scheme's accent: what functions are drawn in, falling back to Special.
 function M.accent()
   return M.fg("Function", "Special", "Normal")

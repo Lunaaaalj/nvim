@@ -109,7 +109,13 @@ return {
   priority = 1000,
   lazy = false,
   opts = {
-    scroll = { enabled = true },
+    -- Snappier than the 200ms default so <C-d> / n / G don't feel laggy;
+    -- held-key repeats (j/k) get a short linear animation instead.
+    scroll = {
+      enabled = true,
+      animate = { duration = { step = 10, total = 140 }, easing = "outQuad" },
+      animate_repeat = { delay = 100, duration = { step = 5, total = 50 }, easing = "linear" },
+    },
     dashboard = {
       enabled = true,
       width = math.max(header_width, 60),

@@ -154,7 +154,9 @@ noice.nvim ~  (folke/noice.nvim)
 
 nvim-notify ~  (rcarriga/nvim-notify)
   Notification backend for Noice (configured only inside the Noice spec):
-  `static` stage, 3s timeout. Noice routes `vim.notify` through it.
+  `slide` stage (moves, never fades: fading left dark corners on the
+  transparent toasts; `static` is the fallback), 3s timeout. Noice routes
+  `vim.notify` through it.
 
 snacks.nvim dashboard ~  (folke/snacks.nvim)
   Minimal single-column start screen, everything centered: the header art
@@ -171,7 +173,8 @@ snacks.nvim dashboard ~  (folke/snacks.nvim)
   assigned to you; pass `issues = "author"` to `dashboard_data.setup()` in
   `lua/plugins/snacks.lua` to count issues you filed instead. Colors are
   muted text plus one accent taken from the active scheme.
-  The `scroll` module (smooth scrolling) is enabled from the same spec.
+  The `scroll` module (smooth scrolling) is enabled from the same spec:
+  140ms outQuad per jump (<C-d>, n, G, ...), 50ms linear for held-key repeats.
 
 barbecue.nvim ~  (utilyre/barbecue.nvim)
   Winbar breadcrumbs of the code location, powered by nvim-navic.
@@ -180,10 +183,24 @@ nvim-navic ~  (SmiteshP/nvim-navic)
   LSP-driven location provider feeding barbecue's breadcrumbs.
 
 smear-cursor.nvim ~  (sphamba/smear-cursor.nvim)
-  Animated cursor trail.
+  Animated cursor trail; owns all cursor animation. Stiffer than the defaults
+  (settles faster). Its trail fades into `colors.terminal_bg` (#181818,
+  Alacritty's default bg) because a transparent Normal has no bg to fade into.
+
+mini.animate ~  (echasnovski/mini.animate)
+  Window resize / open / close animations, 150ms quadratic ease-out; cursor
+  and scroll are off (smear-cursor and snacks.scroll own those). Open/close
+  are motion only: the window grows from / shrinks to its centre in a soft
+  tint with a constant 'winblend'. The stock version fades 'winblend' over a
+  bg-less float, which flashed dark against the transparent background.
+
+tiny-glimmer.nvim ~  (rachartier/tiny-glimmer.nvim)
+  Flash on yank: the yanked text highlights (Visual) and fades out over
+  ~300ms toward `colors.terminal_bg`. Paste/search/undo flashes are off so
+  p/P, n/N and u keep their normal mappings.
 
 mini.indentscope ~  (echasnovski/mini.indentscope)
-  Indent-scope guide (│), no draw animation. Disabled in neo-tree, toggleterm,
+  Indent-scope guide (│) that grows out from the cursor (80ms). Disabled in neo-tree, toggleterm,
   lazy, mason, help, noice and trouble buffers.
 
 typr ~  (nvzone/typr)

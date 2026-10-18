@@ -7,12 +7,13 @@ return {
     {
       "rcarriga/nvim-notify",
       opts = {
-        -- `static` (no fade) avoids the dark-corner artifacts that fade/slide
-        -- stages leave when the toast bg is transparent. The hex below is only
+        -- `slide` moves toasts in/out without fading them; fading (`fade`,
+        -- `fade_in_slide_out`) is what left dark-corner artifacts on the
+        -- transparent toast bg. Fall back to `static` if slide shows any. The hex below is only
         -- the blend reference and silences nvim-notify's "NotifyBackground has
         -- no background highlight" warning; actual transparency comes from the
         -- Notify* groups stripped in lua/defaults/init.lua's ColorScheme autocmd.
-        stages = "static",
+        stages = "slide",
         background_colour = "#000000",
         timeout = 3000,
       },
