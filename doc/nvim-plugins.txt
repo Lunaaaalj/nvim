@@ -156,6 +156,23 @@ nvim-notify ~  (rcarriga/nvim-notify)
   Notification backend for Noice (configured only inside the Noice spec):
   `static` stage, 3s timeout. Noice routes `vim.notify` through it.
 
+snacks.nvim dashboard ~  (folke/snacks.nvim)
+  Minimal single-column start screen, everything centered: the header art
+  (`dashboard-header.txt` in the config root, verbatim; a built-in Python
+  snake otherwise), a live clock + date, a GitHub stats line (open PRs ·
+  open issues · contributions in the last year · current streak), and a
+  one-line key hint (f find · r recent · s session · c config · q quit).
+  The width follows the art's widest line. g/n/p/l/m (grep, new file,
+  projects, Lazy, Mason) are bound too, just not listed. The clock ticks
+  once a minute and only while the dashboard is visible.
+  The stats come from one async `gh api graphql` call, cached 30 min in
+  `stdpath("cache")/dashboard/stats.json`, so the counts are exact (not
+  capped at 30). Without `gh`/auth the stats line is hidden. "issues" means
+  assigned to you; pass `issues = "author"` to `dashboard_data.setup()` in
+  `lua/plugins/snacks.lua` to count issues you filed instead. Colors are
+  muted text plus one accent taken from the active scheme.
+  The `scroll` module (smooth scrolling) is enabled from the same spec.
+
 barbecue.nvim ~  (utilyre/barbecue.nvim)
   Winbar breadcrumbs of the code location, powered by nvim-navic.
 

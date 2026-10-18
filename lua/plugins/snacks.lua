@@ -1,18 +1,22 @@
 -- snacks.nvim is already pulled in as a dependency of claudecode.nvim. This spec
 -- turns on two of its modules:
---   * dashboard — a static startup screen (see header swapping below)
+--   * dashboard — a minimal, single-column start screen (see below)
 --   * scroll    — smooth animated scrolling (pairs with smear_cursor)
+--
+-- Dashboard, top to bottom, all centered: header art, a live clock + date, a
+-- GitHub stats line (open PRs · issues · contributions · streak), and a one-line
+-- key hint. Quiet colors: muted text plus ONE accent taken from the active
+-- scheme, so it matches every theme, transparent or solid.
 --
 -- Header art: drop any ASCII art into `dashboard-header.txt` in the config root
 -- (e.g. paste from https://www.asciiart.eu or https://patorjk.com/software/taag)
 -- and it is used verbatim — no Lua editing needed. With no file, the built-in
--- Python snake below is used. The dashboard background is transparent: its
--- `SnacksDashboardNormal` group is stripped in lua/defaults/init.lua alongside
--- the other transparent groups.
+-- Python snake below is used. The dashboard width follows the art's widest
+-- line. The background is transparent: `SnacksDashboardNormal` is stripped in
+-- lua/defaults/init.lua alongside the other transparent groups.
 --
--- Live data (GitHub contribution heatmap, PR/issue counts, Claude token usage)
--- comes from lua/defaults/dashboard_data.lua. It is fetched asynchronously and
--- file-cached, so it never blocks startup and renders as plain text + highlights.
+-- The stats come from lua/defaults/dashboard_data.lua (one async, file-cached
+-- `gh api graphql` call), so they never block startup.
 
 local data = require("defaults.dashboard_data")
 
@@ -29,27 +33,75 @@ local default_header = [[
             ';;;;;;;;;;
               ';;;;;;;;]]
 
-local function header()
+local header_lines = (function()
   local path = vim.fn.stdpath("config") .. "/dashboard-header.txt"
-  if vim.fn.filereadable(path) == 1 then
-    return table.concat(vim.fn.readfile(path), "\n")
-  end
-  return default_header
+  if vim.fn.filereadable(path) == 1 then return vim.fn.readfile(path) end
+  return vim.split(default_header, "\n")
+end)()
+
+local header_width = 0
+for _, l in ipairs(header_lines) do
+  header_width = math.max(header_width, vim.api.nvim_strwidth(l))
 end
 
--- Subtitle line: weekday/date + the running Neovim version.
-local function subtitle()
-  local v = vim.version()
-  return os.date("%A, %d %B %Y") .. "   ·   v" .. v.major .. "." .. v.minor .. "." .. v.patch
+-- One table drives both the visible hint line (entries with `hint`) and the
+-- key bindings (every entry, as hidden items), so the two can't drift apart.
+local keys = {
+  { key = "f", hint = "find", action = ":lua Snacks.dashboard.pick('files')" },
+  { key = "r", hint = "recent", action = ":lua Snacks.dashboard.pick('oldfiles')" },
+  { key = "g", action = ":lua Snacks.dashboard.pick('live_grep')" },
+  { key = "n", action = ":ene | startinsert" },
+  { key = "p", action = ":lua Snacks.picker.projects()" },
+  { key = "s", hint = "session", action = ":lua require('persistence').load()" },
+  { key = "c", hint = "config", action = ":lua Snacks.dashboard.pick('files', {cwd = vim.fn.stdpath('config')})" },
+  { key = "l", action = ":Lazy" },
+  { key = "m", action = ":Mason" },
+  { key = "q", hint = "quit", action = ":qa" },
+}
+
+local function hint_line()
+  local out = {}
+  for _, k in ipairs(keys) do
+    if k.hint then
+      if #out > 0 then out[#out + 1] = { "  ·  ", hl = "DashboardMuted" } end
+      out[#out + 1] = { k.key, hl = "DashboardAccent" }
+      out[#out + 1] = { " " .. k.hint, hl = "DashboardMuted" }
+    end
+  end
+  return out
 end
 
--- Section helper: build a centered text block in the given pane, or hide the
--- section (return nil) when its data isn't cached yet.
-local function block(text, pane)
-  if not text then
-    return nil
+local function set_hl()
+  local colors = require("defaults.colors")
+  vim.api.nvim_set_hl(0, "DashboardAccent", { fg = colors.accent(), bold = true })
+  vim.api.nvim_set_hl(0, "DashboardMuted", { fg = colors.fg("Comment") })
+end
+
+-- Live clock: a uv timer that fires on each minute boundary, but only while a
+-- dashboard window is visible. It stops itself otherwise, so it never runs
+-- while editing.
+local timer
+local function dashboard_visible()
+  for _, w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+    if vim.bo[vim.api.nvim_win_get_buf(w)].filetype == "snacks_dashboard" then return true end
   end
-  return { pane = pane, text = text, align = "center", padding = 1 }
+  return false
+end
+local function stop_clock()
+  if timer then
+    timer:stop()
+    timer:close()
+    timer = nil
+  end
+end
+local function start_clock()
+  if timer then return end
+  timer = (vim.uv or vim.loop).new_timer()
+  local ms_to_minute = (60 - tonumber(os.date("%S"))) * 1000
+  timer:start(ms_to_minute, 60 * 1000, vim.schedule_wrap(function()
+    if not dashboard_visible() then return stop_clock() end
+    Snacks.dashboard.update()
+  end))
 end
 
 return {
@@ -60,85 +112,67 @@ return {
     scroll = { enabled = true },
     dashboard = {
       enabled = true,
-      -- Two-column layout. Snacks needs ~2*width + pane_gap columns of terminal
-      -- width to show both panes; on narrower windows it collapses to one column.
-      width = 58,
-      pane_gap = 6,
-      preset = {
-        keys = {
-          { icon = " ", key = "f", desc = "Find File", action = ":lua Snacks.dashboard.pick('files')" },
-          { icon = " ", key = "r", desc = "Recent Files", action = ":lua Snacks.dashboard.pick('oldfiles')" },
-          { icon = " ", key = "g", desc = "Find Text", action = ":lua Snacks.dashboard.pick('live_grep')" },
-          { icon = " ", key = "n", desc = "New File", action = ":ene | startinsert" },
-          { icon = " ", key = "p", desc = "Projects", action = ":lua Snacks.picker.projects()" },
-          { icon = " ", key = "s", desc = "Restore Session", action = ":lua require('persistence').load()" },
-          { icon = " ", key = "c", desc = "Config", action = ":lua Snacks.dashboard.pick('files', {cwd = vim.fn.stdpath('config')})" },
-          { icon = "󰒲 ", key = "l", desc = "Lazy", action = ":Lazy" },
-          { icon = " ", key = "m", desc = "Mason", action = ":Mason" },
-          { icon = " ", key = "q", desc = "Quit", action = ":qa" },
-        },
-      },
+      width = math.max(header_width, 60),
       sections = {
-        -- ── LEFT PANE ───────────────────────────────────────────────────────
-        -- Section-as-function: `text` must be a string/Text[], not a function, so
-        -- the section itself is the function and calls header() to get the string.
+        { text = table.concat(header_lines, "\n"), align = "center", padding = 2, hl = "SnacksDashboardHeader" },
+        -- Sections-as-functions re-run on every render, so the time stays current.
         function()
-          return { pane = 1, text = header(), align = "center", padding = 1, hl = "SnacksDashboardHeader" }
+          local time = os.date("%H:%M"):gsub(".", "%0 "):sub(1, -2) -- "1 4 : 3 2", a little larger
+          return {
+            align = "center",
+            padding = 2,
+            text = {
+              { time, hl = "DashboardAccent" },
+              { "\n" },
+              { os.date("%A · %d %B %Y"), hl = "DashboardMuted" },
+            },
+          }
         end,
-        -- Section-as-function so the date is current each time the dashboard opens.
         function()
-          return { pane = 1, text = { { subtitle(), hl = "SnacksDashboardDesc" } }, align = "center", padding = 2 }
+          local stats = data.render_stats()
+          return stats and { text = stats, align = "center", padding = 2 } or nil
         end,
-        { pane = 1, section = "keys", gap = 1, padding = 2 },
-        { pane = 1, icon = " ", title = "Recent Files", section = "recent_files", indent = 2, padding = 1 },
-        { pane = 1, section = "startup" },
-
-        -- ── RIGHT PANE ──────────────────────────────────────────────────────
-        -- GitHub contribution heatmap (title + grid + legend).
-        function()
-          local grid = data.render_contrib()
-          if not grid then
-            return nil
-          end
-          local out = {}
-          vim.list_extend(out, data.contrib_title())
-          out[#out + 1] = { "\n\n" }
-          vim.list_extend(out, grid)
-          return { pane = 2, text = out, align = "center", padding = 2 }
-        end,
-        -- GitHub PR / review / issue counts.
-        function()
-          return block(data.render_counts(), 2)
-        end,
-        -- Updates line: GitHub notifications + available plugin updates.
-        function()
-          return block(data.render_updates(), 2)
-        end,
-        -- Claude token-usage sparkline.
-        function()
-          return block(data.render_usage(), 2)
-        end,
-        -- Local git: current branch + dirty state + recent commits.
-        function()
-          return block(data.render_git(), 2)
-        end,
+        { text = hint_line(), align = "center" },
+        -- every key stays bound, without its own row
+        vim.tbl_map(function(k) return { key = k.key, action = k.action, hidden = true } end, keys),
       },
     },
   },
   config = function(_, opts)
     require("snacks").setup(opts)
-    data.set_hl()
-    vim.api.nvim_create_autocmd("ColorScheme", { callback = data.set_hl })
+    data.setup({ issues = "assignee" }) -- or "author"
+    set_hl()
 
-    -- Kick off a background refresh now and whenever the dashboard opens; stale
-    -- caches refresh, fresh ones are reused. Data fills in via a debounced
-    -- Snacks.dashboard.update() when each source returns.
+    local grp = vim.api.nvim_create_augroup("DashboardLive", { clear = true })
+    vim.api.nvim_create_autocmd("ColorScheme", { group = grp, callback = set_hl })
+    -- Refresh stats (stale cache only) and run the clock while the dashboard is up.
     data.refresh(false)
     vim.api.nvim_create_autocmd("User", {
+      group = grp,
       pattern = "SnacksDashboardOpened",
       callback = function()
         data.refresh(false)
+        start_clock()
       end,
     })
+    vim.api.nvim_create_autocmd("BufEnter", {
+      group = grp,
+      callback = function()
+        if vim.bo.filetype == "snacks_dashboard" then start_clock() end
+      end,
+    })
+    vim.api.nvim_create_autocmd({ "BufLeave", "BufWipeout" }, {
+      group = grp,
+      callback = function(ev)
+        if vim.bo[ev.buf].filetype == "snacks_dashboard" then vim.schedule(function()
+          if not dashboard_visible() then stop_clock() end
+        end) end
+      end,
+    })
+
+    -- One-time cleanup of the caches from the old multi-source dashboard.
+    for _, f in ipairs({ "contrib.json", "counts.json", "usage.json" }) do
+      vim.fn.delete(vim.fn.stdpath("cache") .. "/dashboard/" .. f)
+    end
   end,
 }
