@@ -315,6 +315,19 @@ their solid backgrounds (|nvim-config-ui-toggle|).
   zenbones          (zenbones-theme/zenbones.nvim)  transparent; variants
                     forestbones / neobones / kanagawabones / seoulbones
 
+Warm set (all but vesper follow 'background', so <leader>uB switches them):
+  rose-pine         (rose-pine/neovim)           styles.transparency; main /
+                    moon / dawn (light)
+  kanagawa-paper    (thesimonho/kanagawa-paper.nvim)  transparent; ink /
+                    canvas (light)
+  bamboo            (ribru17/bamboo.nvim)        transparent; vulgaris /
+                    multiplex / light
+  flexoki           (kepano/flexoki-neovim)      via global autocmd only;
+                    flexoki-dark / flexoki-light
+  evergarden        (comfysage/evergarden)       transparent_background; the
+                    spec picks fall (dark) / summer (light) from 'background'
+  vesper            (datsfilipe/vesper.nvim)     transparent; dark only
+
 ==============================================================================
 10. AI                                                      *nvim-plugins-ai*
 
