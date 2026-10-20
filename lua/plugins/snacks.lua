@@ -44,11 +44,49 @@ for _, l in ipairs(header_lines) do
   header_width = math.max(header_width, vim.api.nvim_strwidth(l))
 end
 
+-- Fuzzy-pick any directory under $HOME and :cd into it. Snacks' `files` source
+-- only lists files, so this streams `find -type d` through the generic `proc`
+-- finder (no fd/zoxide dependency), pruning dotdirs, node_modules and ~/Library
+-- to keep the walk fast.
+local function pick_dir()
+  local home = vim.fn.expand("~")
+  Snacks.picker.pick({
+    title = "cd",
+    finder = "proc",
+    cmd = "find",
+    notify = false, -- find exits non-zero on TCC-protected dirs; results still stream
+    cwd = home,
+    args = {
+      ".", "-mindepth", "1", "-maxdepth", "5",
+      "(", "-name", ".*", "-o", "-name", "node_modules", "-o", "-name", "__pycache__",
+      "-o", "-path", "./Library", ")", "-prune",
+      "-o", "-type", "d", "-print",
+    },
+    transform = function(item)
+      -- strip "./"; must be idempotent: snacks applies `transform` twice
+      -- (in the proc finder and again in the picker's item pipeline)
+      item.file = item.text:gsub("^%./", "")
+      item.text = item.file
+      item.cwd = home
+      item.dir = true
+    end,
+    format = "file",
+    preview = "directory",
+    confirm = function(picker, item)
+      picker:close()
+      if not item then return end
+      vim.cmd.cd(vim.fn.fnameescape(home .. "/" .. item.file))
+      vim.notify("cwd → " .. vim.fn.fnamemodify(vim.fn.getcwd(), ":~"))
+    end,
+  })
+end
+
 -- One table drives both the visible hint line (entries with `hint`) and the
 -- key bindings (every entry, as hidden items), so the two can't drift apart.
 local keys = {
   { key = "f", hint = "find", action = ":lua Snacks.dashboard.pick('files')" },
   { key = "r", hint = "recent", action = ":lua Snacks.dashboard.pick('oldfiles')" },
+  { key = "d", hint = "cd", action = pick_dir },
   { key = "g", action = ":lua Snacks.dashboard.pick('live_grep')" },
   { key = "n", action = ":ene | startinsert" },
   { key = "p", action = ":lua Snacks.picker.projects()" },

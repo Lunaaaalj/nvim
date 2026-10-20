@@ -91,13 +91,19 @@ vim.api.nvim_create_autocmd(
   }
 )
 
--- Prose/markup buffers: enable spell-check (English). z= suggests corrections,
--- ]s/[s jump between misspellings. Toggle per-buffer with <leader>us.
+-- Prose/markup buffers: enable spell-check. The language comes from the nearest
+-- .spelllang file above the buffer (one line, e.g. "es,en"), else English.
+-- z= suggests corrections, ]s/[s jump between misspellings. Toggle per-buffer with <leader>us.
 vim.api.nvim_create_autocmd("FileType", {
   pattern = { "tex", "plaintex", "markdown", "gitcommit", "text" },
-  callback = function()
+  callback = function(args)
     vim.opt_local.spell = true
-    vim.opt_local.spelllang = "en"
+    local marker = vim.fs.find(".spelllang", {
+      upward = true,
+      path = vim.fs.dirname(vim.api.nvim_buf_get_name(args.buf)),
+    })[1]
+    local lang = marker and vim.trim(vim.fn.readfile(marker, "", 1)[1] or "")
+    vim.opt_local.spelllang = (lang and lang ~= "") and lang or "en"
   end,
 })
 

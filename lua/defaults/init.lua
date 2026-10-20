@@ -1,6 +1,7 @@
 require("defaults.options")
 require("defaults.keymaps")
 require("defaults.lsp")
+require("defaults.shell_cwd")
 -- Transparency/background state must exist before lazy runs the theme specs,
 -- which read vim.g.ui_transparent in their setup().
 require("defaults.ui_toggle").restore()

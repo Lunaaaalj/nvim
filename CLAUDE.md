@@ -151,6 +151,7 @@ The authoritative human-facing reference is the in-editor `:help` documentation 
 - `lazygit` binary (for lazygit.nvim)
 - `gh` CLI, authenticated (`gh auth login`) — optional; powers the dashboard's GitHub stats line (PRs, issues, contributions, streak). Without it the line simply doesn't render.
 - `make` (for telescope-fzf-native)
+- An `nvim()` zsh wrapper in `~/.zshrc` (not in this repo) — optional; sets `$NVIM_CWD_FILE` so `lua/defaults/shell_cwd.lua` can write Neovim's final cwd on exit and the shell `cd`s there (cd-on-quit, e.g. after the dashboard's `d` directory picker). The module unsets the var so `:terminal` shells don't inherit it.
 - `~/.virtualenvs/neovim` venv with `pynvim`, `jupyter_client`, `jupytext` (Neovim Python host / Molten / jupytext.nvim)
 - `~/.local/bin/jkernel` helper script for registering/removing per-project Jupyter kernels (see [`docs/molten.md`](docs/molten.md)). Not part of this repo — lives in `~/.local/bin`.
 - A Kitty-graphics terminal (Kitty/WezTerm/Ghostty) is only needed for inline Molten images; Alacritty works for everything else

@@ -196,6 +196,10 @@ Spell-check (auto-enabled for tex/markdown/gitcommit/text):
   ]s  /  [s     Next / previous misspelled word
   z=            Suggest corrections
 
+  The language is English unless a `.spelllang` file exists in the buffer's
+  directory or any parent; its first line is used as 'spelllang' (e.g.
+  `es,en`). Missing dictionaries are offered for download on first use.
+
 ==============================================================================
 7. COMPLETION (INSERT MODE)                        *nvim-keymaps-completion*
 

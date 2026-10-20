@@ -163,10 +163,13 @@ snacks.nvim dashboard ~  (folke/snacks.nvim)
   (`dashboard-header.txt` in the config root, verbatim; a built-in Python
   snake otherwise), a live clock + date, a GitHub stats line (open PRs ·
   open issues · contributions in the last year · current streak), and a
-  one-line key hint (f find · r recent · s session · c config · q quit).
+  one-line key hint (f find · r recent · d cd · s session · c config · q quit).
   The width follows the art's widest line. g/n/p/l/m (grep, new file,
   projects, Lazy, Mason) are bound too, just not listed. The clock ticks
   once a minute and only while the dashboard is visible.
+  `d` fuzzy-picks any directory under ~ and `:cd`s into it. The launching
+  shell follows on exit via the zsh `nvim` wrapper ($NVIM_CWD_FILE, see
+  lua/defaults/shell_cwd.lua).
   The stats come from one async `gh api graphql` call, cached 30 min in
   `stdpath("cache")/dashboard/stats.json`, so the counts are exact (not
   capped at 30). Without `gh`/auth the stats line is hidden. "issues" means
