@@ -1,5 +1,6 @@
 -- Per-PDF view state (page, zoom, fit, spread, colours) remembered across
--- sessions in stdpath("state")/pdfview.json. Writes are debounced.
+-- sessions in stdpath("state")/pdfview.json, keyed by the PDF path or the
+-- viewer's `store_key` (a Markdown preview's source file). Writes are debounced.
 
 local M = {}
 
@@ -30,7 +31,7 @@ function M.flush()
 end
 
 function M.restore(v)
-  local e = load()[v.pdf]
+  local e = load()[v.store_key or v.pdf]
   if not e then return end
   for _, f in ipairs(FIELDS) do
     if e[f] ~= nil and e[f] ~= vim.NIL then v[f] = e[f] end
@@ -40,7 +41,7 @@ end
 function M.save(v)
   local e = { t = os.time() }
   for _, f in ipairs(FIELDS) do e[f] = v[f] end
-  load()[v.pdf] = e
+  load()[v.store_key or v.pdf] = e
   timer:start(1000, 0, vim.schedule_wrap(M.flush))
 end
 

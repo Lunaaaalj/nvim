@@ -46,6 +46,23 @@ return {
             max_width_window_percentage = math.huge,
             window_overlap_clear_enabled = true, -- toggles images when windows are overlapped
             window_overlap_clear_ft_ignore = { "cmp_menu", "cmp_docs", "" },
+            -- Molten drives image.nvim through its API; the document
+            -- integrations (on by default) would render every image link in
+            -- Markdown/Neorg/typst buffers inline. They download remote images
+            -- and block the editor in `vim.wait` on a `magick identify` per
+            -- image, so a README full of shields.io badges froze Neovim and
+            -- threw on SVGs ImageMagick can't parse. The Markdown preview
+            -- (<leader>pv, lua/pdfview/markdown.lua) shows images properly.
+            integrations = {
+                markdown = { enabled = false },
+                neorg = { enabled = false },
+                typst = { enabled = false },
+                html = { enabled = false },
+                css = { enabled = false },
+                asciidoc = { enabled = false },
+                syslang = { enabled = false },
+                org = { enabled = false },
+            },
         },
     },
 }

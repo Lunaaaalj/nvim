@@ -37,7 +37,7 @@ local function preview(pdf)
   local buf = vim.api.nvim_create_buf(false, true)
   vim.bo[buf].bufhidden = "wipe"
   pcall(vim.api.nvim_buf_set_name, buf, "pdfview://" .. vim.fs.basename(pdf))
-  v = V.new(buf, pdf, "tex")
+  v = V.new(buf, pdf, "tex", { integration = M })
   M.viewer = v
   return v
 end
@@ -181,8 +181,16 @@ function M.setup()
       v:winbar()
     end
   end
-  vim.api.nvim_create_autocmd("User", { group = group, pattern = "VimtexEventCompiling", callback = status("compiling") })
-  vim.api.nvim_create_autocmd("User", { group = group, pattern = "VimtexEventCompileFailed", callback = status("failed") })
+  vim.api.nvim_create_autocmd("User", {
+    group = group,
+    pattern = "VimtexEventCompiling",
+    callback = status({ kind = "busy", text = "compiling" }),
+  })
+  vim.api.nvim_create_autocmd("User", {
+    group = group,
+    pattern = "VimtexEventCompileFailed",
+    callback = status({ kind = "error", text = "compile failed · <leader>le" }),
+  })
   vim.api.nvim_create_autocmd("User", {
     group = group,
     pattern = "VimtexEventCompileSuccess",

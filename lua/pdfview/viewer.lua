@@ -1,5 +1,5 @@
--- One viewer per PDF buffer: the LaTeX preview split ("tex") or a .pdf file
--- opened like any other buffer ("file").
+-- One viewer per PDF buffer: a preview split (LaTeX "tex", Markdown "md") or
+-- a .pdf file opened like any other buffer ("file").
 --
 -- The viewport lives in PDF points (vx, vy = its top-left on the "view": one
 -- page, or two side by side in a spread), so zooming keeps whatever was centred
@@ -37,8 +37,11 @@ end
 function V.get(buf) return viewers[buf] end
 function V.list() return vim.tbl_values(viewers) end
 
----@param kind "tex"|"file"
-function V.new(buf, pdf, kind)
+-- opts: fields set before the per-PDF state is restored, e.g. `integration`
+-- (the source-side module: tex/markdown, providing live follow), `inverse`
+-- (click -> source; defaults to SyncTeX), `title`, `store_key`.
+---@param kind "tex"|"md"|"file"
+function V.new(buf, pdf, kind, opts)
   local self = setmetatable({
     buf = buf, pdf = pdf, kind = kind,
     page = 1, fit = "page", zoom = 1, vx = 0, vy = 0, -- fit: "page"|"width"|"manual"
@@ -46,6 +49,7 @@ function V.new(buf, pdf, kind)
     history = {}, gen = 0,
     timer = assert(vim.uv.new_timer()),
   }, V)
+  for k, val in pairs(opts or {}) do self[k] = val end
   if not V.did_setup then V.setup() end
   require("pdfview.store").restore(self)
   viewers[buf] = self
@@ -80,12 +84,13 @@ function V.new(buf, pdf, kind)
   return self
 end
 
--- Point an existing viewer at another PDF (the LaTeX preview, new project).
-function V:set_pdf(pdf)
+-- Point an existing viewer at another PDF (a preview switching projects).
+function V:set_pdf(pdf, title, store_key)
+  self.title, self.store_key = title, store_key
   self.pdf, self.mt, self.info, self.layout = pdf, nil, nil, nil
   self.page, self.vx, self.vy, self.sync_marks, self.search, self.history = 1, 0, 0, nil, nil, {}
   require("pdfview.store").restore(self)
-  pcall(vim.api.nvim_buf_set_name, self.buf, "pdfview://" .. vim.fs.basename(pdf))
+  pcall(vim.api.nvim_buf_set_name, self.buf, "pdfview://" .. (title or vim.fs.basename(pdf)))
 end
 
 function V:win()
@@ -103,13 +108,15 @@ end
 
 -- The LaTeX preview's home: a full-height split at the far right, sized to
 -- the page on its first render.
-function V:open_split()
+function V:open_split(frac)
   local win = vim.api.nvim_open_win(self.buf, false, {
     split = "right",
     win = -1,
-    width = math.floor(vim.o.columns * 0.45),
+    width = math.floor(vim.o.columns * (frac or 0.45)),
   })
-  self.float, self.autosize = false, true
+  -- LaTeX pages have a fixed shape, so the split adapts to them; Markdown
+  -- pages are shaped to the split instead (lua/pdfview/markdown.lua)
+  self.float, self.autosize = false, self.kind == "tex"
   self:setup_win(win)
   self:winbar()
   return win
@@ -118,7 +125,7 @@ end
 -- Reading mode: move the preview into a large float and back.
 function V:toggle_float()
   local old = self:win()
-  if not old or self.kind ~= "tex" then return end
+  if not old or self.kind == "file" then return end
   local new
   if self.float then
     new = self:open_split()
@@ -255,17 +262,18 @@ end
 function V:winbar()
   local win = self:win()
   if not win then return end
-  local left = "%#Comment# " .. esc(vim.fs.basename(self.pdf))
-  if self.status == "failed" then
-    left = left .. "  %#DiagnosticError#✗ compile failed · <leader>le"
-  elseif self.status == "compiling" then
-    left = left .. "  %#DiagnosticWarn#⟳ compiling"
+  local left = "%#Comment# " .. esc(self.title or vim.fs.basename(self.pdf))
+  -- status = { kind = "error"|"busy", text = ... }, set by the integration
+  if self.status then
+    local err = self.status.kind == "error"
+    left = ("%s  %%#%s#%s %s"):format(left, err and "DiagnosticError" or "DiagnosticWarn", err and "✗" or "⟳",
+      esc(self.status.text))
   end
   local right = {}
   if self.search then
     right[#right + 1] = ("/%s %d/%d"):format(esc(self.search.query), self.search.idx or 0, #self.search.matches)
   end
-  if self.kind == "tex" and require("pdfview.tex").live then right[#right + 1] = "live" end
+  if self.integration and self.integration.live then right[#right + 1] = "live" end
   if self.colors == "paper" then right[#right + 1] = "paper" end
   right[#right + 1] = self.fit == "page" and "fit" or self.fit == "width" and "width"
     or ("%d%%%%"):format(math.floor(self.zoom * 100 + 0.5))
@@ -321,7 +329,8 @@ function V:render()
 
   local mt = R.mtime(self.pdf)
   if not mt then
-    notify("Missing " .. self.pdf)
+    -- a preview's window can open before its first PDF is written
+    if self.kind == "file" then notify("Missing " .. self.pdf) end
     return done()
   end
   R.info(self.pdf, mt, function(info)
@@ -495,7 +504,7 @@ function V:click(pos)
         return
       end
     end
-    require("pdfview.tex").inverse(self, page, x, y)
+    ;(self.inverse or require("pdfview.tex").inverse)(self, page, x, y)
   end)
 end
 
@@ -627,9 +636,9 @@ function V:keymaps()
     { "q", function() self:close() end, "close" },
     { "?", function() self:show_help() end, "this help" },
   }
-  if self.kind == "tex" then
+  if self.integration then -- the previews (LaTeX, Markdown)
     table.insert(help, { "z", function() self:toggle_float() end, "toggle reading mode (float)" })
-    table.insert(help, { "f", function() require("pdfview.tex").toggle_live() end, "toggle live follow of the cursor" })
+    table.insert(help, { "f", function() self.integration.toggle_live() end, "toggle live follow of the cursor" })
   end
   self.help = help
   for _, m in ipairs(help) do
