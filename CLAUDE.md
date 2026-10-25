@@ -65,15 +65,26 @@ A `.luarc.json` at the config root configures lua_ls for this repo: it declares 
 **Quarto / R:** `.qmd` files get per-language LSP-in-chunks via `quarto-nvim` + `otter.nvim` (`lua/plugins/quarto.lua`, `ft = "quarto"`, `codeRunner.enabled = false`); `.qmd` is registered as filetype `quarto` defensively in `lua/defaults/init.lua`. Execution does **not** go through quarto-nvim's own runner — it reuses Molten exactly like Python: register R as a Jupyter kernel via IRkernel (`install.packages("IRkernel"); IRkernel::installspec()`, a one-time machine-wide step, unlike per-project `jkernel` venvs), then pick it from `<leader>mi`. `molten_cells()` in `lua/defaults/keymaps.lua` matches both plain jupytext fences (` ```python `) and Quarto's curly-brace chunk headers (` ```{r} `, ` ```{python} `), so `<leader>rc`/`ra`/`rk`/`rj` work unchanged in `.qmd`. `<leader>tR` opens a persistent R REPL terminal (same `named_term` pattern as `<leader>tp`/`<leader>tN`). `<leader>op`/`<leader>oP` (`:QuartoPreview`/`:QuartoClosePreview`) run a live-reload document preview in a browser. Full workflow in [`docs/molten.md`](docs/molten.md#r--quarto).
 
 ### LaTeX
-Four layers, all of which hang off VimTeX initialising correctly:
+Five layers, all of which hang off VimTeX initialising correctly:
 - **`lua/plugins/vimtex.lua`** — VimTeX itself, `lazy = false` (its ftplugin must register before the first `.tex` buffer). **Pinned to `tag = "v2.18"`**: VimTeX HEAD raised its floor to Neovim 0.12.4 on 2026-07-22, and on an older Neovim the version gate `finish`es `ftplugin/tex.vim` *before* `vimtex#init()` — killing every mapping, the latexmk compiler, and `vimtex#syntax#in_mathzone()`. Drop the pin once Neovim is 0.12.4+.
-- **Viewer: Skim** (`vimtex_view_method = "skim"`, sync/activate/reading-bar on). Not sioyek — sioyek ships unsigned, so Gatekeeper kills it, and Homebrew deprecated the cask (disabled 2026-09-01). VimTeX drives Skim over AppleScript/JXA, so macOS may prompt for automation permission on first use.
+- **In-terminal preview: `lua/pdfview/tex.lua`** (`<leader>lv`, also visual; `<leader>lF` live follow). It builds on the PDF viewer (see **PDF viewer** below). Forward search runs `synctex view` once per line, and the `h/v/W/H` boxes become accent highlights. Inverse search maps the clicked page point to `synctex edit -o page:x:y:pdf`. Paths need `simplify()` because synctex reports `dir/./file`. The PDF comes from `b:vimtex.compiler.get_file('pdf')`; v2.18 has no `b:vimtex.out()`. `VimtexEventCompiling`/`CompileFailed`/`CompileSuccess` set the winbar status. Success with `config.follow` re-syncs to the cursor. Outside a graphics terminal it falls back to `:VimtexView`.
+- **External viewer: Skim** (`<leader>lV`) (`vimtex_view_method = "skim"`, sync/activate/reading-bar on). Not sioyek — sioyek ships unsigned, so Gatekeeper kills it, and Homebrew deprecated the cask (disabled 2026-09-01). VimTeX drives Skim over AppleScript/JXA, so macOS may prompt for automation permission on first use.
 - **LSP/format** — `texlab` (mason `ensure_installed`) and `latexindent` for `tex` in conform.
 - **Snippets** — `lua/snippets/tex.lua`, a Castel-style set loaded by LuaSnip's `from_lua` loader. Math-mode autosnippets gate on `vimtex#syntax#in_mathzone()`, so **they die silently whenever VimTeX fails to init** — check VimTeX first if snippets stop firing.
 
 Treesitter highlighting is deliberately `disable`d for `latex` (`lua/plugins/treesitter.lua`) so VimTeX owns syntax + conceal; the parser stays installed for folding/textobjects/context.
 
-Debugging tip: VimTeX starts viewers **detached**, so viewer failures are invisible inside Neovim (`<leader>lv` just does nothing). Run `<leader>li` (`:VimtexInfo`) and reproduce the printed viewer command in a shell, where stderr is visible.
+Debugging tip: VimTeX starts viewers **detached**, so Skim failures are invisible inside Neovim (`<leader>lV` just does nothing). Run `<leader>li` (`:VimtexInfo`) and reproduce the printed viewer command in a shell, where stderr is visible.
+
+### PDF viewer
+`lua/pdfview/` (a plain module; `require("pdfview").setup()` in `lua/defaults/init.lua` only claims `*.pdf` via `BufReadCmd` and sweeps stale caches) draws PDFs inside Neovim with kitty graphics. It is used by the LaTeX preview (`kind = "tex"`, a nofile split) and for any opened `.pdf` (`kind = "file"`, `buftype=nowrite` so sessions keep it). Files: `render.lua` (rasterising + caches), `viewer.lua` (one object per buffer: navigation, zoom, spread, search, links, highlights, keymaps), `tex.lua` (VimTeX/SyncTeX), `store.lua` (per-PDF page/zoom/spread/colours in `stdpath("state")/pdfview.json`).
+- **Pipeline:** pages are rasterised once per scale (`pdftoppm`), recoloured by ImageMagick and stored as memory-mapped `.mpc` under `stdpath("cache")/pdfview/<pid>` (per process; dead pids are swept, 16-entry LRU). Each render then crops the viewport from those into one window-sized PNG plus highlight rectangles: about 0.15 s, versus about 0.6 s re-rasterising at retina sizes. `pdftoppm -x/-y/-W/-H` is **not** faster than a full page (poppler rasterises it all), so crops are only for pages above `max_pixels` (high zoom). The neighbouring view is prefetched. Single pages are placed with `-extent` and a negative offset; a blank-canvas composite costs about 0.1 s more, so it's only used for spreads. Caches are keyed on the PDF's mtime.
+- **Sizing:** snacks sizes images by their DPI (`size / dpi * 96 * scale`) and never enlarges, so every PNG is window-sized and stamped `-density 1`. snacks then always "shrinks to fit", a no-op that keeps pixels 1:1 with cells, which inverse search and link clicks rely on. Use `winheight()`, not `nvim_win_get_height()`, which counts the winbar; `getmousepos().winrow` counts it too. The viewport is kept in **PDF points** (`vx`/`vy` on the "view" = one page or a spread), so zoom keeps the centre. The tex split is sized to the page aspect; pages aren't necessarily A4 (the user's `cas-dc` reports are 210×280 mm).
+- **Colours:** in "theme", ink becomes the Normal fg and the paper becomes alpha (ink = 1 − min(R,G,B)). Raster figures keep their colours, using `<image>` boxes from `pdftohtml -xml -zoom 1`, run per page. The same run gives link geometry: an `<a href>` inside a `<text>` run, where `x.html#N` is an internal link to page N. Vector figures still recolour.
+- **Search** uses `pdftotext -bbox` words (whole document, cached per mtime). Matches span word boundaries; a hit highlights whole words.
+- **snacks conflict:** snacks.image also claims `*.pdf` (page 1 as a picture). `claim_from_snacks()` drops `pdf` from `Snacks.image.config.formats` before snacks' one-time setup and clears its `BufReadCmd *.pdf` if setup already ran. Every image buffer gets `filetype=image` from snacks, which is in cursorline's `skip_ft`.
+- **Sessions:** the preview's nofile window is closed on `PersistenceSavePre`, recorded in `g:Session_pdfview` and re-opened on `PersistenceSavePost` (unless exiting) and on `PersistenceLoadPost`.
+- It deliberately does not use image.nvim, whose global `max_height = 12` (sized for Molten) would clip a page.
 
 ## Adding a plugin
 
@@ -133,7 +144,9 @@ The authoritative human-facing reference is the in-editor `:help` documentation 
 | `<leader>oi` | Molten open image output externally |
 | `<leader>op` / `<leader>oP` | Quarto: start / stop live-reload preview |
 | `<leader>ll` / `<leader>lo` | LaTeX: compile continuous / once |
-| `<leader>lv` / `<leader>lk` | LaTeX: view PDF / stop compile |
+| `<leader>lv` / `<leader>lV` | LaTeX: preview PDF in a kitty split / view in Skim |
+| `<leader>lF` | LaTeX: toggle live follow in the preview |
+| `<leader>lk` | LaTeX: stop compile |
 | `<leader>lc` / `<leader>lC` | LaTeX: clean aux / aux + PDF |
 | `<leader>le` / `<leader>lt` | LaTeX: error list / table of contents |
 | `<leader>li` | LaTeX: project info (first stop when debugging) |
@@ -157,6 +170,7 @@ The authoritative human-facing reference is the in-editor `:help` documentation 
 - `lazygit` binary (for lazygit.nvim)
 - `gh` CLI, authenticated (`gh auth login`) — optional; powers the dashboard's GitHub stats line (PRs, issues, contributions, streak). Without it the line simply doesn't render.
 - `make` (for telescope-fzf-native)
+- `poppler` (`pdftoppm`, `pdfinfo`, `pdftohtml`, `pdftotext`) and ImageMagick (`magick`), both via Homebrew, for the in-terminal PDF viewer (`lua/pdfview/`)
 - An `nvim()` zsh wrapper in `~/.zshrc` (not in this repo) — optional; sets `$NVIM_CWD_FILE` so `lua/defaults/shell_cwd.lua` can write Neovim's final cwd on exit and the shell `cd`s there (cd-on-quit, e.g. after the dashboard's `d` directory picker). The module unsets the var so `:terminal` shells don't inherit it.
 - `~/.virtualenvs/neovim` venv with `pynvim`, `jupyter_client`, `jupytext` (Neovim Python host / Molten / jupytext.nvim)
 - `~/.local/bin/jkernel` helper script for registering/removing per-project Jupyter kernels (see [`docs/molten.md`](docs/molten.md)). Not part of this repo — lives in `~/.local/bin`.

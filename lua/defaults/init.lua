@@ -47,6 +47,9 @@ vim.api.nvim_create_autocmd("ColorScheme", {
 -- registered after the strip above so it runs second.
 require("defaults.cursorline")
 
+-- In-terminal PDF viewer: claims *.pdf buffers; the rest loads on first use.
+require("pdfview").setup()
+
 -- Build help tags for this config's own docs so `:help nvim-config` resolves.
 -- Cheap and idempotent: only runs when doc/tags is missing (e.g. fresh clone).
 local doc_dir = vim.fn.stdpath("config") .. "/doc"

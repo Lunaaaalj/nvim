@@ -24,6 +24,7 @@ nvim-keymaps-latex	nvim-keymaps.txt	/*nvim-keymaps-latex*
 nvim-keymaps-lsp	nvim-keymaps.txt	/*nvim-keymaps-lsp*
 nvim-keymaps-motion	nvim-keymaps.txt	/*nvim-keymaps-motion*
 nvim-keymaps-notebooks	nvim-keymaps.txt	/*nvim-keymaps-notebooks*
+nvim-keymaps-pdf	nvim-keymaps.txt	/*nvim-keymaps-pdf*
 nvim-keymaps-quit	nvim-keymaps.txt	/*nvim-keymaps-quit*
 nvim-keymaps-session	nvim-keymaps.txt	/*nvim-keymaps-session*
 nvim-keymaps-terminal	nvim-keymaps.txt	/*nvim-keymaps-terminal*
@@ -47,6 +48,7 @@ nvim-plugins-git	nvim-plugins.txt	/*nvim-plugins-git*
 nvim-plugins-lsp	nvim-plugins.txt	/*nvim-plugins-lsp*
 nvim-plugins-navigation	nvim-plugins.txt	/*nvim-plugins-navigation*
 nvim-plugins-notebooks	nvim-plugins.txt	/*nvim-plugins-notebooks*
+nvim-plugins-pdfview	nvim-plugins.txt	/*nvim-plugins-pdfview*
 nvim-plugins-prose	nvim-plugins.txt	/*nvim-plugins-prose*
 nvim-plugins-testdebug	nvim-plugins.txt	/*nvim-plugins-testdebug*
 nvim-plugins-ui	nvim-plugins.txt	/*nvim-plugins-ui*

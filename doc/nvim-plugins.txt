@@ -310,15 +310,26 @@ vimtex ~  (lervag/vimtex)                              *nvim-plugins-vimtex*
   disables all math autosnippets in `lua/snippets/tex.lua`. v2.18 is the last
   tag accepting Neovim 0.10+. Drop the pin after upgrading to 0.12.4.
 
-  Viewer: Skim, with forward search, window activation and the reading bar
-  enabled; `vimtex_view_forward_search_on_start` is off, so `<leader>lv` is
-  the explicit way to open the PDF. Skim is driven over AppleScript/JXA
-  rather than CLI flags, so macOS may ask for automation permission the first
-  time Neovim controls it (Settings -> Privacy & Security -> Automation);
-  denying it makes `<leader>lv` fail silently.
+  In-terminal preview (`<leader>lv`): in kitty the PDF opens in a split on
+  the right, using the PDF viewer below (|nvim-plugins-pdfview|). Forward
+  search highlights the cursor line (or visual selection) on the page.
+  Clicking the page jumps back to the source. After every compile the page
+  re-renders, and with `follow` on it re-syncs to the cursor. While a
+  compile runs, the winbar shows "compiling"; a failed compile shows
+  "compile failed" until the next success, so a stale PDF is never mistaken
+  for a fresh one. `<leader>lF` turns on live follow (sync on CursorHold).
+  Outside a graphics terminal `<leader>lv` falls back to Skim.
 
-  Note that VimTeX starts viewers detached, so *any* viewer failure is
-  invisible from inside Neovim. When `<leader>lv` appears to do nothing, run
+  Viewer (VimTeX / `<leader>lV`): Skim, with forward search, window
+  activation and the reading bar enabled;
+  `vimtex_view_forward_search_on_start` is off, so a map is the explicit way
+  to open the PDF. Skim is driven over AppleScript/JXA rather than CLI flags,
+  so macOS may ask for automation permission the first time Neovim controls
+  it (Settings -> Privacy & Security -> Automation); denying it makes
+  `<leader>lV` fail silently.
+
+  Note that VimTeX starts viewers detached, so *any* Skim failure is
+  invisible from inside Neovim. When `<leader>lV` appears to do nothing, run
   `<leader>li` (:VimtexInfo) and try the printed viewer command in a shell,
   where stderr is actually visible.
 
@@ -328,6 +339,31 @@ vimtex ~  (lervag/vimtex)                              *nvim-plugins-vimtex*
 
   Maps: see |nvim-keymaps-latex| for the `<leader>l...` group, text objects
   and snippets. VimTeX's own `\l...` maps remain available too.
+
+pdfview ~  (lua/pdfview, local)                       *nvim-plugins-pdfview*
+  A PDF viewer drawn inside Neovim with kitty graphics, used by the LaTeX
+  preview and for any `.pdf` opened as a buffer (`:e paper.pdf`). It needs
+  poppler (`pdftoppm`, `pdfinfo`, `pdftohtml`, `pdftotext`), ImageMagick and,
+  for SyncTeX, TeX's `synctex`. Outside a graphics terminal, `.pdf` files go
+  to the system viewer.
+    - Rendering: each page is rasterised once per scale into ImageMagick's
+      memory-mapped `.mpc`. Scrolling crops from that (~0.15 s), and the
+      neighbouring pages are pre-rendered so page turns are as fast. Very
+      high zooms render viewport crops straight from the PDF.
+    - Colours: "theme" puts ink in the Normal fg and makes the paper
+      transparent. Figures (raster images, located with pdftohtml) keep
+      their own colours. `c` toggles back to paper.
+    - Search: `/` searches the text layer (pdftotext). Matches are
+      highlighted in the scheme's Search/CurSearch colours.
+    - Links: clicking a `\ref`/citation link goes to its page (`<C-o>`
+      back); URLs open in the browser. Otherwise the click is a SyncTeX
+      inverse search, which works for any PDF with a .synctex.gz.
+    - Layout: two-page spread (`s`), and a reading float for the LaTeX
+      preview (`z`).
+    - Memory: page, zoom, spread and colours are remembered per PDF in
+      `stdpath("state")/pdfview.json`. Sessions reopen the LaTeX preview
+      (lua/plugins/persistence.lua).
+  Maps: |nvim-keymaps-pdf|.
 
 ==============================================================================
 9. COLORSCHEMES                                   *nvim-plugins-colorschemes*
