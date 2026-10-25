@@ -338,7 +338,35 @@ Compile & view ~
 
   <leader>ll    Toggle continuous compilation (:VimtexCompile)
   <leader>lo    Compile once, single shot (:VimtexCompileSS)
-  <leader>lv    View the PDF, forward-searching to the cursor (:VimtexView)
+  <leader>lv    Preview the PDF in a split on the right, drawn with kitty
+                graphics, highlighting the cursor line on its page
+                (lua/pdfview). In visual mode it highlights the selected
+                lines. Again re-syncs. Falls back to Skim outside kitty.
+  <leader>lV    View the PDF in Skim, forward-searching (:VimtexView)
+  <leader>lF    Toggle live follow: the preview tracks the cursor on
+                CursorHold
+
+PDF viewer ~                                              *nvim-keymaps-pdf*
+
+The LaTeX preview and any `.pdf` opened as a buffer share these maps
+(`?` inside the viewer lists them).
+
+  j / k, wheel    Scroll; past the page edge, flow to the next/previous
+  h / l           Pan sideways when zoomed, else previous/next page
+  <C-d> / <C-u>   Half a screen down / up
+  J / K           Next / previous page (also <Space> / <BS>, <PageDown> /
+                  <PageUp>); counts work; a spread turns two pages
+  gg / G          First / last page; {N}G goes to page N
+  + / - / 0 / w   Zoom in / out / fit page / fit width
+  s               Toggle two-page spread
+  / n N           Search the text (smartcase); next / previous match
+  click, <CR>     Follow the link under the mouse; otherwise jump to the
+                  source line (SyncTeX) and highlight it on the page
+  <C-o>           Back to where you were before a link or search jump
+  c               Toggle colours: colorscheme (default) / paper
+  x / <Esc>       Clear the SyncTeX highlight and the search
+  z / f           LaTeX preview only: reading mode (float) / live follow
+  r / q / ?       Re-render / close / list these maps
   <leader>lk    Stop compilation for this project (:VimtexStop)
   <leader>lK    Stop every running compilation (:VimtexStopAll)
   <leader>lc    Clean auxiliary files (:VimtexClean)
