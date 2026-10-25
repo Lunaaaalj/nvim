@@ -22,6 +22,7 @@ nvim-keymaps-git	nvim-keymaps.txt	/*nvim-keymaps-git*
 nvim-keymaps-harpoon	nvim-keymaps.txt	/*nvim-keymaps-harpoon*
 nvim-keymaps-latex	nvim-keymaps.txt	/*nvim-keymaps-latex*
 nvim-keymaps-lsp	nvim-keymaps.txt	/*nvim-keymaps-lsp*
+nvim-keymaps-markdown	nvim-keymaps.txt	/*nvim-keymaps-markdown*
 nvim-keymaps-motion	nvim-keymaps.txt	/*nvim-keymaps-motion*
 nvim-keymaps-notebooks	nvim-keymaps.txt	/*nvim-keymaps-notebooks*
 nvim-keymaps-pdf	nvim-keymaps.txt	/*nvim-keymaps-pdf*

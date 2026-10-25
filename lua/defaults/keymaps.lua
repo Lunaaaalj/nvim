@@ -201,6 +201,20 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 
+-- Markdown preview (lua/pdfview/markdown.lua): the LaTeX preview's split, fed
+-- by pandoc -> typst. Buffer-local for the same reason as the LaTeX maps.
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "markdown",
+  group = vim.api.nvim_create_augroup("MarkdownPreviewKeymaps", { clear = true }),
+  callback = function(ev)
+    local md = function() return require("pdfview.markdown") end
+    vim.keymap.set({ "n", "x" }, "<leader>pv", function() md().view() end,
+      { buffer = ev.buf, silent = true, desc = "Markdown: preview in a split (sync to cursor)" })
+    vim.keymap.set("n", "<leader>pF", function() md().toggle_live() end,
+      { buffer = ev.buf, silent = true, desc = "Markdown: toggle live follow in the preview" })
+  end,
+})
+
 vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, { desc = "Show diagnostic" })
 
 -- bufferline navigation

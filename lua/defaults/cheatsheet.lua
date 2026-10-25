@@ -141,6 +141,7 @@ local sections = {
     { "<leader>ll / lo", "Compile continuous / once" },
     { "<leader>lv / lV", "Preview PDF in a kitty split / in Skim" },
     { "<leader>lF", "Toggle live follow (preview tracks the cursor)" },
+    { "<leader>pv / pF", "Markdown: preview in a split / live follow" },
     { "PDF: j k / J K", "Scroll (flows across pages) / turn page" },
     { "PDF: + - 0 w / s", "Zoom in / out / fit page / width; s spread" },
     { "PDF: / n N", "Search the text, next / previous match" },

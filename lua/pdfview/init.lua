@@ -4,6 +4,7 @@
 --   lua/pdfview/viewer.lua  one viewer per PDF buffer: navigation, zoom, spread,
 --                           search, links, highlights, keymaps
 --   lua/pdfview/tex.lua     LaTeX preview split, SyncTeX, compile status
+--   lua/pdfview/markdown.lua Markdown preview (pandoc -> typst), text-matched sync
 --   lua/pdfview/store.lua   per-PDF page/zoom memory
 --
 -- This file is required at startup (lua/defaults/init.lua) only to claim
@@ -19,12 +20,24 @@ M.config = {
   zoom_step = 1.2,
   scroll = 0.15, -- j/k step, as a fraction of the visible height
   prefetch = true, -- render the neighbouring pages in the background
+  markdown = {
+    from = "gfm", -- GitHub's dialect: its heading ids match README #anchors ($math$ and footnotes included)
+    delay = 300, -- ms after the last edit before re-rendering
+    width = 0.5, -- preview split width, as a fraction of the editor
+    -- Page width per split column (points; 11pt text). Tying the width to the
+    -- split keeps the text the same size and reflows it when the split
+    -- resizes, like a browser; 100 columns -> 560pt (~50 ems a line, GitHub's
+    -- measure). The height follows the split's aspect, so a page fills it.
+    column_pt = 5.6,
+    args = {}, -- extra pandoc arguments
+  },
 }
 
 local root = vim.fn.stdpath("cache") .. "/pdfview"
 
 function M.supported()
   if not (_G.Snacks and Snacks.image.supports_terminal()) then return false end
+  -- synctex ships with TeX; the Markdown preview checks pandoc/typst itself
   for _, bin in ipairs({ "pdftoppm", "pdfinfo", "pdftohtml", "pdftotext", "magick", "synctex" }) do
     if vim.fn.executable(bin) == 0 then return false end
   end
@@ -61,48 +74,60 @@ function M.open_file(ev)
   vim.schedule(function() v:render() end)
 end
 
--- Sessions (lua/plugins/persistence.lua). The preview's nofile buffer can't be
+-- Sessions (lua/plugins/persistence.lua). A preview's nofile buffer can't be
 -- restored by :mksession, so it is closed before the save and re-launched from
--- the remembered TeX file afterwards. PDF files restore on their own: they
+-- the remembered source file afterwards. PDF files restore on their own: they
 -- have a name and come back through BufReadCmd.
-local reopen ---@type fun()?
+local previews = { tex = "pdfview.tex", md = "pdfview.markdown" }
+local reopen ---@type fun()[]
+
+-- Re-run `view()` of `mod` from window `win` without moving the focus.
+local function view_from(mod, win)
+  local cur = vim.api.nvim_get_current_win()
+  vim.api.nvim_set_current_win(win)
+  require(mod).view()
+  if vim.api.nvim_win_is_valid(cur) then vim.api.nvim_set_current_win(cur) end
+end
 
 function M.session_save_pre()
-  vim.g.Session_pdfview = ""
-  reopen = nil
-  local tex = package.loaded["pdfview.tex"]
-  local v = tex and tex.viewer
-  local win = v and vim.api.nvim_buf_is_valid(v.buf) and v:win()
-  if not win then return end
-  local tw = v.tex_win
-  local src = tw and vim.api.nvim_win_is_valid(tw) and vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(tw))
-  if not src or src == "" then return end
-  vim.g.Session_pdfview = vim.json.encode({ tex = src })
-  vim.api.nvim_win_close(win, true)
-  reopen = function()
-    local cur = vim.api.nvim_get_current_win()
-    vim.api.nvim_set_current_win(tw)
-    tex.view()
-    if vim.api.nvim_win_is_valid(cur) then vim.api.nvim_set_current_win(cur) end
+  local marker = {}
+  reopen = {}
+  for kind, mod in pairs(previews) do
+    local P = package.loaded[mod]
+    local v = P and P.viewer
+    local win = v and vim.api.nvim_buf_is_valid(v.buf) and v:win()
+    local sw = v and (v.tex_win or v.src_win)
+    if win and sw and vim.api.nvim_win_is_valid(sw) then
+      local src = vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(sw))
+      if src ~= "" then
+        marker[kind] = src
+        vim.api.nvim_win_close(win, true)
+        table.insert(reopen, function() view_from(mod, sw) end)
+      end
+    end
   end
+  vim.g.Session_pdfview = next(marker) and vim.json.encode(marker) or ""
 end
 
 function M.session_save_post()
   local exiting = vim.v.exiting ~= nil and vim.v.exiting ~= vim.NIL
-  if reopen and not exiting then reopen() end
+  if not exiting then
+    for _, f in ipairs(reopen or {}) do
+      if vim.api.nvim_win_is_valid(vim.api.nvim_get_current_win()) then pcall(f) end
+    end
+  end
   reopen = nil
 end
 
 function M.session_restore()
   local ok, s = pcall(vim.json.decode, vim.g.Session_pdfview or "")
-  if not (ok and type(s) == "table" and s.tex) then return end
-  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-    if vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(win)) == s.tex then
-      local cur = vim.api.nvim_get_current_win()
-      vim.api.nvim_set_current_win(win)
-      require("pdfview.tex").view()
-      if vim.api.nvim_win_is_valid(cur) then vim.api.nvim_set_current_win(cur) end
-      return
+  if not (ok and type(s) == "table") then return end
+  for kind, src in pairs(s) do
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+      if previews[kind] and vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(win)) == src then
+        view_from(previews[kind], win)
+        break
+      end
     end
   end
 end
