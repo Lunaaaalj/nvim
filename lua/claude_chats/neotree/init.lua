@@ -17,9 +17,9 @@ local utils = require("neo-tree.utils")
 local chats = require("claude_chats")
 
 ---@class neotree.sources.Claude : neotree.Source
+-- No display_name: the tab label lives in lua/neotree_tabs.lua.
 local M = {
   name = "claude",
-  display_name = " \u{f086} Claude ",
 }
 
 local function chat_node(id, title, mtime, extra)

@@ -34,6 +34,12 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
   <leader>z     Toggle Zen mode
   <leader>d     Show diagnostic float (line diagnostics)
   <leader>cs    Pick colorscheme with live preview (persisted)
+  <leader>ub    Toggle transparent / solid background (persisted;
+                also `:ToggleTransparency`)
+  <leader>uB    Toggle dark / light 'background' (persisted; also
+                `:ToggleBackground`). Light forces solid until you go dark.
+  <leader>uc    Cycle cursorline style: number / underline / band
+                (transparent mode)
   <leader>ut    Toggle treesitter sticky context header
   <leader>up    Toggle precognition motion hints
   <leader>sn    Show notification history (Noice)
@@ -55,6 +61,17 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
   <Tab>         Next buffer        (bufferline)
   <S-Tab>       Previous buffer    (bufferline)
   <leader>x     Close the current buffer (preserves window layout)
+  :q            Close the current BUFFER, not Neovim      *nvim-keymaps-quit*
+                (`lua/defaults/bufclose.lua`). In a split, a float, neo-tree
+                or with several tabs it just closes that window/tab. In the
+                last editing window it shows the next buffer (files before
+                terminals, then most recent), or the dashboard when none is
+                left; `:q` on that dashboard quits. Modified buffers prompt
+                Save / Discard / Cancel. Terminals and unlisted buffers are
+                hidden, not deleted, so their jobs keep running.
+  :q!  :wq  :wq!  Same, discarding / writing first.
+  :quit         The full word keeps Vim's normal behaviour (escape hatch).
+  <leader>qq    Quit Neovim (`:qall`; prompts for unsaved changes)
 
 ==============================================================================
 3. FIND, FILES & SEARCH                                   *nvim-keymaps-find*
@@ -67,16 +84,28 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
                       auto-opens if only one other window exists)
                   s   open in a vertical split    S  horizontal split
                   t   open in a new tab
-  <leader>t     Terminal: toggle shell #1 in the side panel
-  <leader>tn    Terminal: open a new shell (next free id)
-  <leader>ts    Terminal: select / switch between open shells (:TermSelect)
-  <leader>tf    Terminal: floating terminal
-  <leader>th    Terminal: horizontal (bottom) terminal
+                                                       *nvim-keymaps-terminal*
+  <C-\>         Terminal: toggle the last used one (also in terminal mode);
+                closes the terminal you're in. 2<C-\> toggles shell #2.
+  <leader>tt    Terminal: toggle the last used one (same as <C-\>)
+  <leader>tn    Terminal: new shell in the cwd (first free id)
+  <leader>t.    Terminal: new shell in the current file's directory
+  <leader>tg    Terminal: new shell at the project (git) root
+  <leader>ts    Terminal: Telescope picker with scrollback preview
+                (<C-r> rename, <C-x> kill, <C-n> new shell)
+  <leader>te    Terminal: neo-tree Terminals tab
+                (a/n new, d kill, r rename, f float, x quickfix, . repeat)
+  <leader>tf    Terminal: show the current one as a float (toggle)
+  <leader>th    Terminal: show the current one as a bottom panel (toggle)
+  <leader>tl    Terminal: send line ([count] lines) / visual selection
+  <leader>tr    Terminal: re-run the last command (no need to switch)
+  <leader>tq    Terminal: last command's output -> quickfix (Trouble)
+  <leader>tk    Terminal: kill the current one (asks if a command runs)
+  <leader>tm    Terminal: rename the current one (empty = automatic)
   <leader>tp    Terminal: Python REPL    <leader>tN  Node REPL
                 <leader>tR  R REPL
-  2<C-\>        Open numbered shell #2 (prefix <C-\> with a count for any id)
-                Each terminal's winbar shows a tab-strip of all open shells,
-                with the current one bracketed. In terminal mode, <C-h/j/k/l>
+                Each terminal's winbar shows a tab-strip of all terminals
+                ("<id> <state> <name>"). In terminal mode, <C-h/j/k/l>
                 jump to other windows and <Esc><Esc> returns to normal mode.
   -             Oil: open the parent directory as an editable buffer
   <leader>sr    Search & replace across files (grug-far); prefills a
@@ -179,6 +208,10 @@ Spell-check (auto-enabled for tex/markdown/gitcommit/text):
   ]s  /  [s     Next / previous misspelled word
   z=            Suggest corrections
 
+  The language is English unless a `.spelllang` file exists in the buffer's
+  directory or any parent; its first line is used as 'spelllang' (e.g.
+  `es,en`). Missing dictionaries are offered for download on first use.
+
 ==============================================================================
 7. COMPLETION (INSERT MODE)                        *nvim-keymaps-completion*
 
@@ -269,6 +302,7 @@ Adapters: Python (debugpy via the neovim venv) and C/C++ (codelldb). For C/C++,
   <leader>ql    Restore the last session
   <leader>qS    Select a session to restore
   <leader>qd    Stop saving the session on exit
+  <leader>qq    Quit Neovim (see |nvim-keymaps-quit|)
 
 ==============================================================================
 13. NOTEBOOKS (MOLTEN / QUARTO)                       *nvim-keymaps-notebooks*

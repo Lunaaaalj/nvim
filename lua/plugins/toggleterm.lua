@@ -1,10 +1,12 @@
+-- toggleterm only draws the terminal windows; ids, names, state, sending and
+-- sessions live in lua/terminals/ (keymaps in lua/defaults/keymaps.lua).
 return {
   "akinsho/toggleterm.nvim",
   version = "*",
   opts = {
-    -- Count-prefix <C-\> to open numbered shells, VSCode-style: 2<C-\> opens
-    -- terminal #2, 3<C-\> opens #3, etc. Each id is an independent persistent shell.
-    open_mapping = [[<C-\>]],
+    -- <C-\> is mapped by lua/terminals (count-aware, toggles the last used
+    -- terminal), so toggleterm's own toggle-all mapping is off.
+    open_mapping = nil,
     -- Default to a side (vertical) panel; make the size sensible per direction.
     direction = "vertical",
     size = function(term)
@@ -17,7 +19,6 @@ return {
     persist_size = true,
     persist_mode = true,
     start_in_insert = true,
-    terminal_mappings = true, -- the terminal-mode maps below also work inside terms
     -- Don't darken the terminal background — keep it transparent so the
     -- Alacritty background shows through like every other window.
     shade_terminals = false,
@@ -29,26 +30,21 @@ return {
       WinBarNC = { guibg = "NONE" },
     },
     float_opts = { border = "rounded" },
-    -- Per-terminal winbar rendered as a tab-strip of ALL open terminals, with the
-    -- one owning this window bracketed — so each terminal shows which shell you're
-    -- in and what else is open (the VSCode terminal tabs). name_formatter is called
-    -- once per terminal window; we ignore the per-term arg's name and rebuild the
-    -- whole strip, marking `term`'s own id.
+    -- Every terminal (including ones made by :ToggleTerm / :TermExec) reports
+    -- to lua/terminals, which tracks its state and names.
+    on_create = function(t) require("terminals").attach(t) end,
+    on_open = function(t) require("terminals").on_open(t) end,
+    on_exit = function(t) require("terminals").on_exit(t) end,
+    -- Winbar = a tab-strip of all terminals. toggleterm calls name_formatter
+    -- once per terminal and highlights the window's own one (WinBarActive);
+    -- each label is "<id> <state glyph> <name>".
     winbar = {
       enabled = true,
-      name_formatter = function(term)
-        local ok, mod = pcall(require, "toggleterm.terminal")
-        if not ok then
-          return ("%d: %s"):format(term.id, term.display_name or "term")
-        end
-        local parts = {}
-        for _, t in ipairs(mod.get_all()) do
-          local nm = t.display_name or vim.fn.fnamemodify(t.name or "term", ":t")
-          local label = ("%d:%s"):format(t.id, nm)
-          parts[#parts + 1] = (t.id == term.id) and ("[" .. label .. "]") or (" " .. label .. " ")
-        end
-        return table.concat(parts, " ")
-      end,
+      name_formatter = function(term) return require("terminals").winbar_label(term) end,
     },
   },
+  config = function(_, opts)
+    require("toggleterm").setup(opts)
+    require("terminals").setup()
+  end,
 }

@@ -25,7 +25,8 @@ return {
       offsets = {
         {
           filetype = "neo-tree",
-          text = "  Explorer",
+          -- active neo-tree source (icon + name), since its tabs are icon-only
+          text = function() return require("neotree_tabs").active_label() end,
           highlight = "Directory",
           text_align = "left",
           separator = true,

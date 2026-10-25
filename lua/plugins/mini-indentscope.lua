@@ -17,7 +17,8 @@ return {
             options = { try_as_border = true },
             draw = {
                 delay = 80,
-                animation = require("mini.indentscope").gen_animation.none(),
+                -- the guide grows out from the cursor instead of popping in
+                animation = require("mini.indentscope").gen_animation.quadratic({ easing = "out", duration = 80, unit = "total" }),
             },
         })
     end,

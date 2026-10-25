@@ -6,7 +6,7 @@ return {
     priority = 1000,
     init = function()
         vim.g.gruvbox_material_background = "medium" -- "hard" | "medium" | "soft"
-        vim.g.gruvbox_material_transparent_background = 2 -- 0 off, 1/2 transparent
+        vim.g.gruvbox_material_transparent_background = vim.g.ui_transparent and 2 or 0 -- 0 off, 1/2 transparent
         vim.g.gruvbox_material_enable_italic = true
         vim.g.gruvbox_material_better_performance = 1
     end,

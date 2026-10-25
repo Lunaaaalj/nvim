@@ -8,7 +8,7 @@ return {
     lazy = false,
     priority = 1000,
     init = function()
-        local transparent = { transparent_background = true }
+        local transparent = { transparent_background = vim.g.ui_transparent }
         vim.g.zenbones = transparent
         vim.g.neobones = transparent
         vim.g.forestbones = transparent

@@ -2,7 +2,7 @@ return {
     "rebelot/kanagawa.nvim",
     config = function()
         require("kanagawa").setup({
-            transparent = true, -- do not set a background color
+            transparent = vim.g.ui_transparent, -- do not set a background color (<leader>ub)
         })
     end,
 }

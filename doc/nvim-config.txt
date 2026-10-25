@@ -100,7 +100,6 @@ Directory layout:
                       returns a lazy.nvim spec table. lazy.nvim auto-imports
                       everything in this directory.
   - `lazy-lock.json`  Locked plugin versions.
-  - `.colorscheme`    Persisted colorscheme name (see below).
 
 To add a plugin, create a new file under `lua/plugins/` returning a spec: >
      return {
@@ -117,13 +116,13 @@ Set in `lua/defaults/options.lua`:
   - `autoindent` + `smartindent`  Automatic indentation.
   - `wrap` + `linebreak`          Soft-wrap long lines at word boundaries.
   - `netrw_banner = 0`            Hide the netrw banner.
-  - `cursorline` (number,line)    Active window only: the line number is
-                                  highlighted and the current line gets a
-                                  subtle underline. The `CursorLine` group's
-                                  background is stripped on ColorScheme (see
-                                  |nvim-config-colorscheme|) so it stays
-                                  transparent — the underline is what reads.
-                                  Autocmds toggle it off in inactive windows.
+  - `cursorline`                  Only in the focused regular-file window;
+                                  off in inactive splits, terminals, floats
+                                  (incl. Zen), the dashboard, lazy and mason.
+                                  neo-tree keeps its own selection line. Set
+                                  `w:no_cursorline` to opt a window out.
+                                  Styling lives in `lua/defaults/cursorline.lua`;
+                                  see |nvim-config-cursorline|.
   - `fillchars`                   Clean window chrome: blank `eob` (no `~` on
                                   empty lines), thin `│` window separator, `─`
                                   horizontal split, and fold arrows.
@@ -148,30 +147,66 @@ Python host (`lua/defaults/init.lua`): `g:python3_host_prog` points at
 6. COLORSCHEMES & TRANSPARENCY                     *nvim-config-colorscheme*
 
 Persistence ~
-The last-used colorscheme is written to `.colorscheme` in the config root and
-restored on startup (fallback: `kanso`). Any `:colorscheme` call triggers an
-autocmd that saves the name, so your choice survives restarts.
+The last-used colorscheme is written to `stdpath("state")/colorscheme`
+(machine-local, outside the config repo, so theme changes never show up in
+`git status`) and restored on startup. Any `:colorscheme` call triggers an
+autocmd that saves the name, so your choice survives restarts. If the saved
+scheme can't be loaded (removed plugin, typo, fresh machine), startup falls
+back to `kanso` instead of erroring. A legacy `.colorscheme` in the config
+root is migrated once, then ignored (it is in `.gitignore`).
 
 Picker ~
   - `<leader>cs`   Opens Telescope with live colorscheme preview; the
                    selection is persisted automatically.
 
 Universal transparency ~
-Every scheme renders with no editor background so the terminal background
-shows through. This is enforced two ways:
-  1. Native `transparent` options set per-plugin where supported.
+By default every scheme renders with no editor background so the terminal
+background shows through. This is enforced two ways, both driven by
+`g:ui_transparent`:
+  1. Native `transparent` options set per-plugin where supported (each theme
+     spec passes `vim.g.ui_transparent` instead of a literal `true`).
   2. A global `ColorScheme` autocmd in `lua/defaults/init.lua` strips the
      background of core highlight groups (`transparent_groups`) after ANY
      scheme loads — covering schemes without a transparency option (e.g.
      melange). Add new groups to that list if a plugin leaves a background.
+     It does nothing in solid mode.
 
-Note: light colorschemes only look right if the terminal background is also
-light, since transparency means the terminal background is what shows.
+Current line ~                                       *nvim-config-cursorline*
+In transparent mode the style comes from `g:cursorline_style`, cycled with
+`<leader>uc` (not persisted):
+  `number`     Accent, bold line number only, no line decoration (default).
+               The accent is the scheme's `Function` fg.
+  `underline`  One faint rule in a single colour (explicit `sp` = `LineNr`
+               fg, so it doesn't change colour under every token).
+  `band`       A soft tint (Normal fg blended ~7% into black/white). Over a
+               translucent Alacritty this needs
+               `colors.transparent_background_colors = true` in
+               `alacritty.toml`, otherwise it is drawn as an opaque stripe.
+In solid mode (|nvim-config-ui-toggle|) the scheme's own `CursorLine` band and
+`CursorLineNr` are kept as is.
+
+Toggles ~                                             *nvim-config-ui-toggle*
+  `<leader>ub`  `:ToggleTransparency`  transparent <-> solid background
+  `<leader>uB`  `:ToggleBackground`    'background' dark <-> light
+Both live in `lua/defaults/ui_toggle.lua` and persist to
+`stdpath("state")/ui.json`, restored before lazy.nvim loads the themes. A
+toggle re-runs the active theme's lazy `init`/`config` (nightfox and
+catppuccin recompile automatically when their options change) and reloads it.
+
+Light colorschemes only look right over a light background, so switching to
+light while transparent forces solid mode, and switching back to dark restores
+transparency. A scheme with no variant for the target is left as is, with a
+warning: either it pins 'background' back (nightfox; use dayfox) or it just
+keeps drawing dark (vesper). The toggle checks the colors the scheme actually
+drew, not just 'background'. In Alacritty, solid mode also
+sets `window.opacity=1` live via `alacritty msg config`; transparent mode and
+quitting Neovim reset it to the value in `alacritty.toml`.
 
 Installed schemes (one file each under `lua/plugins/`): catppuccin, kanagawa,
-kanso, lackluster, nightfox, everforest, melange, gruvbox-material, and
-zenbones with its variants (forestbones, neobones, kanagawabones,
-seoulbones). See |nvim-plugins-colorschemes|.
+kanso, lackluster, nightfox, everforest, melange, gruvbox-material, zenbones
+with its variants (forestbones, neobones, kanagawabones, seoulbones), and a
+warm set: rose-pine, kanagawa-paper, bamboo, flexoki, evergarden, vesper. See
+|nvim-plugins-colorschemes|.
 
 ==============================================================================
 7. OTHER HELP FILES                                       *nvim-config-help*

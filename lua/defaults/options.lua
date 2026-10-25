@@ -31,22 +31,10 @@ vim.opt.swapfile = false
 vim.opt.scrolloff = 8
 vim.opt.signcolumn = "yes"
 
--- Highlight the current line number + a subtle underline on the line itself.
--- The CursorLine bg is stripped on ColorScheme (see init.lua) so it stays
--- transparent; the underline is what reads against the Alacritty background.
+-- Current line: only in the focused, regular-file window. Styling (accent
+-- line number by default, <leader>uc to cycle) and the per-window rules live
+-- in lua/defaults/cursorline.lua.
 vim.opt.cursorline = true
-vim.opt.cursorlineopt = "number,line"
-
--- Only show the cursorline in the focused window so inactive splits stay clean.
-local cursorline_grp = vim.api.nvim_create_augroup("ActiveCursorLine", { clear = true })
-vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter" }, {
-  group = cursorline_grp,
-  callback = function() vim.opt_local.cursorline = true end,
-})
-vim.api.nvim_create_autocmd({ "WinLeave" }, {
-  group = cursorline_grp,
-  callback = function() vim.opt_local.cursorline = false end,
-})
 
 -- Slight transparency on the popup menu and floating windows so they sit
 -- lightly over the (transparent) editor instead of reading as solid blocks.
@@ -103,13 +91,19 @@ vim.api.nvim_create_autocmd(
   }
 )
 
--- Prose/markup buffers: enable spell-check (English). z= suggests corrections,
--- ]s/[s jump between misspellings. Toggle per-buffer with <leader>us.
+-- Prose/markup buffers: enable spell-check. The language comes from the nearest
+-- .spelllang file above the buffer (one line, e.g. "es,en"), else English.
+-- z= suggests corrections, ]s/[s jump between misspellings. Toggle per-buffer with <leader>us.
 vim.api.nvim_create_autocmd("FileType", {
   pattern = { "tex", "plaintex", "markdown", "gitcommit", "text" },
-  callback = function()
+  callback = function(args)
     vim.opt_local.spell = true
-    vim.opt_local.spelllang = "en"
+    local marker = vim.fs.find(".spelllang", {
+      upward = true,
+      path = vim.fs.dirname(vim.api.nvim_buf_get_name(args.buf)),
+    })[1]
+    local lang = marker and vim.trim(vim.fn.readfile(marker, "", 1)[1] or "")
+    vim.opt_local.spelllang = (lang and lang ~= "") and lang or "en"
   end,
 })
 

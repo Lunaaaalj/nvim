@@ -1,6 +1,10 @@
 require("defaults.options")
 require("defaults.keymaps")
 require("defaults.lsp")
+require("defaults.shell_cwd")
+-- Transparency/background state must exist before lazy runs the theme specs,
+-- which read vim.g.ui_transparent in their setup().
+require("defaults.ui_toggle").restore()
 require("defaults.lazy")
 
 -- Register .qmd as filetype "quarto" defensively: quarto-nvim registers this
@@ -13,6 +17,8 @@ vim.filetype.add({ extension = { qmd = "quarto" } })
 -- the core editor groups so the Alacritty background shows through. This works
 -- even for colorschemes without a built-in transparency option (e.g. melange).
 -- Defined before the startup colorscheme load below so it also applies on boot.
+-- Skipped in solid mode (vim.g.ui_transparent = false, <leader>ub), where the
+-- scheme's own backgrounds are kept; see lua/defaults/ui_toggle.lua.
 local transparent_groups = {
   "Normal", "NormalNC", "NormalFloat", "FloatBorder", "FloatTitle",
   "SignColumn", "LineNr", "CursorLineNr", "FoldColumn", "EndOfBuffer",
@@ -30,14 +36,16 @@ local transparent_groups = {
 }
 vim.api.nvim_create_autocmd("ColorScheme", {
   callback = function()
+    if not vim.g.ui_transparent then return end
     for _, g in ipairs(transparent_groups) do
       -- only touch the bg attribute; fg/styles from the colorscheme are kept
       vim.cmd(("highlight %s guibg=NONE ctermbg=NONE"):format(g))
     end
-    -- Transparent-friendly current line: no bg band, just a subtle underline.
-    vim.cmd("highlight CursorLine guibg=NONE ctermbg=NONE gui=underline cterm=underline")
   end,
 })
+-- Current-line styling + per-window cursorline; its ColorScheme handler must be
+-- registered after the strip above so it runs second.
+require("defaults.cursorline")
 
 -- Build help tags for this config's own docs so `:help nvim-config` resolves.
 -- Cheap and idempotent: only runs when doc/tags is missing (e.g. fresh clone).
@@ -46,10 +54,21 @@ if vim.fn.filereadable(doc_dir .. "/tags") == 0 and vim.fn.isdirectory(doc_dir) 
   pcall(vim.cmd, "helptags " .. doc_dir)
 end
 
--- Load persisted colorscheme, fallback to kanso
-local cs_file = vim.fn.stdpath("config") .. "/.colorscheme"
+-- Load persisted colorscheme, fallback to kanso. It lives in stdpath("state")
+-- (machine-local, untracked) rather than the config repo. A missing scheme (a
+-- removed plugin, a typo, a fresh machine) falls back instead of erroring.
+local cs_file = vim.fn.stdpath("state") .. "/colorscheme"
+local legacy_cs_file = vim.fn.stdpath("config") .. "/.colorscheme"
+if vim.fn.filereadable(cs_file) == 0 and vim.fn.filereadable(legacy_cs_file) == 1 then
+  -- one-time migration from the old in-repo location
+  vim.fn.mkdir(vim.fn.fnamemodify(cs_file, ":h"), "p")
+  vim.fn.writefile(vim.fn.readfile(legacy_cs_file), cs_file)
+end
 local ok, cs = pcall(vim.fn.readfile, cs_file)
-vim.cmd("colorscheme " .. (ok and cs[1] or "kanso"))
+local name = ok and cs[1] or "kanso"
+if not pcall(vim.cmd.colorscheme, name) then
+  vim.cmd.colorscheme("kanso")
+end
 
 -- Colorscheme picker: opens Telescope with live preview; selection is persisted
 vim.keymap.set("n", "<leader>cs", function()
