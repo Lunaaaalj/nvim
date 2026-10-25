@@ -50,6 +50,9 @@ A `.luarc.json` at the config root configures lua_ls for this repo: it declares 
 ### Claude chats in buffers
 `lua/claude_chats/` (not a lazy spec — a plain module) runs `claude` in ordinary terminal buffers, any number at once, as an alternative to claudecode.nvim's single split. Each buffer gets the same env claudecode gives its own terminal (`ENABLE_IDE_INTEGRATION`, `CLAUDE_CODE_SSE_PORT` from `claudecode.server.init`'s port, loopback `no_proxy`), so IDE features keep working. New chats are spawned with a pre-generated `--session-id` and tagged `b:claude_chat`, which is how running buffers are matched to their session logs. Past sessions are read from `~/.claude/projects/<cwd with non-alnum → "-">/*.jsonl`; titles come from `custom-title` > `ai-title` > `last-prompt` lines (tail of file, cached by mtime). `claude_chats/neotree/` is a custom neo-tree source (`name = "claude"`) registered in `sources` in `lua/plugins/neo-tree.lua` (its tab icon/name, like every source's, lives in `lua/neotree_tabs.lua` — the selector shows icons only and bufferline's neo-tree offset shows the active source's name, both from that one table; keep glyphs as BMP `\u{}` escapes); its commands module overrides neo-tree's filesystem-mutating commands because chat nodes carry the `.jsonl` as `path` (stock `delete` would remove the log).
 
+### Terminals
+`lua/terminals/` (a plain module, like `claude_chats`) owns terminal sessions; `lua/plugins/toggleterm.lua` only draws the windows and forwards toggleterm's `on_create`/`on_open`/`on_exit` to it, then calls `require("terminals").setup()`. **Ids are partitioned:** shells 1–99 (`new()` takes the first free id), the pinned REPLs 100+ (`M.repls`) — toggleterm hands out the lowest free id from one pool, so never create a terminal without an explicit id. Per-terminal state (`info(id)`: custom name, cwd, running command, last command, exit, output rows, unseen) is fed by **zsh prompt hooks**: shells get `ZDOTDIR=shell/zsh` (+ the real one in `NVIM_TERM_ZDOTDIR`), whose `.zshenv` restores the user's ZDOTDIR, sources their files unchanged, and (interactive only — toggleterm runs `zsh -c "zsh;#toggleterm#N"`, so the outer non-interactive zsh must keep pointing at the wrapper) emits OSC `633;E;<cmd>`, `133;C`, `133;D;<status>` and `7`, read through the `TermRequest` autocmd. The cursor rows at C/D are the first output row and the row after the output (1-indexed), which `quickfix()` uses (with a `%D` line in the errorformat so paths resolve against the shell's cwd). "Last used" is set only by `on_open`/`TermEnter`, **not** `BufEnter` (toggleterm moves focus through other terminal windows while closing). State changes fire a debounced `User TermsChanged`, consumed by the winbar (`winbar_label`, toggleterm's per-terminal `name_formatter`) and the neo-tree source `terminals/neotree/` (`name = "terminals"`, tab in `lua/neotree_tabs.lua`). Python paste: 3.13+ (pyrepl) gets bracketed paste and a **separately delayed** second Enter (pyrepl reads a fast burst as more paste); older REPLs get blank lines stripped. Sessions: `persistence.lua` stores `session_state()` as JSON in `g:Session_terminals` and `session_restore()` re-spawns them.
+
 ### Molten / notebooks
 `molten.nvim` runs code in Jupyter kernels and `jupytext.nvim` handles `.ipynb` ↔ markdown conversion. Requires `:UpdateRemotePlugins` after install.
 
@@ -104,11 +107,14 @@ The authoritative human-facing reference is the in-editor `:help` documentation 
 | `<leader>ub` / `<leader>uB` | Toggle transparent ↔ solid background / dark ↔ light (persisted) |
 | `<leader>uc` | Cycle cursorline style: number / underline / band |
 | `<leader>n` | Toggle Neo-tree |
-| `<leader>t` | Terminal: toggle shell #1 (vertical side panel) |
-| `<leader>tn` / `<leader>ts` | New shell / select-switch shell (`:TermSelect`) |
-| `<leader>tf` / `<leader>th` | Float / horizontal terminal |
+| `<C-\>` / `<leader>tt` | Toggle last used terminal (`2<C-\>` = shell #2; no bare `<leader>t`, it's a prefix) |
+| `<leader>tn` / `<leader>t.` / `<leader>tg` | New shell in cwd / file's dir / project root |
+| `<leader>ts` / `<leader>te` | Terminal picker (Telescope, scrollback preview) / neo-tree Terminals tab |
+| `<leader>tf` / `<leader>th` | Current terminal as float / bottom panel |
+| `<leader>tl` | Send line / visual selection to the last used terminal |
+| `<leader>tr` / `<leader>tq` | Re-run last command / last output → quickfix |
+| `<leader>tk` / `<leader>tm` | Kill / rename current terminal |
 | `<leader>tp` / `<leader>tN` / `<leader>tR` | Python / Node / R REPL terminal |
-| `2<C-\>` | Open numbered shell #2 (count-prefix `<C-\>` for any id) |
 | `<leader>ac` | Toggle ClaudeCode |
 | `<leader>an` / `<leader>aR` / `<leader>al` | New / resume Claude chat in a buffer / chat list (neo-tree Claude tab) |
 | `<leader>z` | Toggle Zen Mode |

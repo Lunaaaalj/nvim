@@ -3,11 +3,13 @@ before	nvim-plugins.txt	/*before*
 nvim-config	nvim-config.txt	/*nvim-config*
 nvim-config-architecture	nvim-config.txt	/*nvim-config-architecture*
 nvim-config-colorscheme	nvim-config.txt	/*nvim-config-colorscheme*
+nvim-config-cursorline	nvim-config.txt	/*nvim-config-cursorline*
 nvim-config-help	nvim-config.txt	/*nvim-config-help*
 nvim-config-install	nvim-config.txt	/*nvim-config-install*
 nvim-config-intro	nvim-config.txt	/*nvim-config-intro*
 nvim-config-options	nvim-config.txt	/*nvim-config-options*
 nvim-config-requirements	nvim-config.txt	/*nvim-config-requirements*
+nvim-config-ui-toggle	nvim-config.txt	/*nvim-config-ui-toggle*
 nvim-config.txt	nvim-config.txt	/*nvim-config.txt*
 nvim-keymaps	nvim-keymaps.txt	/*nvim-keymaps*
 nvim-keymaps-claude	nvim-keymaps.txt	/*nvim-keymaps-claude*
@@ -22,7 +24,9 @@ nvim-keymaps-latex	nvim-keymaps.txt	/*nvim-keymaps-latex*
 nvim-keymaps-lsp	nvim-keymaps.txt	/*nvim-keymaps-lsp*
 nvim-keymaps-motion	nvim-keymaps.txt	/*nvim-keymaps-motion*
 nvim-keymaps-notebooks	nvim-keymaps.txt	/*nvim-keymaps-notebooks*
+nvim-keymaps-quit	nvim-keymaps.txt	/*nvim-keymaps-quit*
 nvim-keymaps-session	nvim-keymaps.txt	/*nvim-keymaps-session*
+nvim-keymaps-terminal	nvim-keymaps.txt	/*nvim-keymaps-terminal*
 nvim-keymaps-test	nvim-keymaps.txt	/*nvim-keymaps-test*
 nvim-keymaps-windows	nvim-keymaps.txt	/*nvim-keymaps-windows*
 nvim-keymaps.txt	nvim-keymaps.txt	/*nvim-keymaps.txt*

@@ -51,12 +51,13 @@ return {
         enable_git_status = true,
         enable_diagnostics = true,
 
-        -- "claude_chats.neotree" is a local custom source (lua/claude_chats/)
-        -- listing running + recent Claude Code chats for the cwd.
-        sources = { "filesystem", "buffers", "git_status", "claude_chats.neotree" },
+        -- Local custom sources: "claude_chats.neotree" (lua/claude_chats/) lists
+        -- running + recent Claude Code chats for the cwd; "terminals.neotree"
+        -- (lua/terminals/) lists shells and REPLs with their live state.
+        sources = { "filesystem", "buffers", "git_status", "claude_chats.neotree", "terminals.neotree" },
 
         -- Icon-only tabs at the top of the tree (filesystem / buffers / git /
-        -- claude), evenly spread over the 34 cols; the active source's name is
+        -- claude / terminals), evenly spread over the 34 cols; the active source's name is
         -- shown in the bufferline offset instead. Defined in lua/neotree_tabs.lua.
         source_selector = {
           winbar = true,

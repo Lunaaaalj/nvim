@@ -1,5 +1,5 @@
 -- Single definition of the neo-tree source tabs: the selector shows only the
--- icon (four labels don't fit the 34-col tree), and bufferline's neo-tree
+-- icon (five labels don't fit the 34-col tree), and bufferline's neo-tree
 -- offset shows the active source's icon + name, so both read from here.
 --
 -- Glyphs are \u{} escapes on purpose (literal glyphs were silently stripped to
@@ -13,6 +13,7 @@ M.tabs = {
   { source = "buffers",    icon = "\u{f0c5}", name = "Buffers" }, -- nf-fa-copy
   { source = "git_status", icon = "\u{e725}", name = "Git" },    -- nf-dev-git_branch
   { source = "claude",     icon = "\u{f086}", name = "Claude" }, -- nf-fa-comments
+  { source = "terminals",  icon = "\u{f120}", name = "Terminals" }, -- nf-fa-terminal
 }
 
 -- source_selector.sources entries (icon only).

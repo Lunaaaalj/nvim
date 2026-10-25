@@ -22,35 +22,36 @@ vim.keymap.set("n", "<C-l>", "<C-w>l", { desc = "Move to right window" })
 
 vim.keymap.set('n','<leader>n', "<cmd>Neotree toggle<cr>", { desc = "Toogle Neo-Tree" })
 
--- Terminal: VSCode-like multiple shells via toggleterm. <leader>t toggles shell
--- #1 in the side panel; numbered shells also open with a count prefix on <C-\>
--- (e.g. 2<C-\>). <leader>ts lists/switches between open shells.
-vim.keymap.set("n", "<leader>t", "<cmd>1ToggleTerm direction=vertical<cr>", { desc = "Terminal: toggle shell #1" })
-vim.keymap.set("n", "<leader>tf", "<cmd>ToggleTerm direction=float<cr>", { desc = "Terminal: float" })
-vim.keymap.set("n", "<leader>th", "<cmd>ToggleTerm direction=horizontal size=15<cr>", { desc = "Terminal: horizontal panel" })
-vim.keymap.set("n", "<leader>ts", "<cmd>TermSelect<cr>", { desc = "Terminal: select / switch" })
-vim.keymap.set("n", "<leader>tn", function()
-    -- Open the next free terminal id (a brand-new shell).
-    local id = #require("toggleterm.terminal").get_all() + 1
-    vim.cmd(id .. "ToggleTerm direction=vertical")
-end, { desc = "Terminal: new shell" })
-
--- Pinned REPL terminals: each toggles its own persistent instance.
-local function named_term(cmd, name)
-    return function()
-        local Terminal = require("toggleterm.terminal").Terminal
-        _G._named_terms = _G._named_terms or {}
-        local t = _G._named_terms[name]
-        if not t then
-            t = Terminal:new({ cmd = cmd, display_name = name, direction = "vertical", hidden = true })
-            _G._named_terms[name] = t
-        end
-        t:toggle()
-    end
+-- Terminals (lua/terminals/, drawn by toggleterm). <C-\> toggles the last used
+-- terminal; with a count, shell N (2<C-\>). Shells are ids 1-99, the pinned
+-- REPLs 100+, so they never steal each other's number. There's no bare
+-- <leader>t: as a prefix of the maps below it would always wait 'timeoutlen'.
+local function terms(fn, ...)
+    local args = { ... }
+    return function() require("terminals")[fn](unpack(args)) end
 end
-vim.keymap.set("n", "<leader>tp", named_term("python3", "python"), { desc = "Terminal: Python REPL" })
-vim.keymap.set("n", "<leader>tN", named_term("node", "node"), { desc = "Terminal: Node REPL" })
-vim.keymap.set("n", "<leader>tR", named_term("R", "R"), { desc = "Terminal: R REPL" })
+vim.keymap.set({ "n", "t" }, "<C-\\>", function() require("terminals").toggle(vim.v.count) end,
+    { desc = "Terminal: toggle (count = shell N)" })
+vim.keymap.set("n", "<leader>tt", function() require("terminals").toggle(vim.v.count) end,
+    { desc = "Terminal: toggle last used" })
+vim.keymap.set("n", "<leader>tn", terms("new"), { desc = "Terminal: new shell (cwd)" })
+vim.keymap.set("n", "<leader>t.", terms("new_here", false), { desc = "Terminal: new shell in file's dir" })
+vim.keymap.set("n", "<leader>tg", terms("new_here", true), { desc = "Terminal: new shell at project root" })
+vim.keymap.set("n", "<leader>ts", function() require("terminals.picker").pick() end,
+    { desc = "Terminal: pick (preview, rename, kill)" })
+vim.keymap.set("n", "<leader>te", "<cmd>Neotree source=terminals reveal=false<cr>",
+    { desc = "Terminal: list in neo-tree" })
+vim.keymap.set("n", "<leader>tf", terms("toggle_direction", "float"), { desc = "Terminal: as float" })
+vim.keymap.set("n", "<leader>th", terms("toggle_direction", "horizontal"), { desc = "Terminal: as bottom panel" })
+vim.keymap.set("n", "<leader>tl", terms("send_line"), { desc = "Terminal: send line ([count] lines)" })
+vim.keymap.set("x", "<leader>tl", terms("send_selection"), { desc = "Terminal: send selection" })
+vim.keymap.set("n", "<leader>tr", terms("repeat_last"), { desc = "Terminal: repeat last command" })
+vim.keymap.set("n", "<leader>tq", terms("quickfix"), { desc = "Terminal: output → quickfix" })
+vim.keymap.set("n", "<leader>tk", terms("kill"), { desc = "Terminal: kill current" })
+vim.keymap.set("n", "<leader>tm", terms("rename"), { desc = "Terminal: rename current" })
+vim.keymap.set("n", "<leader>tp", terms("repl", "python"), { desc = "Terminal: Python REPL" })
+vim.keymap.set("n", "<leader>tN", terms("repl", "node"), { desc = "Terminal: Node REPL" })
+vim.keymap.set("n", "<leader>tR", terms("repl", "R"), { desc = "Terminal: R REPL" })
 
 -- Terminal-mode escapes: jump to other windows or back to normal mode without
 -- getting trapped in insert. <Esc><Esc> leaves terminal-insert to normal mode.

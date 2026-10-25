@@ -126,14 +126,35 @@ bufferline.nvim ~  (akinsho/bufferline.nvim)
   with <Tab>/<S-Tab>, close with <leader>x.
 
 toggleterm.nvim ~  (akinsho/toggleterm.nvim)
-  Multiple toggleable terminals, VSCode-style. <leader>t toggles shell #1 in a
-  vertical side panel; numbered shells open with a count prefix on <C-\> (e.g.
-  2<C-\> -> shell #2), and :TermSelect (<leader>ts) lists/switches between them.
-  <leader>tn opens a fresh shell, <leader>tf/th give float/horizontal terminals,
-  and <leader>tp / <leader>tN toggle pinned Python / Node REPLs. Each terminal
-  window carries a winbar tab-strip of every open shell with the current one
-  bracketed. Terminals stay transparent (shade_terminals off). See also the
-  terminal-mode window-nav maps in :help nvim-keymaps.
+  Draws the terminal windows (vertical side panel by default, float, bottom).
+  Everything else about terminals lives in the local `terminals` module below.
+  Terminals stay transparent (shade_terminals off).
+
+terminals ~  (local: lua/terminals/ + shell/zsh/.zshenv)
+  Terminal sessions on top of toggleterm:
+  - Ids: shells are 1-99 (new = first free id), the pinned Python / Node / R
+    REPLs are 100-102, so a REPL never takes over "shell #1".
+  - Names: a custom name (rename), else the running command, else the cwd's
+    basename. The winbar tab-strip shows "<id> <state> <name>" for every
+    terminal, the window's own one underlined in the scheme's accent.
+  - Live state from zsh: shells are started with ZDOTDIR=shell/zsh, whose
+    .zshenv restores your real ZDOTDIR, loads your config unchanged, and adds
+    prompt hooks that emit OSC 133 / 633;E / 7. Neovim reads them via
+    TermRequest to know the running command, exit status, cwd and the last
+    command's output range. Glyphs: spinner = running, x = failed,
+    dot = unseen output, terminal = idle.
+  - Notifications: a command that ran 5s+ in a terminal not on screen
+    announces its finish (and exit status).
+  - Send code: <leader>tl sends the line / selection to the last used terminal
+    (indent stripped; bracketed paste for zsh and Python 3.13+).
+  - <leader>tr re-runs the last command, <leader>tq parses the last command's
+    output into quickfix/Trouble (paths resolved against the shell's cwd).
+  - Sessions: persistence.nvim saves every terminal (id, name, cwd,
+    direction, open) and restore re-spawns them fresh.
+  - Neo-tree "Terminals" tab (<leader>te) and a Telescope picker (<leader>ts)
+    with a scrollback preview. Commands: :TermNew [dir], :TermRename [name],
+    :TermKill, :TermRepeat, :TermQuickfix, :TermPick.
+  See |nvim-keymaps-terminal|.
 
 which-key.nvim ~  (folke/which-key.nvim)
   Popup of pending keybindings after a 500ms delay, with named groups for the
