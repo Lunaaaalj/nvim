@@ -346,9 +346,20 @@ Compile & view ~
   <leader>lF    Toggle live follow: the preview tracks the cursor on
                 CursorHold
 
+Markdown preview ~                                   *nvim-keymaps-markdown*
+
+Buffer-local to Markdown buffers.
+
+  <leader>pv    Preview the buffer in a split on the right (pandoc ->
+                typst), highlighting the cursor line on the page; in
+                visual mode, the selection. It re-renders as you type.
+  <leader>pF    Toggle live follow: the preview tracks the cursor on
+                CursorHold
+
 PDF viewer ~                                              *nvim-keymaps-pdf*
 
-The LaTeX preview and any `.pdf` opened as a buffer share these maps
+The LaTeX and Markdown previews and any `.pdf` opened as a buffer share
+these maps
 (`?` inside the viewer lists them).
 
   j / k, wheel    Scroll; past the page edge, flow to the next/previous
@@ -365,7 +376,7 @@ The LaTeX preview and any `.pdf` opened as a buffer share these maps
   <C-o>           Back to where you were before a link or search jump
   c               Toggle colours: colorscheme (default) / paper
   x / <Esc>       Clear the SyncTeX highlight and the search
-  z / f           LaTeX preview only: reading mode (float) / live follow
+  z / f           Previews only: reading mode (float) / live follow
   r / q / ?       Re-render / close / list these maps
   <leader>lk    Stop compilation for this project (:VimtexStop)
   <leader>lK    Stop every running compilation (:VimtexStopAll)

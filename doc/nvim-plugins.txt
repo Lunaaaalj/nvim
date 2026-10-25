@@ -363,7 +363,20 @@ pdfview ~  (lua/pdfview, local)                       *nvim-plugins-pdfview*
     - Memory: page, zoom, spread and colours are remembered per PDF in
       `stdpath("state")/pdfview.json`. Sessions reopen the LaTeX preview
       (lua/plugins/persistence.lua).
-  Maps: |nvim-keymaps-pdf|.
+    - Markdown preview (`<leader>pv`, `lua/pdfview/markdown.lua`): the
+      buffer goes through pandoc into typst and opens in the same split as
+      the LaTeX preview, styled like GitHub: system font, rules under h1/h2,
+      code panels, gridded tables, centred `<div align="center">` headers,
+      HTML tables and images, and remote badges. Pages are shaped to the
+      split, so a page always fills the window. The text keeps its size and
+      reflows when you resize the split.
+      It re-renders a moment after each edit (~0.2 s for typst, plus the
+      page raster), from the buffer's text, so saving isn't needed. There's
+      no SyncTeX for Markdown, so sync matches text: the cursor line's words
+      are found on the page, and a click finds the clicked words in the
+      buffer. Repeated phrases resolve by position in the document. Errors
+      show in the winbar. Needs `pandoc` and `typst`.
+  Maps: |nvim-keymaps-pdf|, |nvim-keymaps-markdown|.
 
 ==============================================================================
 9. COLORSCHEMES                                   *nvim-plugins-colorschemes*
