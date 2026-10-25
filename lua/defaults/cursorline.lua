@@ -42,7 +42,7 @@ end
 
 -- Filetypes that never get a cursorline, and ones that manage it themselves
 -- (neo-tree uses its cursorline as the selection marker).
-local skip_ft = { snacks_dashboard = true, lazy = true, mason = true, TelescopePrompt = true, TelescopeResults = true }
+local skip_ft = { image = true, snacks_dashboard = true, lazy = true, mason = true, TelescopePrompt = true, TelescopeResults = true }
 local unmanaged_ft = { ["neo-tree"] = true }
 
 local function update(win, active)
