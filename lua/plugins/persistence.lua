@@ -33,7 +33,14 @@ return {
         end
         vim.g.Session_claude_open = claude_open and 1 or 0
         vim.g.Session_terminals = vim.json.encode(require("terminals").session_state())
+        require("pdfview").session_save_pre()
       end,
+    })
+    -- The PDF preview was closed so the session wouldn't hold its scratch
+    -- buffer; bring it back unless we're exiting.
+    vim.api.nvim_create_autocmd("User", {
+      pattern = "PersistenceSavePost",
+      callback = function() require("pdfview").session_save_post() end,
     })
 
     -- After a session loads, re-launch the panels that were open. These spawn
@@ -51,6 +58,7 @@ return {
           if vim.g.Session_claude_open == 1 then
             pcall(vim.cmd, "ClaudeCode --continue")
           end
+          require("pdfview").session_restore()
         end, 100) -- let the restored layout settle first
       end,
     })
