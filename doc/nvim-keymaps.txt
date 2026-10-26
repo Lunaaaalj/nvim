@@ -18,7 +18,7 @@ Leader is <Space>; localleader is "\". Modes are noted where not normal mode.
   11. Debug (DAP) .............................. |nvim-keymaps-debug|
   12. Session (Persistence) .................... |nvim-keymaps-session|
   13. Notebooks (Molten) ....................... |nvim-keymaps-notebooks|
-  14. LaTeX (VimTeX) ........................... |nvim-keymaps-latex|
+  14. LaTeX (VimTeX), Typst .................... |nvim-keymaps-latex|
   15. Claude Code .............................. |nvim-keymaps-claude|
 
 Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
@@ -169,7 +169,7 @@ nvim-treesitter-textobjects (syntax-aware; use in operators/visual):
 
 LSP (buffer-local; bound by a global LspAttach autocmd in
 `lua/defaults/lsp.lua`, so they work for every server: clangd, pyright, ruff,
-ts_ls, html, cssls, emmet, texlab, lua_ls):
+ts_ls, html, cssls, emmet, texlab, tinymist, lua_ls):
   gd            Go to definition
   gD            Go to declaration
   gr            List references
@@ -330,7 +330,7 @@ also get per-language LSP inside chunks via quarto-nvim + otter.nvim.
 See |nvim-notebooks| and |nvim-notebooks-quarto| for the full workflow.
 
 ==============================================================================
-14. LATEX (VIMTEX)                                        *nvim-keymaps-latex*
+14. LATEX (VIMTEX), TYPST                                 *nvim-keymaps-latex*
 
 All maps in this section are buffer-local to TeX buffers.
 
@@ -356,9 +356,24 @@ Buffer-local to Markdown buffers.
   <leader>pF    Toggle live follow: the preview tracks the cursor on
                 CursorHold
 
+Typst ~                                                 *nvim-keymaps-typst*
+
+Buffer-local to Typst buffers; the same keys as LaTeX do the same jobs.
+There is no continuous-compile key: the preview recompiles as you type.
+
+  <leader>lv    Live preview in a split on the right (kitty graphics),
+                highlighting the cursor line on the page; in visual mode,
+                the selection. Again re-syncs.
+  <leader>lF    Toggle live follow: the preview tracks the cursor on
+                CursorHold
+  <leader>lk    Close the preview
+  <leader>lo    Compile once to `foo.pdf` next to the file
+  <leader>lV    Compile and open `foo.pdf` in the system viewer (Skim)
+  <leader>le    Diagnostics in the location list
+
 PDF viewer ~                                              *nvim-keymaps-pdf*
 
-The LaTeX and Markdown previews and any `.pdf` opened as a buffer share
+The LaTeX, Markdown and Typst previews and any `.pdf` opened as a buffer share
 these maps
 (`?` inside the viewer lists them).
 

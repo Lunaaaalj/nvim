@@ -30,6 +30,7 @@ nvim-keymaps-quit	nvim-keymaps.txt	/*nvim-keymaps-quit*
 nvim-keymaps-session	nvim-keymaps.txt	/*nvim-keymaps-session*
 nvim-keymaps-terminal	nvim-keymaps.txt	/*nvim-keymaps-terminal*
 nvim-keymaps-test	nvim-keymaps.txt	/*nvim-keymaps-test*
+nvim-keymaps-typst	nvim-keymaps.txt	/*nvim-keymaps-typst*
 nvim-keymaps-windows	nvim-keymaps.txt	/*nvim-keymaps-windows*
 nvim-keymaps.txt	nvim-keymaps.txt	/*nvim-keymaps.txt*
 nvim-notebooks	nvim-notebooks.txt	/*nvim-notebooks*
@@ -52,6 +53,7 @@ nvim-plugins-notebooks	nvim-plugins.txt	/*nvim-plugins-notebooks*
 nvim-plugins-pdfview	nvim-plugins.txt	/*nvim-plugins-pdfview*
 nvim-plugins-prose	nvim-plugins.txt	/*nvim-plugins-prose*
 nvim-plugins-testdebug	nvim-plugins.txt	/*nvim-plugins-testdebug*
+nvim-plugins-typst	nvim-plugins.txt	/*nvim-plugins-typst*
 nvim-plugins-ui	nvim-plugins.txt	/*nvim-plugins-ui*
 nvim-plugins-vimtex	nvim-plugins.txt	/*nvim-plugins-vimtex*
 nvim-plugins.txt	nvim-plugins.txt	/*nvim-plugins.txt*

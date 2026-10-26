@@ -8,6 +8,7 @@ return {
             cpp = { "clang_format" },
             c = { "clang_format" },
             tex = { "latexindent" },
+            typst = { "typstyle" },
             html = { "prettier" },
             css = { "prettier" },
             scss = { "prettier" },

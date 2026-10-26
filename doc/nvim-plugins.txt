@@ -28,7 +28,7 @@ nvim-lspconfig ~  (neovim/nvim-lspconfig)
 
 mason.nvim + mason-lspconfig.nvim ~  (mason-org/*)
   Installs and manages LSP servers (clangd, pyright, ruff, ts_ls, html,
-  cssls, emmet, texlab, lua_ls, r_language_server). cmp capabilities are set
+  cssls, emmet, texlab, tinymist, lua_ls, r_language_server). cmp capabilities are set
   for all servers via `vim.lsp.config("*")`, per-server overrides via
   `vim.lsp.config(name)`, and mason-lspconfig's `automatic_enable` starts each
   installed server. Build hook: `:MasonUpdate`.
@@ -340,9 +340,20 @@ vimtex ~  (lervag/vimtex)                              *nvim-plugins-vimtex*
   Maps: see |nvim-keymaps-latex| for the `<leader>l...` group, text objects
   and snippets. VimTeX's own `\l...` maps remain available too.
 
+Typst ~  (tinymist + lua/pdfview/typst.lua)              *nvim-plugins-typst*
+  `.typ` files get the tinymist LSP (completion, diagnostics, go-to; it
+  formats with typstyle, and writes `foo.pdf` next to `foo.typ` on save),
+  treesitter highlighting, and typstyle through conform on save. The
+  preview is the same kitty split as LaTeX (|nvim-plugins-pdfview|): the
+  buffer is piped to `typst compile` a moment after each edit, so it is
+  live without saving. The document's own page size is kept, so the split
+  sizes itself to the page as for LaTeX. Typst has no SyncTeX, so sync
+  matches text, as for Markdown. Needs the `typst` CLI.
+  Maps: |nvim-keymaps-typst| (the same `<leader>l...` keys as LaTeX).
+
 pdfview ~  (lua/pdfview, local)                       *nvim-plugins-pdfview*
-  A PDF viewer drawn inside Neovim with kitty graphics, used by the LaTeX
-  preview and for any `.pdf` opened as a buffer (`:e paper.pdf`). It needs
+  A PDF viewer drawn inside Neovim with kitty graphics, used by the LaTeX,
+  Markdown and Typst previews and for any `.pdf` opened as a buffer (`:e paper.pdf`). It needs
   poppler (`pdftoppm`, `pdfinfo`, `pdftohtml`, `pdftotext`), ImageMagick and,
   for SyncTeX, TeX's `synctex`. Outside a graphics terminal, `.pdf` files go
   to the system viewer.
@@ -376,7 +387,10 @@ pdfview ~  (lua/pdfview, local)                       *nvim-plugins-pdfview*
       are found on the page, and a click finds the clicked words in the
       buffer. Repeated phrases resolve by position in the document. Errors
       show in the winbar. Needs `pandoc` and `typst`.
-  Maps: |nvim-keymaps-pdf|, |nvim-keymaps-markdown|.
+    - Typst preview (`<leader>lv` in `.typ` buffers, `lua/pdfview/typst.lua`):
+      the same live, text-matched machinery (`lua/pdfview/live.lua`), with
+      `typst compile` instead of pandoc. See |nvim-plugins-typst|.
+  Maps: |nvim-keymaps-pdf|, |nvim-keymaps-markdown|, |nvim-keymaps-typst|.
 
 ==============================================================================
 9. COLORSCHEMES                                   *nvim-plugins-colorschemes*

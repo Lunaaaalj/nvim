@@ -215,6 +215,28 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 
+-- Typst (lua/pdfview/typst.lua; tinymist does LSP/format): the same <leader>l
+-- keys as LaTeX do the same jobs, buffer-local like the VimTeX maps. The
+-- preview recompiles on every edit, so there is no "continuous compile" key.
+local typst = function() return require("pdfview.typst") end
+local typst_maps = {
+  { "lv", function() typst().view() end, "Typst: live preview in a split (sync to cursor)", { "n", "x" } },
+  { "lF", function() typst().toggle_live() end, "Typst: toggle live follow in the preview" },
+  { "lk", function() typst().stop() end, "Typst: close the preview" },
+  { "lo", function() typst().compile_file() end, "Typst: compile once to foo.pdf" },
+  { "lV", function() typst().open_external() end, "Typst: compile and open the PDF in the system viewer" },
+  { "le", function() vim.diagnostic.setloclist() end, "Typst: error list (diagnostics)" },
+}
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "typst",
+  group = vim.api.nvim_create_augroup("TypstKeymaps", { clear = true }),
+  callback = function(ev)
+    for _, m in ipairs(typst_maps) do
+      vim.keymap.set(m[4] or "n", "<leader>" .. m[1], m[2], { buffer = ev.buf, silent = true, desc = m[3] })
+    end
+  end,
+})
+
 vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, { desc = "Show diagnostic" })
 
 -- bufferline navigation
