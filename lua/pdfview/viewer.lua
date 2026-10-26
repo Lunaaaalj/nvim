@@ -728,4 +728,7 @@ function V.setup()
   })
 end
 
+-- Global patch; other image users (lua/music) install it too.
+V.fix_snacks_spinner = fix_snacks_spinner
+
 return V

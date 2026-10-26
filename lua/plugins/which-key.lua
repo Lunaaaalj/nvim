@@ -32,6 +32,7 @@ return {
             { "<leader>h", group = "Git hunks" },
             { "<leader>H", group = "Harpoon" },
             { "<leader>m", group = "Molten" },
+            { "<leader>M", group = "Music" },
             { "<leader>o", group = "Output/Open" },
             { "<leader>p", group = "Preview" },
             { "<leader>q", group = "Session / quit" },

@@ -119,6 +119,14 @@ return {
             { "selectioncount" },
           },
           lualine_x = {
+            -- now playing (lua/music); reads cached state, refreshed on MusicChanged
+            {
+              function() return require("music").statusline() end,
+              cond = function() return require("music").state.track ~= nil end,
+              color = function()
+                return require("music").state.playing and "MusicAccent" or "MusicMuted"
+              end,
+            },
             { "diagnostics", sources = { "nvim_lsp" }, symbols = { error = " ", warn = " ", info = " ", hint = " " } },
             { lsp_clients, color = { gui = "italic" } },
             { "filetype", colored = true, icon_only = false },

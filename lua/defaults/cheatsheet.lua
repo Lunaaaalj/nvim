@@ -41,6 +41,16 @@ local sections = {
     { "<leader>flife", "Game of Life (cellular automaton)" },
     { "<leader>ty / tY", "Typing practice / typing stats (typr)" },
   } },
+  { "Music (Apple Music)", {
+    { "<leader>Mo", "Player: library browser + now playing" },
+    { "<leader>Mp", "Play / pause (launches Music if needed)" },
+    { "<leader>Mn / MN", "Next / previous track" },
+    { "<leader>Ms", "Search songs (player, Songs tab, filter open)" },
+    { "l / h / ⏎ / a", "In player: open / back / play / add to queue" },
+    { "⇥ 1-5 / o", "In player: tabs / reveal the playing song" },
+    { "hjkl / ⏎ / P / ⌫", "Cover grid: move / open / play / back" },
+    { "␣ n p < > - + s r", "In player: pause, skip, seek, volume, shuffle, repeat" },
+  } },
   { "Windows / Buffers", {
     { "<C-h/j/k/l>", "Move between windows" },
     { "<Tab> / <S-Tab>", "Next / previous buffer" },

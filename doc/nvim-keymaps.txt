@@ -49,6 +49,41 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
   <leader>ty    Typing practice (typr)
   <leader>tY    Typing stats dashboard (typr)
 
+Music ~                                                    *nvim-keymaps-music*
+
+Drives the Apple Music app (|nvim-plugins-music|); the statusline shows the
+current song.
+
+  <leader>Mo    Toggle the player (library browser + now playing)
+  <leader>Mp    Play / pause (launches Music in the background if needed)
+  <leader>Mn    Next track
+  <leader>MN    Previous track (restarts the song when past its start)
+  <leader>Ms    Search songs: the player on its Songs tab, filter open
+
+In the player (tabs: Playlists, Artists, Albums, Songs, Queue):
+  j / k, gg, G  Move                  <Tab> / <S-Tab>  Next / previous tab
+  l  <Right>    Open (on a song: play) 1 .. 5           Jump to a tab
+  h  <BS>       Back
+  <CR>          Play: a playlist in order, an album or artist through the
+                queue, a song in its context (its album, playlist, or the
+                library for the Songs tab)
+  a             Add to the queue (starts it when nothing is playing)
+  /             Live filter: every word must match; <CR> opens the
+                selection, <Esc> keeps the filter, <C-n>/<C-p> move
+  o             Reveal the playing song inside its album
+  <Space>       Play / pause          n / p      Next / previous track
+  < / >         Seek -10s / +10s      - / +      Volume down / up (also =)
+  s             Toggle shuffle        r          Cycle repeat off/all/one
+  R             Reload the library    ?          Show these keys
+  q / <Esc>     Close (<Esc> clears an active filter first)
+
+In cover grids (Albums, Playlists and an artist's albums, in a kitty-graphics
+terminal; elsewhere they stay lists):
+  h j k l       Move between covers (also the arrow keys)
+  <CR>          Open the album / playlist
+  P             Play it (also works on any selection in a list)
+  <BS>          Back
+
 ==============================================================================
 2. WINDOWS & BUFFERS                                   *nvim-keymaps-windows*
 

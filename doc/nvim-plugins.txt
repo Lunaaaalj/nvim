@@ -224,6 +224,38 @@ typr ~  (nvzone/typr)
   Typing practice (`:Typr`, <leader>ty) and a WPM/accuracy stats dashboard
   (`:TyprStats`, <leader>tY). UI rendered by nvzone/volt. Lazy-loaded.
 
+music ~  (lua/music, local)                             *nvim-plugins-music*
+  A controller for the Apple Music app: Neovim plays nothing itself, it
+  talks to Music through `osascript` (`applemusic.js` for state and
+  commands, `artwork.applescript` for album art). Keys: |nvim-keymaps-music|.
+
+  Statusline: "󰎈 Artist – Title 1:23" in lualine's x section, accent
+  while playing, muted while paused, hidden when nothing is loaded.
+
+  Polling: every 1s with the player open, 3s playing, 5s paused, 15s while
+  Music is closed (plus on |FocusGained|). The position is interpolated
+  between polls, so the clock ticks every second anyway. Changes fire
+  `User MusicChanged`.
+
+  Player: a library browser (tabs Playlists / Artists / Albums / Songs /
+  Queue, drill in and out with l / h, live filter with /) above a
+  now-playing card with album art (snacks.image; kitty graphics), a
+  progress bar, volume, shuffle and repeat. Art is exported once per song
+  to `stdpath("cache")/music/<id>.png`. Where you were (tab, drill-down,
+  cursor, filter) is kept when the player closes. Albums and playlists are
+  shown as a grid of covers (a playlist's cover is its first song's art);
+  covers load progressively, three exports at a time, and are cached like
+  the now-playing art. Without kitty graphics they fall back to lists.
+
+  Queue: Music can't be told to play an album and its Up Next isn't
+  scriptable, so albums, artists and queued songs (a) are copied into a
+  playlist called "Neovim Queue" in your library and played from there.
+  Music's own shuffle setting applies to it.
+
+  First use: macOS asks to let the terminal control Music. If that was
+  denied, allow it under System Settings → Privacy & Security → Automation;
+  until then the player stops polling and says so.
+
 ==============================================================================
 5. GIT                                                     *nvim-plugins-git*
 
