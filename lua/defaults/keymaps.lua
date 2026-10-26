@@ -53,6 +53,18 @@ vim.keymap.set("n", "<leader>tp", terms("repl", "python"), { desc = "Terminal: P
 vim.keymap.set("n", "<leader>tN", terms("repl", "node"), { desc = "Terminal: Node REPL" })
 vim.keymap.set("n", "<leader>tR", terms("repl", "R"), { desc = "Terminal: R REPL" })
 
+-- Music (lua/music/): drives the Apple Music app. <leader>m is Molten's.
+local function music(fn, ...)
+    local args = { ... }
+    return function() require("music")[fn](unpack(args)) end
+end
+vim.keymap.set("n", "<leader>Mo", function() require("music.ui").toggle() end, { desc = "Music: player" })
+vim.keymap.set("n", "<leader>Mp", music("toggle"), { desc = "Music: play / pause" })
+vim.keymap.set("n", "<leader>Mn", music("next"), { desc = "Music: next track" })
+vim.keymap.set("n", "<leader>MN", music("prev"), { desc = "Music: previous track" })
+vim.keymap.set("n", "<leader>Ms", function() require("music.ui").open({ tab = 4, filter = true }) end,
+    { desc = "Music: search songs" })
+
 -- Terminal-mode escapes: jump to other windows or back to normal mode without
 -- getting trapped in insert. <Esc><Esc> leaves terminal-insert to normal mode.
 vim.keymap.set("t", "<Esc><Esc>", [[<C-\><C-n>]], { desc = "Terminal: to normal mode" })
