@@ -283,6 +283,24 @@ function V:winbar()
   vim.wo[win].winbar = left .. "%=%#Comment#" .. table.concat(right, " · ") .. " "
 end
 
+-- snacks.image bug: a placement closed while its image is still converting
+-- keeps its "loading" spinner timer, whose stop check ignores `closed`. Every
+-- 80 ms it clears the snacks.image namespace -- wiping the image that replaced
+-- it -- and draws "identify loading …" until the old file disappears. Each
+-- render re-attaches, so a quick second render (autosize, sync) hit it. An
+-- invalid buffer is one of the timer's stop conditions, and nothing reads
+-- `buf` from a closed placement (update() returns early on it).
+local function fix_snacks_spinner()
+  local Placement = require("snacks.image.placement")
+  if Placement._pdfview_close then return end
+  Placement._pdfview_close = Placement.close
+  function Placement:close()
+    local was_open = not self.closed
+    Placement._pdfview_close(self)
+    if was_open then self.buf = -1 end
+  end
+end
+
 function V:show(png)
   if not vim.api.nvim_buf_is_valid(self.buf) then
     os.remove(png)
@@ -290,6 +308,7 @@ function V:show(png)
   end
   local old = self.png
   self.png = png
+  fix_snacks_spinner()
   Snacks.image.buf.attach(self.buf, { src = png })
   -- kitty may still be reading the old file when the new one is placed
   if old then vim.defer_fn(function() os.remove(old) end, 5000) end
