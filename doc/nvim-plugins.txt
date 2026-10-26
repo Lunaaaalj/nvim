@@ -351,6 +351,17 @@ Typst ~  (tinymist + lua/pdfview/typst.lua)              *nvim-plugins-typst*
   matches text, as for Markdown. Needs the `typst` CLI.
   Maps: |nvim-keymaps-typst| (the same `<leader>l...` keys as LaTeX).
 
+  Templates (`lua/typst_templates.lua`, `<leader>ln` / `:TypstNew`): a
+  template is a function applied with `#show: template.with(...)`. The
+  picker lists every template on Typst Universe (from its package index,
+  cached a day in `stdpath("cache")/typst`), with `M.favourites` first
+  (elsevier-cas-unofficial -- Elsevier's cas-dc/cas-sc -- elspub,
+  charged-ieee). Your own templates are local packages:
+  `~/Library/Application Support/typst/packages/local/<name>/<version>/`
+  with a `typst.toml` that has a `[template]` section (`path`,
+  `entrypoint`); `typst init @local/<name>:<version>` uses them, and so
+  does the picker.
+
 pdfview ~  (lua/pdfview, local)                       *nvim-plugins-pdfview*
   A PDF viewer drawn inside Neovim with kitty graphics, used by the LaTeX,
   Markdown and Typst previews and for any `.pdf` opened as a buffer (`:e paper.pdf`). It needs

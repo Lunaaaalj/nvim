@@ -144,6 +144,7 @@ local sections = {
     { "<leader>pv / pF", "Markdown: preview in a split / live follow" },
     { "<leader>lv / lF / lk", "Typst: live preview / follow / close" },
     { "<leader>lo / lV / le", "Typst: compile to PDF / open in Skim / errors" },
+    { "<leader>ln", "Typst: new document from a template (:TypstNew)" },
     { "PDF: j k / J K", "Scroll (flows across pages) / turn page" },
     { "PDF: + - 0 w / s", "Zoom in / out / fit page / width; s spread" },
     { "PDF: / n N", "Search the text, next / previous match" },

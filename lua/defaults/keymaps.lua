@@ -237,6 +237,19 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 
+-- New Typst document from a template (lua/typst_templates.lua). Global, unlike
+-- the maps above: you start a document from anywhere (the only global
+-- <leader>l map, and no buffer-local one shadows it).
+vim.keymap.set("n", "<leader>ln", function() require("typst_templates").pick() end,
+  { desc = "Typst: new document from a template" })
+vim.api.nvim_create_user_command("TypstNew", function(o)
+  require("typst_templates").new(o.args ~= "" and o.args or nil)
+end, {
+  nargs = "?",
+  complete = function(lead) return require("typst_templates").complete(lead) end,
+  desc = "New Typst document from a template",
+})
+
 vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, { desc = "Show diagnostic" })
 
 -- bufferline navigation

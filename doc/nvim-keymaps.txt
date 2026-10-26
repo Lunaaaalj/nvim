@@ -370,6 +370,13 @@ There is no continuous-compile key: the preview recompiles as you type.
   <leader>lo    Compile once to `foo.pdf` next to the file
   <leader>lV    Compile and open `foo.pdf` in the system viewer (Skim)
   <leader>le    Diagnostics in the location list
+  <leader>ln    New document from a template (global, works anywhere; also
+                `:TypstNew [name]`). A Telescope list of Typst Universe
+                templates, favourites first (★), then your `@local`
+                template packages (◆). <CR> asks for a directory, runs
+                `typst init`, opens the entry file and starts the preview;
+                <C-o> opens the template's Universe page. ✗ = needs a newer
+                typst. See |nvim-plugins-typst|.
 
 PDF viewer ~                                              *nvim-keymaps-pdf*
 
