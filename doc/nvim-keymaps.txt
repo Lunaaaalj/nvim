@@ -365,8 +365,9 @@ these maps
   j / k, wheel    Scroll; past the page edge, flow to the next/previous
   h / l           Pan sideways when zoomed, else previous/next page
   <C-d> / <C-u>   Half a screen down / up
-  J / K           Next / previous page (also <Space> / <BS>, <PageDown> /
-                  <PageUp>); counts work; a spread turns two pages
+  J / K           Next / previous page (also <PageDown> / <PageUp>, <C-f> /
+                  <C-b>, and <BS> for previous); counts work; a spread turns
+                  two pages. <Space> is left free so <leader> maps work here
   gg / G          First / last page; {N}G goes to page N
   + / - / 0 / w   Zoom in / out / fit page / fit width
   s               Toggle two-page spread
