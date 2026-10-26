@@ -153,10 +153,12 @@ end
 -- ImageMagick arguments (after the input) recolouring `src` for "theme": ink to
 -- `fg`, paper to alpha (ink = 1 - min(R,G,B), so antialiasing blends onto any
 -- background). `keep` rects (figures, in src pixels) keep their own colours.
+-- 1 - min(R,G,B) is max() of the negated channels, i.e. HSB brightness: same
+-- pixels as `-separate -evaluate-sequence min -negate`, at half the cost.
 function M.recolor(src, fg, keep)
   local a = {
     "-channel", "RGB", "+level-colors", fg .. ",white", "+channel",
-    "(", src, "-separate", "-evaluate-sequence", "min", "-negate", ")",
+    "(", src, "-negate", "-grayscale", "Brightness", ")",
     "-alpha", "off", "-compose", "CopyOpacity", "-composite", "-compose", "Over",
   }
   for _, r in ipairs(keep or {}) do
@@ -219,17 +221,19 @@ function M.page(pdf, mt, page, s, look, cb)
     local function finish()
       if raw == nil or (theme and m == nil) then return end
       if not raw then return done(nil) end
-      local args = { "magick", base .. "-raw.png" }
-      if theme then vim.list_extend(args, M.recolor(base .. "-raw.png", look.fg, figures(m, s, 0, 0))) end
+      local args = { "magick", base .. "-raw.ppm" }
+      if theme then vim.list_extend(args, M.recolor(base .. "-raw.ppm", look.fg, figures(m, s, 0, 0))) end
       table.insert(args, base .. ".mpc")
       run(args, function(res)
-        os.remove(base .. "-raw.png")
+        os.remove(base .. "-raw.ppm")
         if res.code ~= 0 then return done(nil) end
         touch(k, base)
         done(base .. ".mpc")
       end)
     end
-    run({ "pdftoppm", "-png", "-singlefile", "-f", page, "-l", page, "-r", ("%.4f"):format(s * 72), pdf, base .. "-raw" },
+    -- PPM, not PNG: it is read once by magick, and PNG's compression made
+    -- pdftoppm ~5x slower (~250 ms vs ~45 ms for a retina A4 page)
+    run({ "pdftoppm", "-singlefile", "-f", page, "-l", page, "-r", ("%.4f"):format(s * 72), pdf, base .. "-raw" },
       function(res)
         raw = res.code == 0
         finish()
@@ -249,17 +253,17 @@ function M.crop(pdf, mt, page, s, rect, look, cb)
   local base = ("%s/crop-%s"):format(M.dir, key(pdf, mt, page, s, table.concat(rect, ","), vim.uv.hrtime()))
   vim.fn.mkdir(M.dir, "p")
   run({
-    "pdftoppm", "-png", "-singlefile", "-f", page, "-l", page, "-r", ("%.4f"):format(s * 72),
+    "pdftoppm", "-singlefile", "-f", page, "-l", page, "-r", ("%.4f"):format(s * 72),
     "-x", rect[1], "-y", rect[2], "-W", rect[3], "-H", rect[4], pdf, base,
   }, function(res)
     if res.code ~= 0 then return cb(nil) end
-    if look.colors ~= "theme" then return cb(base .. ".png") end
+    if look.colors ~= "theme" then return cb(base .. ".ppm") end
     M.meta(pdf, mt, page, function(m)
-      local args = { "magick", base .. ".png" }
-      vim.list_extend(args, M.recolor(base .. ".png", look.fg, figures(m, s, rect[1], rect[2])))
+      local args = { "magick", base .. ".ppm" }
+      vim.list_extend(args, M.recolor(base .. ".ppm", look.fg, figures(m, s, rect[1], rect[2])))
       table.insert(args, base .. "-c.png")
       run(args, function(r2)
-        os.remove(base .. ".png")
+        os.remove(base .. ".ppm")
         cb(r2.code == 0 and base .. "-c.png" or nil)
       end)
     end)

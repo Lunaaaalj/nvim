@@ -1,5 +1,5 @@
--- One viewer per PDF buffer: a preview split (LaTeX "tex", Markdown "md") or
--- a .pdf file opened like any other buffer ("file").
+-- One viewer per PDF buffer: a preview split (LaTeX "tex", Markdown "md",
+-- Typst "typst") or a .pdf file opened like any other buffer ("file").
 --
 -- The viewport lives in PDF points (vx, vy = its top-left on the "view": one
 -- page, or two side by side in a spread), so zooming keeps whatever was centred
@@ -38,9 +38,9 @@ function V.get(buf) return viewers[buf] end
 function V.list() return vim.tbl_values(viewers) end
 
 -- opts: fields set before the per-PDF state is restored, e.g. `integration`
--- (the source-side module: tex/markdown, providing live follow), `inverse`
+-- (the source-side module: tex/markdown/typst, providing live follow), `inverse`
 -- (click -> source; defaults to SyncTeX), `title`, `store_key`.
----@param kind "tex"|"md"|"file"
+---@param kind "tex"|"md"|"typst"|"file"
 function V.new(buf, pdf, kind, opts)
   local self = setmetatable({
     buf = buf, pdf = pdf, kind = kind,
@@ -106,6 +106,10 @@ function V:setup_win(win)
   wo.winfixwidth = not self.float
 end
 
+-- A preview whose document sets its own page shape (LaTeX, Typst): its split
+-- is sized to the page. Markdown pages are shaped to the split instead.
+function V:fixed_pages() return self.kind == "tex" or self.kind == "typst" end
+
 -- The LaTeX preview's home: a full-height split at the far right, sized to
 -- the page on its first render.
 function V:open_split(frac)
@@ -114,9 +118,7 @@ function V:open_split(frac)
     win = -1,
     width = math.floor(vim.o.columns * (frac or 0.45)),
   })
-  -- LaTeX pages have a fixed shape, so the split adapts to them; Markdown
-  -- pages are shaped to the split instead (lua/pdfview/markdown.lua)
-  self.float, self.autosize = false, self.kind == "tex"
+  self.float, self.autosize = false, self:fixed_pages()
   self:setup_win(win)
   self:winbar()
   return win
@@ -283,6 +285,24 @@ function V:winbar()
   vim.wo[win].winbar = left .. "%=%#Comment#" .. table.concat(right, " · ") .. " "
 end
 
+-- snacks.image bug: a placement closed while its image is still converting
+-- keeps its "loading" spinner timer, whose stop check ignores `closed`. Every
+-- 80 ms it clears the snacks.image namespace -- wiping the image that replaced
+-- it -- and draws "identify loading …" until the old file disappears. Each
+-- render re-attaches, so a quick second render (autosize, sync) hit it. An
+-- invalid buffer is one of the timer's stop conditions, and nothing reads
+-- `buf` from a closed placement (update() returns early on it).
+local function fix_snacks_spinner()
+  local Placement = require("snacks.image.placement")
+  if Placement._pdfview_close then return end
+  Placement._pdfview_close = Placement.close
+  function Placement:close()
+    local was_open = not self.closed
+    Placement._pdfview_close(self)
+    if was_open then self.buf = -1 end
+  end
+end
+
 function V:show(png)
   if not vim.api.nvim_buf_is_valid(self.buf) then
     os.remove(png)
@@ -290,6 +310,7 @@ function V:show(png)
   end
   local old = self.png
   self.png = png
+  fix_snacks_spinner()
   Snacks.image.buf.attach(self.buf, { src = png })
   -- kitty may still be reading the old file when the new one is placed
   if old then vim.defer_fn(function() os.remove(old) end, 5000) end
@@ -309,6 +330,21 @@ function V:prefetch(g)
       if sz[1] * g.s * sz[2] * g.s <= R.max_pixels then R.page(self.pdf, self.mt, q, g.s, look) end
     end
   end
+end
+
+-- Start rasterising the pages on screen right away (after a recompile, while
+-- the live sync waits on pdftotext), so render() finds them cached.
+function V:warm()
+  local g, mt = self.layout, R.mtime(self.pdf)
+  if not (g and mt) then return end
+  local look = self:look()
+  R.info(self.pdf, mt, function(info)
+    if not info then return end
+    for _, q in ipairs(g.pages) do
+      local sz = R.size(info, q)
+      if q <= info.pages and sz[1] * g.s * sz[2] * g.s <= R.max_pixels then R.page(self.pdf, mt, q, g.s, look) end
+    end
+  end)
 end
 
 function V:render()
@@ -345,7 +381,7 @@ function V:render()
     if changed and self.search then self:find(self.search.query, true) end
     if self.autosize then
       self.autosize = false
-      if self.kind == "tex" and not self.float then vim.api.nvim_win_set_width(win, self:fit_cols(win)) end
+      if self:fixed_pages() and not self.float then vim.api.nvim_win_set_width(win, self:fit_cols(win)) end
     end
 
     local g = self:geometry(win)
@@ -616,7 +652,7 @@ function V:keymaps()
     { "w", function() self:set_zoom(nil, "width") end, "fit width" },
     { "s", function()
       self.spread, self.anchor, self.vx = not self.spread, nil, 0
-      self.autosize = self.kind == "tex" and not self.float
+      self.autosize = self:fixed_pages() and not self.float
       self:winbar()
       self:render()
     end, "toggle two-page spread" },
@@ -637,7 +673,7 @@ function V:keymaps()
     { "q", function() self:close() end, "close" },
     { "?", function() self:show_help() end, "this help" },
   }
-  if self.integration then -- the previews (LaTeX, Markdown)
+  if self.integration then -- the previews (LaTeX, Markdown, Typst)
     table.insert(help, { "z", function() self:toggle_float() end, "toggle reading mode (float)" })
     table.insert(help, { "f", function() self.integration.toggle_live() end, "toggle live follow of the cursor" })
   end
@@ -676,7 +712,7 @@ function V.setup()
     callback = function()
       for _, v in pairs(viewers) do
         if v:win() then
-          v.autosize = v.kind == "tex" and not v.float
+          v.autosize = v:fixed_pages() and not v.float
           v:later()
         end
       end

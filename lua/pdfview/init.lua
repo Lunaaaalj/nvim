@@ -4,7 +4,9 @@
 --   lua/pdfview/viewer.lua  one viewer per PDF buffer: navigation, zoom, spread,
 --                           search, links, highlights, keymaps
 --   lua/pdfview/tex.lua     LaTeX preview split, SyncTeX, compile status
---   lua/pdfview/markdown.lua Markdown preview (pandoc -> typst), text-matched sync
+--   lua/pdfview/live.lua    live previews compiled on every edit, text-matched sync
+--   lua/pdfview/markdown.lua Markdown preview (pandoc -> typst)
+--   lua/pdfview/typst.lua   Typst preview (typst compile)
 --   lua/pdfview/store.lua   per-PDF page/zoom memory
 --
 -- This file is required at startup (lua/defaults/init.lua) only to claim
@@ -22,7 +24,7 @@ M.config = {
   prefetch = true, -- render the neighbouring pages in the background
   markdown = {
     from = "gfm", -- GitHub's dialect: its heading ids match README #anchors ($math$ and footnotes included)
-    delay = 300, -- ms after the last edit before re-rendering
+    delay = 300, -- ms from an edit to its re-render (throttled while typing)
     width = 0.5, -- preview split width, as a fraction of the editor
     -- Page width per split column (points; 11pt text). Tying the width to the
     -- split keeps the text the same size and reflows it when the split
@@ -31,13 +33,18 @@ M.config = {
     column_pt = 5.6,
     args = {}, -- extra pandoc arguments
   },
+  typst = {
+    delay = 120, -- ms from an edit to its recompile (throttled while typing)
+    width = 0.45, -- initial split width; it then fits the page, as for LaTeX
+    args = {}, -- extra `typst compile` arguments (e.g. { "--font-path", "fonts" })
+  },
 }
 
 local root = vim.fn.stdpath("cache") .. "/pdfview"
 
 function M.supported()
   if not (_G.Snacks and Snacks.image.supports_terminal()) then return false end
-  -- synctex ships with TeX; the Markdown preview checks pandoc/typst itself
+  -- synctex ships with TeX; the Markdown/Typst previews check pandoc/typst themselves
   for _, bin in ipairs({ "pdftoppm", "pdfinfo", "pdftohtml", "pdftotext", "magick", "synctex" }) do
     if vim.fn.executable(bin) == 0 then return false end
   end
@@ -78,7 +85,7 @@ end
 -- restored by :mksession, so it is closed before the save and re-launched from
 -- the remembered source file afterwards. PDF files restore on their own: they
 -- have a name and come back through BufReadCmd.
-local previews = { tex = "pdfview.tex", md = "pdfview.markdown" }
+local previews = { tex = "pdfview.tex", md = "pdfview.markdown", typst = "pdfview.typst" }
 local reopen ---@type fun()[]
 
 -- Re-run `view()` of `mod` from window `win` without moving the focus.

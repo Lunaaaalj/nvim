@@ -29,6 +29,14 @@ return {
           -- ruff exposes a hover handler that duplicates pyright; quiet it.
           on_attach = function(client) client.server_capabilities.hoverProvider = false end,
         },
+        tinymist = {
+          settings = {
+            formatterMode = "typstyle",
+            -- foo.pdf next to foo.typ on save, for Skim/<leader>lV; the live
+            -- preview (<leader>lv) compiles into its own cache instead.
+            exportPdf = "onSave",
+          },
+        },
         emmet_language_server = {
           filetypes = { "html", "css", "scss", "javascriptreact", "typescriptreact" },
         },
@@ -50,6 +58,7 @@ return {
           "cssls",                  -- CSS
           "emmet_language_server",  -- Emmet expansion
           "texlab",                 -- LaTeX
+          "tinymist",               -- Typst (also formats via typstyle)
           "lua_ls",                 -- Lua (this config)
           "r_language_server",      -- R / Quarto .qmd R chunks
         },
@@ -73,6 +82,7 @@ return {
           "stylua",              -- Lua format
           "clang-format",        -- C/C++ format
           "latexindent",         -- LaTeX format
+          "typstyle",            -- Typst format
           "prettier",            -- web/markdown format
           "codelldb",            -- C/C++ debug adapter
           "debugpy",             -- Python debug adapter

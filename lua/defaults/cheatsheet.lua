@@ -142,6 +142,9 @@ local sections = {
     { "<leader>lv / lV", "Preview PDF in a kitty split / in Skim" },
     { "<leader>lF", "Toggle live follow (preview tracks the cursor)" },
     { "<leader>pv / pF", "Markdown: preview in a split / live follow" },
+    { "<leader>lv / lF / lk", "Typst: live preview / follow / close" },
+    { "<leader>lo / lV / le", "Typst: compile to PDF / open in Skim / errors" },
+    { "<leader>ln", "Typst: new document from a template (:TypstNew)" },
     { "PDF: j k / J K", "Scroll (flows across pages) / turn page" },
     { "PDF: + - 0 w / s", "Zoom in / out / fit page / width; s spread" },
     { "PDF: / n N", "Search the text, next / previous match" },
@@ -162,6 +165,7 @@ local sections = {
     { "]] / [[", "Next / prev section" },
     { "mk / dm", "Snippet: inline / display math (insert)" },
     { "@a / @W", "Snippet: \\alpha / \\Omega (math zone)" },
+    { "typst: mk dm x2 @a //", "Same snippets in .typ (alpha, frac(), x_2)" },
   } },
   { "Claude Code", {
     { "<leader>ac", "Toggle Claude" },

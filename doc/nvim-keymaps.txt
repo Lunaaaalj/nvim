@@ -18,7 +18,7 @@ Leader is <Space>; localleader is "\". Modes are noted where not normal mode.
   11. Debug (DAP) .............................. |nvim-keymaps-debug|
   12. Session (Persistence) .................... |nvim-keymaps-session|
   13. Notebooks (Molten) ....................... |nvim-keymaps-notebooks|
-  14. LaTeX (VimTeX) ........................... |nvim-keymaps-latex|
+  14. LaTeX (VimTeX), Typst .................... |nvim-keymaps-latex|
   15. Claude Code .............................. |nvim-keymaps-claude|
 
 Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
@@ -169,7 +169,7 @@ nvim-treesitter-textobjects (syntax-aware; use in operators/visual):
 
 LSP (buffer-local; bound by a global LspAttach autocmd in
 `lua/defaults/lsp.lua`, so they work for every server: clangd, pyright, ruff,
-ts_ls, html, cssls, emmet, texlab, lua_ls):
+ts_ls, html, cssls, emmet, texlab, tinymist, lua_ls):
   gd            Go to definition
   gD            Go to declaration
   gr            List references
@@ -330,7 +330,7 @@ also get per-language LSP inside chunks via quarto-nvim + otter.nvim.
 See |nvim-notebooks| and |nvim-notebooks-quarto| for the full workflow.
 
 ==============================================================================
-14. LATEX (VIMTEX)                                        *nvim-keymaps-latex*
+14. LATEX (VIMTEX), TYPST                                 *nvim-keymaps-latex*
 
 All maps in this section are buffer-local to TeX buffers.
 
@@ -356,9 +356,31 @@ Buffer-local to Markdown buffers.
   <leader>pF    Toggle live follow: the preview tracks the cursor on
                 CursorHold
 
+Typst ~                                                 *nvim-keymaps-typst*
+
+Buffer-local to Typst buffers; the same keys as LaTeX do the same jobs.
+There is no continuous-compile key: the preview recompiles as you type.
+
+  <leader>lv    Live preview in a split on the right (kitty graphics),
+                highlighting the cursor line on the page; in visual mode,
+                the selection. Again re-syncs.
+  <leader>lF    Toggle live follow: the preview tracks the cursor on
+                CursorHold
+  <leader>lk    Close the preview
+  <leader>lo    Compile once to `foo.pdf` next to the file
+  <leader>lV    Compile and open `foo.pdf` in the system viewer (Skim)
+  <leader>le    Diagnostics in the location list
+  <leader>ln    New document from a template (global, works anywhere; also
+                `:TypstNew [name]`). A Telescope list of Typst Universe
+                templates, favourites first (★), then your `@local`
+                template packages (◆). <CR> asks for a directory, runs
+                `typst init`, opens the entry file and starts the preview;
+                <C-o> opens the template's Universe page. ✗ = needs a newer
+                typst. See |nvim-plugins-typst|.
+
 PDF viewer ~                                              *nvim-keymaps-pdf*
 
-The LaTeX and Markdown previews and any `.pdf` opened as a buffer share
+The LaTeX, Markdown and Typst previews and any `.pdf` opened as a buffer share
 these maps
 (`?` inside the viewer lists them).
 
@@ -428,6 +450,25 @@ fire only inside a math zone, detected via `vimtex#syntax#in_mathzone()`:
 
 Because the math-zone check is a VimTeX function, these snippets go silent if
 VimTeX fails to initialise. See |nvim-plugins-vimtex|.
+
+Typst snippets live in `lua/snippets/typst.lua` and reuse the LaTeX
+triggers where they still make sense. Math is detected with treesitter
+(inside `$...$`, not in a "string" there). The set is lighter: Typst
+already turns `->`, `=>`, `<=`, `>=`, `!=`, `...`, `oo`, `RR` and `x/y` into
+symbols, and no autosnippet may be a prefix of a native name (`delta`,
+`sqrt`, `liminf`, `parallel`, ...), so limits/sums are <Tab> snippets.
+
+  mk / dm       Inline $...$ / display $ ... $ math (text mode)
+  //            frac(_, _) (x/y is already a fraction)
+  x2, __, td    x_2, _(...), ^(...); sr ^2, cb ^3, invs ^(-1)
+  @a .. @W      Greek, Typst names (alpha .. Omega)
+  xhat xbar xtld xvec   hat(x), overline(x), tilde(x), arrow(x)
+  ~~ sub= sup= notin    approx, subset.eq, supset.eq, in.not
+  xx ** nn uu   times, dot.op, inter, union; c.. v.. d.. dots
+  lr| nrm lra   abs(), norm(), chevron.l ... chevron.r
+  bf pdv ddt ddx  bold(), (partial _)/(partial _), (dif)/(dif t) ...
+  <Tab>: sum prod lim dint (with limits), pmat bmat vmat cases (math);
+         template fig tab grid eqn code link fn bib note (text)
 
 ==============================================================================
 15. CLAUDE CODE                                          *nvim-keymaps-claude*

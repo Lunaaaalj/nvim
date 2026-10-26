@@ -20,7 +20,7 @@ return {
           "lua", "vim", "vimdoc", "bash", "query",
           "python", "cpp", "c", "r",
           "markdown", "markdown_inline",
-          "html", "css", "latex",
+          "html", "css", "latex", "typst",
           "json", "yaml", "toml",
         },
         -- Install into the canonical site dir: nvim-treesitter appends "/parser",
