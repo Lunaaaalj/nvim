@@ -605,7 +605,8 @@ function V:keymaps()
     { { "h", "<Left>" }, function() self:scroll(0, -sz("view_w")) end, "pan left / previous page" },
     { "<C-d>", function() self:scroll((self.layout and self.layout.view_h or 100) / 2) end, "half a screen down" },
     { "<C-u>", function() self:scroll(-(self.layout and self.layout.view_h or 100) / 2) end, "half a screen up" },
-    { { "J", "<Space>", "<PageDown>", "<C-f>" }, function() self:go(self.page + self:step() * vim.v.count1, 0) end, "next page" },
+    -- not <Space>: it's the leader, and a buffer-local nowait map would swallow every <leader> key here
+    { { "J", "<PageDown>", "<C-f>" }, function() self:go(self.page + self:step() * vim.v.count1, 0) end, "next page" },
     { { "K", "<BS>", "<PageUp>", "<C-b>" }, function() self:go(self.page - self:step() * vim.v.count1, 0) end, "previous page" },
     { "gg", function() self:go(vim.v.count > 0 and vim.v.count or 1, 0) end, "first page / page N" },
     { "G", function() self:go(vim.v.count > 0 and vim.v.count or self.info.pages, 0) end, "last page / page N" },
