@@ -165,6 +165,7 @@ local sections = {
     { "]] / [[", "Next / prev section" },
     { "mk / dm", "Snippet: inline / display math (insert)" },
     { "@a / @W", "Snippet: \\alpha / \\Omega (math zone)" },
+    { "typst: mk dm x2 @a //", "Same snippets in .typ (alpha, frac(), x_2)" },
   } },
   { "Claude Code", {
     { "<leader>ac", "Toggle Claude" },

@@ -350,6 +350,7 @@ Typst ~  (tinymist + lua/pdfview/typst.lua)              *nvim-plugins-typst*
   sizes itself to the page as for LaTeX. Typst has no SyncTeX, so sync
   matches text, as for Markdown. Needs the `typst` CLI.
   Maps: |nvim-keymaps-typst| (the same `<leader>l...` keys as LaTeX).
+  Snippets: `lua/snippets/typst.lua`, see the end of |nvim-keymaps-latex|.
 
   Templates (`lua/typst_templates.lua`, `<leader>ln` / `:TypstNew`): a
   template is a function applied with `#show: template.with(...)`. The
