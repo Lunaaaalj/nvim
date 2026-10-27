@@ -216,7 +216,9 @@ end
 
 --- Open a chat in a window: focuses it if it's already running, otherwise
 --- starts `claude` (resuming `session_id` if given, else a fresh chat).
----@param opts { session_id?: string, title?: string, win?: integer }?
+--- `prompt` seeds a new chat: it's passed as claude's positional argument, so
+--- the chat starts already working on it (upstream.nvim's "work on issue").
+---@param opts { session_id?: string, title?: string, win?: integer, prompt?: string }?
 ---@return integer bufnr
 function M.open(opts)
   opts = opts or {}
@@ -232,6 +234,7 @@ function M.open(opts)
   -- session log (and listed under "Running") before Claude writes anything.
   local id = opts.session_id or uuid4()
   local cmd = opts.session_id and { "claude", "--resume", id } or { "claude", "--session-id", id }
+  if opts.prompt and opts.prompt ~= "" then cmd[#cmd + 1] = opts.prompt end
 
   local buf = vim.api.nvim_create_buf(true, false)
   vim.api.nvim_win_set_buf(win, buf)
