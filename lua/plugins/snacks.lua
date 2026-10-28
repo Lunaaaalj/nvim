@@ -94,6 +94,7 @@ local keys = {
   { key = "c", hint = "config", action = ":lua Snacks.dashboard.pick('files', {cwd = vim.fn.stdpath('config')})" },
   { key = "l", action = ":Lazy" },
   { key = "m", action = ":Mason" },
+  { key = "G", action = ":Upstream" },
   { key = "q", hint = "quit", action = ":qa" },
 }
 

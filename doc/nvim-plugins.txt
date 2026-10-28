@@ -224,6 +224,18 @@ typr ~  (nvzone/typr)
   Typing practice (`:Typr`, <leader>ty) and a WPM/accuracy stats dashboard
   (`:TyprStats`, <leader>tY). UI rendered by nvzone/volt. Lazy-loaded.
 
+upstream ~  (~/Downloads/GitHub/upstream.nvim, local) *nvim-plugins-upstream*
+  Full-screen GitHub UI on the `gh` CLI: issues, pull requests, review
+  requests and Actions runs; comment / edit / labels / merge / check out;
+  compose buffers where |:w| submits; PR review with inline threads and a
+  pending review; Claude drafts PR descriptions and review comments. Its
+  own docs: |upstream|. Keys: |nvim-keymaps-github|.
+
+  Glue in `lua/plugins/upstream.lua`: colours from the active scheme's
+  accent, "work on this issue" chats in Claude chat buffers (seeded with
+  the issue as the first prompt), and a dashboard stats refresh after
+  every write. The dashboard's `G` key opens it.
+
 music ~  (lua/music, local)                             *nvim-plugins-music*
   A controller for the Apple Music app: Neovim plays nothing itself, it
   talks to Music through `osascript` (`applemusic.js` for state and

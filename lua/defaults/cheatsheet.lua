@@ -51,6 +51,16 @@ local sections = {
     { "hjkl / ⏎ / P / ⌫", "Cover grid: move / open / play / back" },
     { "␣ n p < > - + s r", "In player: pause, skip, seek, volume, shuffle, repeat" },
   } },
+  { "GitHub (upstream.nvim)", {
+    { "<leader>Go / Gi / Gp / Gr", "Float: last tab / issues / PRs / review requests" },
+    { "<leader>Gn / Gc", "New issue / create PR from branch (Claude drafts it)" },
+    { "c e x", "In float: comment / edit / close-reopen" },
+    { "l a M v", "In float: labels / assignees / milestone / reviewers" },
+    { "m o n", "In float: merge / check out / new issue-PR" },
+    { "R / A / L", "In float: review PR (run: re-run) / AI menu / run log" },
+    { ":w in compose", "Submit (comment, issue, PR, review body)" },
+    { "c r x ]t S A", "Review: comment / reply / resolve / next thread / submit / AI" },
+  } },
   { "Windows / Buffers", {
     { "<C-h/j/k/l>", "Move between windows" },
     { "<Tab> / <S-Tab>", "Next / previous buffer" },

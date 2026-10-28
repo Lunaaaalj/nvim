@@ -49,6 +49,23 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
   <leader>ty    Typing practice (typr)
   <leader>tY    Typing stats dashboard (typr)
 
+GitHub ~                                                  *nvim-keymaps-github*
+
+upstream.nvim (|nvim-plugins-upstream|, full reference: |upstream|).
+
+  <leader>Go    GitHub float on the last tab
+  <leader>Gi    ... on Issues          <leader>Gp    ... on Pull requests
+  <leader>Gr    ... on Review requests
+  <leader>Gn    New issue (compose buffer; :w submits)
+  <leader>Gc    Create a PR from the current branch, Claude drafting the
+                title and body (compose buffer; :w submits)
+
+In the float: c comment, e edit, x close/reopen, l labels, a assignees,
+M milestone, v reviewers, m merge, o check out, n new, R review (on a run:
+re-run), L run log, A AI menu, gx browser, ? all keys. In the review tab:
+c comment (visual: range), r reply, x resolve, ]t/[t threads, S submit,
+A AI review assist, gd its drafts.
+
 Music ~                                                    *nvim-keymaps-music*
 
 Drives the Apple Music app (|nvim-plugins-music|); the statusline shows the
