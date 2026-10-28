@@ -9,7 +9,8 @@ CONTENTS                                                       *nvim-config*
   4. Architecture ................................. |nvim-config-architecture|
   5. Editor options ............................... |nvim-config-options|
   6. Colorschemes & transparency ................. |nvim-config-colorscheme|
-  7. Other help files ............................. |nvim-config-help|
+  7. Project settings ............................. |nvim-config-project|
+  8. Other help files ............................. |nvim-config-help|
 
 This config also ships these companion help files:
 
@@ -113,6 +114,8 @@ To add a plugin, create a new file under `lua/plugins/` returning a spec: >
 Set in `lua/defaults/options.lua`:
   - `number` + `relativenumber`   Hybrid line numbers.
   - `tabstop`/`softtabstop`/`shiftwidth` = 4, `expandtab`   4-space indents.
+                                  C-family buffers take theirs from
+                                  clang-format instead (|nvim-config-project|).
   - `autoindent` + `smartindent`  Automatic indentation.
   - `wrap` + `linebreak`          Soft-wrap long lines at word boundaries.
   - `netrw_banner = 0`            Hide the netrw banner.
@@ -209,7 +212,26 @@ warm set: rose-pine, kanagawa-paper, bamboo, flexoki, evergarden, vesper. See
 |nvim-plugins-colorschemes|.
 
 ==============================================================================
-7. OTHER HELP FILES                                       *nvim-config-help*
+7. PROJECT SETTINGS                                    *nvim-config-project*
+                                                    *nvim-config-clang-indent*
+Per-project settings in the spirit of VS Code's `.vscode/settings.json`, by
+projectrc.nvim (|nvim-plugins-projectrc|, its own docs: |projectrc|): a float
+(`<leader>,` or `:ProjectRC`, keys in |nvim-keymaps-project|) edits
+`.nvim/settings.json` and, for clang-format/clangd settings, those tools' own
+`.clang-format` / `.clangd`, so shells, CI and other editors agree.
+
+It also makes C, C++, Objective-C, CUDA and proto indentation follow
+clang-format: 'shiftwidth', 'tabstop' and 'expandtab' come from
+`clang-format --dump-config` for the file, and without a `.clang-format`
+both the editor and conform's clang_format use LLVM style with
+`IndentWidth: 4`. So `>>` and format-on-save always agree.
+
+Settings that run something (build commands, environment, launch configs,
+clangd's query driver, the pyright venv) stay off until the settings file is
+trusted (`T` in the float), using the same hash-based trust as 'exrc'.
+
+==============================================================================
+8. OTHER HELP FILES                                       *nvim-config-help*
 
   |nvim-keymaps|      Every keymap in the config, grouped by area.
   |nvim-plugins|      Catalog of all plugins with their options and maps.
