@@ -2,12 +2,14 @@ any	nvim-plugins.txt	/*any*
 before	nvim-plugins.txt	/*before*
 nvim-config	nvim-config.txt	/*nvim-config*
 nvim-config-architecture	nvim-config.txt	/*nvim-config-architecture*
+nvim-config-clang-indent	nvim-config.txt	/*nvim-config-clang-indent*
 nvim-config-colorscheme	nvim-config.txt	/*nvim-config-colorscheme*
 nvim-config-cursorline	nvim-config.txt	/*nvim-config-cursorline*
 nvim-config-help	nvim-config.txt	/*nvim-config-help*
 nvim-config-install	nvim-config.txt	/*nvim-config-install*
 nvim-config-intro	nvim-config.txt	/*nvim-config-intro*
 nvim-config-options	nvim-config.txt	/*nvim-config-options*
+nvim-config-project	nvim-config.txt	/*nvim-config-project*
 nvim-config-requirements	nvim-config.txt	/*nvim-config-requirements*
 nvim-config-ui-toggle	nvim-config.txt	/*nvim-config-ui-toggle*
 nvim-config.txt	nvim-config.txt	/*nvim-config.txt*
@@ -28,6 +30,7 @@ nvim-keymaps-motion	nvim-keymaps.txt	/*nvim-keymaps-motion*
 nvim-keymaps-music	nvim-keymaps.txt	/*nvim-keymaps-music*
 nvim-keymaps-notebooks	nvim-keymaps.txt	/*nvim-keymaps-notebooks*
 nvim-keymaps-pdf	nvim-keymaps.txt	/*nvim-keymaps-pdf*
+nvim-keymaps-project	nvim-keymaps.txt	/*nvim-keymaps-project*
 nvim-keymaps-quit	nvim-keymaps.txt	/*nvim-keymaps-quit*
 nvim-keymaps-session	nvim-keymaps.txt	/*nvim-keymaps-session*
 nvim-keymaps-terminal	nvim-keymaps.txt	/*nvim-keymaps-terminal*
@@ -54,6 +57,7 @@ nvim-plugins-music	nvim-plugins.txt	/*nvim-plugins-music*
 nvim-plugins-navigation	nvim-plugins.txt	/*nvim-plugins-navigation*
 nvim-plugins-notebooks	nvim-plugins.txt	/*nvim-plugins-notebooks*
 nvim-plugins-pdfview	nvim-plugins.txt	/*nvim-plugins-pdfview*
+nvim-plugins-projectrc	nvim-plugins.txt	/*nvim-plugins-projectrc*
 nvim-plugins-prose	nvim-plugins.txt	/*nvim-plugins-prose*
 nvim-plugins-testdebug	nvim-plugins.txt	/*nvim-plugins-testdebug*
 nvim-plugins-typst	nvim-plugins.txt	/*nvim-plugins-typst*

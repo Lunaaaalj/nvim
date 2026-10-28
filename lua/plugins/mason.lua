@@ -17,6 +17,8 @@ return {
           -- clangd defaults to utf-8 offsets; nvim/cmp expect utf-16. Pinning
           -- this silences the "multiple offset encodings" warning.
           capabilities = { offsetEncoding = { "utf-16" } },
+          -- adds --query-driver from the project settings (projectrc.nvim)
+          cmd = function(dispatchers, config) return require("projectrc").clangd_cmd(dispatchers, config) end,
         },
         pyright = {
           settings = {

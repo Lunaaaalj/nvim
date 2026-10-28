@@ -47,6 +47,8 @@ return {
                 },
             }
             dap.configurations.c = dap.configurations.cpp
+            -- the project's launch configs (projectrc.nvim) go first
+            require("projectrc").dap_sync()
 
             dapui.setup()
 

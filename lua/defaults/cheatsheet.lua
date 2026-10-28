@@ -51,6 +51,12 @@ local sections = {
     { "hjkl / ⏎ / P / ⌫", "Cover grid: move / open / play / back" },
     { "␣ n p < > - + s r", "In player: pause, skip, seek, volume, shuffle, repeat" },
   } },
+  { "Project settings", {
+    { "<leader>,", "Settings float (.nvim/settings.json + .clang-format/.clangd)" },
+    { "⏎ / x / f", "In float: edit / reset to inherited / filetype scope" },
+    { "e / T / ⇥ 1-5", "In float: raw JSON / trust the file / tabs" },
+    { "<leader>bb / br / bt", "Project build / run / test command in a terminal" },
+  } },
   { "GitHub (upstream.nvim)", {
     { "<leader>Go / Gi / Gp / Gr", "Float: last tab / issues / PRs / review requests" },
     { "<leader>Gn / Gc", "New issue / create PR from branch (Claude drafts it)" },

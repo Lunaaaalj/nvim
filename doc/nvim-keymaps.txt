@@ -255,6 +255,23 @@ Format:
                 also formatted on save.
   <leader>uf    Toggle format-on-save (sets g:disable_autoformat)
 
+  C/C++ indentation follows clang-format, so `>>` and format-on-save always
+  agree; see |nvim-config-project|.
+
+Project settings & build:                                *nvim-keymaps-project*
+  <leader>,     Project settings float (projectrc.nvim, |projectrc|). Inside:
+                  <CR> / l      Edit (toggle, pick, type, or a JSON editor)
+                  x             Reset to the inherited value
+                  f             Toggle filetype scope ("[cpp]" overrides)
+                  e             Open the raw .nvim/settings.json
+                  T             Trust the settings file (vim.secure)
+                  <Tab> 1-5     Switch tabs
+                  q / <Esc>     Close
+  <leader>bb    Run the project's build command in a project terminal
+  <leader>br    Run the project's run command
+  <leader>bt    Run the project's test command
+                Then <leader>tq turns the output's errors into a quickfix list.
+
 Spell-check (auto-enabled for tex/markdown/gitcommit/text):
   <leader>us    Toggle spell-check in the current window
   ]s  /  [s     Next / previous misspelled word

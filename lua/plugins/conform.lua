@@ -16,19 +16,34 @@ return {
             yaml = { "prettier" },
             markdown = { "prettier" },
         },
+        formatters = {
+            -- Without a .clang-format, use the same fallback style the editor's
+            -- C-family indent is derived from (projectrc.nvim).
+            clang_format = {
+                prepend_args = function(_, ctx)
+                    return require("projectrc").clang_format_args(ctx.filename)
+                end,
+            },
+        },
         -- Function form so the <leader>uf toggle (vim.g.disable_autoformat) can
         -- disable format-on-save globally without unloading the plugin.
         format_on_save = function(bufnr)
             if vim.g.disable_autoformat or vim.b[bufnr].disable_autoformat then
                 return
             end
-            return { timeout_ms = 2000, lsp_fallback = true }
+            -- project settings (projectrc.nvim) can turn it off or pick formatters
+            local project = require("projectrc").format_opts(bufnr, true)
+            if not project then return end
+            return vim.tbl_extend("force", { timeout_ms = 2000, lsp_fallback = true }, project)
         end,
     },
     keys = {
         {
             "<leader>cf",
-            function() require("conform").format({ async = true, lsp_fallback = true }) end,
+            function()
+                local project = require("projectrc").format_opts(0)
+                require("conform").format(vim.tbl_extend("force", { async = true, lsp_fallback = true }, project))
+            end,
             desc = "Format buffer",
         },
         {

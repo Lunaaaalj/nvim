@@ -25,6 +25,7 @@ return {
         },
         spec = {
             { "<leader>a", group = "AI/Claude" },
+            { "<leader>b", group = "Build (project)" },
             { "<leader>c", group = "Code" },
             { "<leader>d", group = "Debug/Diagnostic" },
             { "<leader>f", group = "Find" },
