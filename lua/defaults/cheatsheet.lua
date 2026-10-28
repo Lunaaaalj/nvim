@@ -148,7 +148,8 @@ local sections = {
     { "<leader>qd", "Don't save session on exit" },
   } },
   { "Molten / Notebooks / Quarto", {
-    { "<leader>mi", "Init kernel" },
+    { "<leader>mi", "Pick kernel: interpreter / venv (:Kernel)" },
+    { "<leader>mI", "Add a registered kernel (:MoltenInit)" },
     { "<leader>e", "Evaluate operator" },
     { "<leader>r", "Evaluate selection (visual)" },
     { "<leader>rc", "Run current cell" },

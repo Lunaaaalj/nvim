@@ -21,6 +21,10 @@ return {
         dependencies = { "3rd/image.nvim" },
         build = ":UpdateRemotePlugins",
         init = function()
+            -- Kernels from interpreters/venvs (lua/molten_kernels.lua). Puts its
+            -- kernelspec dir on $JUPYTER_PATH, so it must run before the Python
+            -- host starts.
+            require("molten_kernels").setup()
             if image_capable() then
                 vim.g.molten_image_provider = "image.nvim"
             else

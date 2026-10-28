@@ -1,80 +1,77 @@
 # Molten workflow
 
 How to run code in Jupyter kernels from Neovim with
-[`molten-nvim`](https://github.com/benlubas/molten-nvim). Covers the one
-concept that trips people up — **kernels vs. venvs** — plus the day-to-day flow
-and the `jkernel` helper.
+[`molten-nvim`](https://github.com/benlubas/molten-nvim): picking a kernel,
+the day-to-day flow, plots, and R / Quarto.
 
-## The key idea: kernels, not venvs
+## Picking a kernel: interpreters, like VS Code
 
-`:MoltenInit` does **not** browse for virtual environments. It lists the
-**Jupyter kernels** that are registered on your machine. A venv is *not*
-automatically a kernel — you register it once, and from then on it appears in
-the `:MoltenInit` picker.
+You pick a **Python interpreter or environment**, not a pre-registered Jupyter
+kernel. There is no `jkernel add` step. `lua/molten_kernels.lua` sits between
+you and `:MoltenInit`:
 
-So the model is:
+- **You usually don't pick at all.** The first `<leader>rc` / `<leader>ra` /
+  `<leader>e` in a notebook starts a kernel by itself, from the first of
+  these that applies:
+  1. the interpreter this file used last time;
+  2. the one this project used last (the default for new notebooks in it);
+  3. the project's only venv (`.venv/`, `venv/`, any dir with a `pyvenv.cfg`
+     from the file's folder up to the project root, or a poetry / pipenv env
+     named after the project);
+  4. for an R-only `.qmd`, the only registered R kernel.
 
-```
-project venv  --(register once)-->  Jupyter kernel  --(:MoltenInit)-->  Molten
-```
+  If it still can't tell, it opens the picker.
+- **`<leader>mi` (or `:Kernel`) opens the picker** to switch. It lists the
+  active `$VIRTUAL_ENV` / `$CONDA_PREFIX`, project envs (★), `~/.virtualenvs/*`,
+  conda envs, pyenv versions, uv-managed Pythons and the system Pythons, then
+  every registered kernel (IRkernel, old `jkernel` ones). The current choice is
+  marked ●. It also offers **+ Create .venv** (uv if installed, with pip seeded
+  so `%pip` works) when the project has none, and **Enter interpreter path…**.
+  `:Kernel /path/to/python` (or to an env dir) skips the picker.
+- **ipykernel is installed for you.** If the chosen env doesn't have it, you
+  get one confirmation, then `uv pip install` (uv + venv) or
+  `python -m pip install`. Interpreters that refuse installs (Homebrew, uv's
+  own Pythons: PEP 668) offer to create a project `.venv` from them instead.
+- **The kernel runs in the notebook's folder**, so relative paths
+  (`pd.read_csv("data.csv")`) and local imports behave as in Jupyter or
+  VS Code. The env's `bin` is first on the kernel's `PATH`, so `!pip install x`
+  and subprocesses use that env.
+- The statusline shows the attached kernel.
 
-Molten reads the kernel list through `jupyter_client` (in the Neovim host venv
-`~/.virtualenvs/neovim`), so anything `jupyter kernelspec list` shows, Molten
-sees too.
+### How it works
 
-## Registering a venv as a kernel
+Molten can only start *kernelspecs*. So for the interpreter you pick, the
+module writes one to `stdpath("data")/molten/kernels/nvim-<env>-<hash>/`
+(one per interpreter + notebook folder) and runs `:MoltenInit` with it. That
+directory is put on `$JUPYTER_PATH` before Neovim's Python host starts. The
+specs don't touch `~/Library/Jupyter`, so `jupyter kernelspec list`, VS Code
+and JupyterLab never see them. Specs whose interpreter is gone, or that went
+unused for 30 days, are pruned when the picker opens. Choices are remembered
+in `stdpath("state")/molten_kernels.json`.
 
-Use the `jkernel` helper (`~/.local/bin/jkernel`, already on `PATH`).
+`<leader>mI` is the raw `:MoltenInit`, which lists registered kernels only.
+Use it to attach a *second* kernel to a buffer (e.g. Python and R in one
+`.qmd`). Switching with `<leader>mi` replaces the attached kernel instead.
+
+### Registering a kernel by hand (optional)
+
+You only need this for kernels that aren't a Python env, such as R (below),
+or to share a kernel with other Jupyter frontends. `jkernel add` (in
+`~/.local/bin`) registers the current directory's venv under
+`~/Library/Jupyter/kernels/`; `jkernel rm` / `jkernel list` manage them. By
+hand:
 
 ```bash
-cd /path/to/project
-source .venv/bin/activate     # or just have .venv/ , venv/ , or env/ present
-jkernel add
+.venv/bin/python -m pip install ipykernel
+.venv/bin/python -m ipykernel install --user --name my-project --display-name "My Project"
 ```
-
-`jkernel add`:
-
-1. Finds the venv — an activated `$VIRTUAL_ENV` first, else `.venv/`, `venv/`,
-   or `env/` in the current directory.
-2. Prompts for a **kernel name** (defaults to the folder name) and a display
-   name.
-3. Installs `ipykernel` into the venv if it's missing.
-4. Registers the kernel under `~/Library/Jupyter/kernels/`.
-
-After that the name shows up in `:MoltenInit`. This is a **one-time** step per
-project — the kernelspec just stores the absolute path to that venv's Python, so
-everything you `pip install` in the venv is available when you run cells.
-
-### Doing it manually (no helper)
-
-```bash
-source .venv/bin/activate
-pip install ipykernel
-python -m ipykernel install --user --name my-project --display-name "My Project"
-```
-
-## Managing kernels with `jkernel`
-
-| Command | What it does |
-|---------|--------------|
-| `jkernel add` | Register the current directory's venv (prompts for name) |
-| `jkernel rm` | Remove a kernel — interactive numbered picker |
-| `jkernel rm <name>` | Remove a kernel by name directly |
-| `jkernel list` | List registered kernels |
-
-Notes:
-
-- `jkernel` uses the Neovim host's `jupyter` (`~/.virtualenvs/neovim/bin/jupyter`)
-  so its list always matches what Molten sees. Override with
-  `NVIM_JUPYTER=/path/to/jupyter jkernel ...`.
-- The `Native kernel (python3) is not available` warning from
-  `jupyter kernelspec list` is harmless — the host venv has no kernel of its own.
 
 ## Daily flow
 
 1. Open your `.ipynb` or `.py` in Neovim. (`.ipynb` is converted to markdown on
    the fly by `jupytext.nvim`.)
-2. `<leader>mi` → `:MoltenInit`, then pick the kernel for this project.
+2. Run a cell (`<leader>rc`). The kernel starts by itself (see above). Use
+   `<leader>mi` to switch to another one.
 3. Evaluate code:
    - **`<leader>rc` — run the whole cell the cursor is in** (the fast path: it
      auto-selects the enclosing ```` ```python ```` fence and evaluates it)
@@ -87,7 +84,9 @@ Notes:
    - `<leader>rk` — run every cell **above** the current one (`k` = up)
    - `<leader>rj` — run the current cell **and everything below** (`j` = down)
 
-   These evaluate each ```` ```python ```` cell in order. The kernel queues the
+   These evaluate each cell in the kernel's language, in order: a
+   ```` ```bash ```` example inside a Markdown cell is skipped, not sent to
+   the Python kernel. The kernel queues the
    evaluations, so they run sequentially and outputs land in the right cells —
    even though all the requests are fired at once. If the cursor is between
    cells (in prose), the split falls on the cursor line: `rk` runs cells fully
@@ -128,15 +127,15 @@ startup:
 ### Registering R as a kernel
 
 Unlike Python, R has no per-project venv concept here — IRkernel registration
-is a **one-time, machine-wide** step, not something `jkernel` handles:
+is a **one-time, machine-wide** step:
 
 ```r
 install.packages("IRkernel")
 IRkernel::installspec()
 ```
 
-After that, the R kernel shows up in `<leader>mi` (`:MoltenInit`) alongside
-any Python kernels — pick it the same way. `<leader>tR` also opens a plain,
+After that, the R kernel shows up in `<leader>mi` after the Python
+interpreters, and an R-only `.qmd` picks it by itself. `<leader>tR` also opens a plain,
 persistent R REPL terminal (same pattern as `<leader>tp`/`<leader>tN`) for
 work outside Molten cells.
 
@@ -154,13 +153,18 @@ it applies to R plots exactly like Python ones, no separate mechanism.
 
 ## Troubleshooting
 
-- **Kernel not in `:MoltenInit`** — it isn't registered. Run `jkernel add` in the
-  project, or check `jkernel list`.
-- **`:MoltenInit` errors about remote plugins** — run `:UpdateRemotePlugins` and
-  restart Neovim (required after installing/updating molten-nvim).
+- **"Molten isn't registered"** — run `:UpdateRemotePlugins` and restart
+  Neovim (required after installing/updating molten-nvim).
+- **An env is missing from the picker** — it is found by looking for a
+  `pyvenv.cfg` (venvs), `conda-meta/` (conda) or the usual install dirs. Use
+  **Enter interpreter path…** or `:Kernel /path/to/env` for anything else.
+- **Installing ipykernel failed** — the error is in the notification. Behind a
+  proxy or offline, install it yourself (`.venv/bin/python -m pip install
+  ipykernel`) and pick the env again.
 - **`jupytext` / `pynvim` not found** — the Neovim Python host venv
-  `~/.virtualenvs/neovim` is missing deps; it needs `pynvim`, `jupyter_client`,
-  `jupytext`. See the Molten section of `CLAUDE.md`.
-- **Wrong packages at runtime** — the kernel points at a specific venv. If you
-  `pip install`ed into a different environment, install into the venv the kernel
-  was registered from (or re-register).
+  `~/.virtualenvs/neovim` is missing deps. It needs `pynvim`, `jupyter_client`
+  and `jupytext`, plus `pillow` for `:MoltenImagePopup`, `nbformat` for
+  `:MoltenImportOutput`/`:MoltenExportOutput`, and `cairosvg` for SVG plots:
+  `~/.virtualenvs/neovim/bin/pip install pillow nbformat cairosvg`.
+- **Wrong packages at runtime** — check the statusline: the kernel runs the
+  env shown there. `%pip install x` in a cell installs into that env.

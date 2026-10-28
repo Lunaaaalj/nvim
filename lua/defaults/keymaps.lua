@@ -73,45 +73,63 @@ vim.keymap.set("t", "<C-j>", [[<C-\><C-n><C-w>j]], { desc = "Terminal: window do
 vim.keymap.set("t", "<C-k>", [[<C-\><C-n><C-w>k]], { desc = "Terminal: window up" })
 vim.keymap.set("t", "<C-l>", [[<C-\><C-n><C-w>l]], { desc = "Terminal: window right" })
 
-vim.keymap.set("n", "<leader>mi", ":MoltenInit<CR>", { desc = "init Molten kernel", silent = true })
-vim.keymap.set("n", "<leader>e", ":MoltenEvaluateOperator<CR>", { desc = "evaluate operator", silent = true })
+-- Kernels come from lua/molten_kernels.lua: <leader>mi picks an interpreter,
+-- venv or registered kernel (no `jkernel add` needed), and every evaluation key
+-- below first makes sure one is attached (remembered choice, else the
+-- project's only venv, else the picker), instead of Molten's own prompt, which
+-- only lists registered kernels and fires once per call.
+local kernels = require("molten_kernels")
+vim.keymap.set("n", "<leader>mi", function() kernels.pick() end, { desc = "pick kernel (interpreter / venv)" })
+vim.keymap.set("n", "<leader>mI", ":MoltenInit<CR>", { desc = "add a registered kernel (:MoltenInit)", silent = true })
+vim.keymap.set("n", "<leader>e", function()
+    kernels.ensure(0, function() vim.cmd("MoltenEvaluateOperator") end)
+end, { desc = "evaluate operator" })
 vim.keymap.set("n", "<leader>os", ":noautocmd MoltenEnterOutput<CR>", { desc = "open output window", silent = true })
 vim.keymap.set("n", "<leader>rr", ":MoltenReevaluateCell<CR>", { desc = "re-eval cell", silent = true })
-vim.keymap.set("v", "<leader>r", ":<C-u>MoltenEvaluateVisual<CR>gv", { desc = "execute visual selection", silent = true })
+vim.keymap.set("v", "<leader>r", function()
+    -- leave visual first so '< '> are set while a picker may be open
+    vim.api.nvim_feedkeys(vim.keycode("<Esc>"), "nx", false)
+    kernels.ensure(0, function() vim.cmd("MoltenEvaluateVisual") vim.cmd("normal! gv") end)
+end, { desc = "execute visual selection" })
 
 -- Run whole notebook cells with a single keystroke. Notebooks open as jupytext
 -- markdown, so a "cell" is a fenced code block: opening fence carries a language
 -- (```python), closing fence is bare (```). Quarto/R-Markdown documents (.qmd)
 -- use curly-brace chunk headers instead (```{r}, ```{python}), so both forms
--- are matched. We collect those spans and hand line ranges to Molten
--- (MoltenEvaluateRange auto-resolves a single attached kernel, and the kernel
--- runs queued evaluations in order).
+-- are matched. We collect those spans and hand line ranges to Molten, naming
+-- the kernel (the kernel runs queued evaluations in order).
 local function molten_cells()
     local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-    local cells, open = {}, nil
+    local cells, open, lang = {}, nil, nil
     for i, l in ipairs(lines) do
         if not open then
-            if l:match("^```%a") or l:match("^```{%a") then
+            lang = l:match("^```{?(%a[%w_+-]*)")
+            if lang then
                 open = i
             end
-        elseif l:match("^```") then
-            cells[#cells + 1] = { open = open, close = i }
+        elseif l:match("^```%s*$") then
+            cells[#cells + 1] = { open = open, close = i, lang = kernels.normalize_language(lang) }
             open = nil
         end
     end
     return cells
 end
 
--- Evaluate a list of {open, close} cells, skipping empties.
-local function molten_run(cells)
-    local ran = 0
-    for _, c in ipairs(cells) do
-        if c.close - 1 >= c.open + 1 then
-            vim.fn.MoltenEvaluateRange(c.open + 1, c.close - 1)
-            ran = ran + 1
+-- Evaluate a list of {open, close, lang} cells, skipping empties. Bulk runs
+-- (`only_kernel_lang`) also skip cells in another language than the kernel's,
+-- e.g. a ```bash example inside a Markdown cell of a Python notebook.
+local function molten_run(cells, only_kernel_lang)
+    kernels.ensure(0, function(kernel)
+        local lang = only_kernel_lang and kernels.language(kernel) or ""
+        for _, c in ipairs(cells) do
+            if c.close - 1 >= c.open + 1 and (lang == "" or c.lang == lang) then
+                local ok, err = pcall(vim.fn.MoltenEvaluateRange, kernel, c.open + 1, c.close - 1)
+                if not ok then
+                    return vim.notify(err, vim.log.levels.ERROR, { title = "Molten" })
+                end
+            end
         end
-    end
-    return ran
+    end)
 end
 
 -- Split all cells into those above the cursor and those at/below it. If the
@@ -153,15 +171,15 @@ end
 
 vim.keymap.set("n", "<leader>rc", molten_eval_cell, { desc = "Molten run current cell", silent = true })
 vim.keymap.set("n", "<leader>ra", function()
-    molten_run(molten_cells())
+    molten_run(molten_cells(), true)
 end, { desc = "Molten run all cells", silent = true })
 vim.keymap.set("n", "<leader>rk", function()
     local above = molten_split()
-    molten_run(above)
+    molten_run(above, true)
 end, { desc = "Molten run cells above", silent = true })
 vim.keymap.set("n", "<leader>rj", function()
     local _, below = molten_split()
-    molten_run(below)
+    molten_run(below, true)
 end, { desc = "Molten run current cell and below", silent = true })
 vim.keymap.set("n", "<leader>oh", ":MoltenHideOutput<CR>", { desc = "close output window", silent = true })
 vim.keymap.set("n", "<leader>md", ":MoltenDelete<CR>", { desc = "delete Molten cell", silent = true })

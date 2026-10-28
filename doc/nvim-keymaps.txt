@@ -376,7 +376,10 @@ Adapters: Python (debugpy via the neovim venv) and C/C++ (codelldb). For C/C++,
 ==============================================================================
 13. NOTEBOOKS (MOLTEN / QUARTO)                       *nvim-keymaps-notebooks*
 
-  <leader>mi    Initialize a Molten kernel (:MoltenInit, kernel picker)
+  <leader>mi    Pick the kernel: interpreter / venv / conda / registered
+                kernel (:Kernel; |nvim-notebooks-kernel|). Run keys start
+                one by themselves, so this is mostly for switching
+  <leader>mI    Add a registered kernel (:MoltenInit)
   <leader>e     Evaluate operator (then a motion)
   <leader>r     (visual) Evaluate the visual selection
   <leader>rc    Run the current cell (auto-selects the ```python or ```{r}

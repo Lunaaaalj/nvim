@@ -127,6 +127,12 @@ return {
                 return require("music").state.playing and "MusicAccent" or "MusicMuted"
               end,
             },
+            -- notebook kernel (lua/molten_kernels.lua); a buffer variable, no host call
+            {
+              function() return require("molten_kernels").statusline() end,
+              cond = function() return vim.b.molten_kernel ~= nil end,
+              color = function() return { fg = require("defaults.colors").accent() } end,
+            },
             { "diagnostics", sources = { "nvim_lsp" }, symbols = { error = " ", warn = " ", info = " ", hint = " " } },
             { lsp_clients, color = { gui = "italic" } },
             { "filetype", colored = true, icon_only = false },

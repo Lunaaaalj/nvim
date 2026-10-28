@@ -1,3 +1,4 @@
+:Kernel	nvim-notebooks.txt	/*:Kernel*
 any	nvim-plugins.txt	/*any*
 before	nvim-plugins.txt	/*before*
 nvim-config	nvim-config.txt	/*nvim-config*
@@ -39,12 +40,13 @@ nvim-keymaps-typst	nvim-keymaps.txt	/*nvim-keymaps-typst*
 nvim-keymaps-windows	nvim-keymaps.txt	/*nvim-keymaps-windows*
 nvim-keymaps.txt	nvim-keymaps.txt	/*nvim-keymaps.txt*
 nvim-notebooks	nvim-notebooks.txt	/*nvim-notebooks*
-nvim-notebooks-concept	nvim-notebooks.txt	/*nvim-notebooks-concept*
 nvim-notebooks-flow	nvim-notebooks.txt	/*nvim-notebooks-flow*
 nvim-notebooks-images	nvim-notebooks.txt	/*nvim-notebooks-images*
 nvim-notebooks-jkernel	nvim-notebooks.txt	/*nvim-notebooks-jkernel*
+nvim-notebooks-kernel	nvim-notebooks.txt	/*nvim-notebooks-kernel*
 nvim-notebooks-quarto	nvim-notebooks.txt	/*nvim-notebooks-quarto*
 nvim-notebooks-register	nvim-notebooks.txt	/*nvim-notebooks-register*
+nvim-notebooks-specs	nvim-notebooks.txt	/*nvim-notebooks-specs*
 nvim-notebooks-trouble	nvim-notebooks.txt	/*nvim-notebooks-trouble*
 nvim-notebooks.txt	nvim-notebooks.txt	/*nvim-notebooks.txt*
 nvim-plugins	nvim-plugins.txt	/*nvim-plugins*
