@@ -42,6 +42,7 @@ return {
             { "<leader>t", group = "Terminal" },
             { "<leader>T", group = "Test" },
             { "<leader>u", group = "UI" },
+            { "<leader>W", group = "Writing (Claude)" },
             { "<leader>x", group = "Trouble/Diagnostics" },
             -- git-conflict default chord prefix
             { "c", group = "conflict", mode = "n" },

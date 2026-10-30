@@ -53,6 +53,12 @@ require("pdfview").setup()
 -- Apple Music controller (statusline + <leader>M player); first poll is deferred.
 require("music").setup()
 
+-- Spell audit: walk every spelling issue (<leader>sa, :SpellAudit).
+require("spellaudit").setup()
+
+-- Writing companion with Claude: grammar audit, reverse outline, rewrite/ask (<leader>W).
+require("writing").setup()
+
 -- Panels (terminals, Claude, references) stack in one right column; split keys.
 require("layout").setup()
 

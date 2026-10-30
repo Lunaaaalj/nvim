@@ -14,6 +14,7 @@ nvim-config-project	nvim-config.txt	/*nvim-config-project*
 nvim-config-refdocs	nvim-config.txt	/*nvim-config-refdocs*
 nvim-config-requirements	nvim-config.txt	/*nvim-config-requirements*
 nvim-config-ui-toggle	nvim-config.txt	/*nvim-config-ui-toggle*
+nvim-config-writing	nvim-config.txt	/*nvim-config-writing*
 nvim-config.txt	nvim-config.txt	/*nvim-config.txt*
 nvim-keymaps	nvim-keymaps.txt	/*nvim-keymaps*
 nvim-keymaps-claude	nvim-keymaps.txt	/*nvim-keymaps-claude*
@@ -39,6 +40,7 @@ nvim-keymaps-terminal	nvim-keymaps.txt	/*nvim-keymaps-terminal*
 nvim-keymaps-test	nvim-keymaps.txt	/*nvim-keymaps-test*
 nvim-keymaps-typst	nvim-keymaps.txt	/*nvim-keymaps-typst*
 nvim-keymaps-windows	nvim-keymaps.txt	/*nvim-keymaps-windows*
+nvim-keymaps-writing	nvim-keymaps.txt	/*nvim-keymaps-writing*
 nvim-keymaps.txt	nvim-keymaps.txt	/*nvim-keymaps.txt*
 nvim-notebooks	nvim-notebooks.txt	/*nvim-notebooks*
 nvim-notebooks-concept	nvim-notebooks.txt	/*nvim-notebooks-concept*
@@ -67,3 +69,4 @@ nvim-plugins-ui	nvim-plugins.txt	/*nvim-plugins-ui*
 nvim-plugins-upstream	nvim-plugins.txt	/*nvim-plugins-upstream*
 nvim-plugins-vimtex	nvim-plugins.txt	/*nvim-plugins-vimtex*
 nvim-plugins.txt	nvim-plugins.txt	/*nvim-plugins.txt*
+nvim-spell-audit	nvim-keymaps.txt	/*nvim-spell-audit*

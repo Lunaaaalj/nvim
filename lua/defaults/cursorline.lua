@@ -43,7 +43,7 @@ end
 -- Filetypes that never get a cursorline, and ones that manage it themselves
 -- (neo-tree uses its cursorline as the selection marker).
 local skip_ft = { image = true, snacks_dashboard = true, lazy = true, mason = true, TelescopePrompt = true, TelescopeResults = true }
-local unmanaged_ft = { ["neo-tree"] = true, music = true, upstream = true, projectrc = true }
+local unmanaged_ft = { ["neo-tree"] = true, music = true, upstream = true, projectrc = true, spellaudit = true, writingoutline = true }
 
 local function update(win, active)
   if not vim.api.nvim_win_is_valid(win) then return end
