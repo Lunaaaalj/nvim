@@ -5,6 +5,8 @@
 --                     spell-audit float; issues are also diagnostics
 --   <leader>Wp        the same, for the paragraph under the cursor
 --   <leader>Wo        reverse outline: summary, role and flags per paragraph
+--   <leader>Wa        rigor review: loose arguments, unsupported or overclaimed
+--                     statements, fallacies, inconsistencies (report + walk)
 --   <leader>Wr        rewrite the selection / paragraph (pick an instruction)
 --   <leader>Wq        ask about the selection / paragraph
 --   <leader>Wc        companion chat in a split
@@ -15,7 +17,8 @@
 -- register, conventions, terms to leave alone), sent with every request;
 -- words in your spellfile are never "corrected". Results are cached, so
 -- repeating a pass only sends what changed. Modules: claude.lua (CLI),
--- prose.lua (paragraphs), grammar.lua, outline.lua, assist.lua.
+-- prose.lua (paragraphs), issues.lua (quote-anchored findings), grammar.lua,
+-- rigor.lua, outline.lua, assist.lua.
 
 local M = {}
 
@@ -26,16 +29,16 @@ local function grammar(o)
 end
 
 function M.toggle_diagnostics()
-  local g, o = require("writing.grammar").ns_diag, require("writing.outline").ns_diag
-  local on = not vim.diagnostic.is_enabled({ ns_id = g })
-  vim.diagnostic.enable(on, { ns_id = g })
-  vim.diagnostic.enable(on, { ns_id = o })
+  local all = { require("writing.grammar").ns_diag, require("writing.outline").ns_diag, require("writing.rigor").ns_diag }
+  local on = not vim.diagnostic.is_enabled({ ns_id = all[1] })
+  for _, ns in ipairs(all) do vim.diagnostic.enable(on, { ns_id = ns }) end
   vim.notify("Writing diagnostics " .. (on and "on" or "off"), vim.log.levels.INFO, { title = "Writing" })
 end
 
 function M.setup()
-  require("writing.grammar").setup()
+  require("writing.issues").setup()
   require("writing.outline").setup()
+  require("writing.rigor").setup()
 
   local map = vim.keymap.set
   map("n", "<leader>Wg", grammar({}), { desc = "Writing: grammar audit" })
@@ -45,6 +48,8 @@ function M.setup()
     require("writing.grammar").audit({ range = { row, row } })
   end, { desc = "Writing: grammar audit of this paragraph" })
   map("n", "<leader>Wo", function() require("writing.outline").open() end, { desc = "Writing: reverse outline" })
+  map("n", "<leader>Wa", function() require("writing.rigor").review() end,
+    { desc = "Writing: rigor review (arguments, claims, evidence)" })
   map("n", "<leader>Wr", function() require("writing.assist").rewrite(false) end, { desc = "Writing: rewrite paragraph" })
   map("x", "<leader>Wr", function()
     vim.cmd("normal! \27") -- leave visual mode so '< '> are set
@@ -59,16 +64,21 @@ function M.setup()
   map("n", "<leader>Wd", M.toggle_diagnostics, { desc = "Writing: toggle AI diagnostics" })
   map("n", "<leader>Wx", function()
     require("writing.grammar").clear()
+    require("writing.rigor").store:clear()
     vim.diagnostic.reset(require("writing.outline").ns_diag, 0)
   end, { desc = "Writing: clear AI issues" })
 
   local subs = {
     grammar = grammar({}), style = grammar({ style = true }),
     outline = function() require("writing.outline").open() end,
+    rigor = function() require("writing.rigor").review() end,
     rewrite = function() require("writing.assist").rewrite(false) end,
     ask = function() require("writing.assist").ask(false) end,
     chat = function() require("writing.assist").chat() end,
-    clear = function() require("writing.grammar").clear() end,
+    clear = function()
+      require("writing.grammar").clear()
+      require("writing.rigor").store:clear()
+    end,
   }
   api.nvim_create_user_command("Writing", function(o)
     local f = subs[o.args ~= "" and o.args or "grammar"]
@@ -77,7 +87,7 @@ function M.setup()
   end, {
     nargs = "?",
     complete = function() return vim.tbl_keys(subs) end,
-    desc = "Writing companion (grammar, style, outline, rewrite, ask, chat, clear)",
+    desc = "Writing companion (grammar, style, outline, rigor, rewrite, ask, chat, clear)",
   })
 end
 

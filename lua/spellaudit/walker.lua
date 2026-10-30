@@ -127,7 +127,9 @@ local function build(issue, sugg, width)
   if issue.end_row > issue.row then post = "…" end
   add(" " .. pre .. bad .. post, { { "SpellAuditMuted", 0, -1 }, { "SpellAuditBad", 1 + #pre, 1 + #pre + #bad } })
   add(" " .. (issue.label or ""), { { "SpellAuditMuted", 0, -1 } })
-  for _, l in ipairs(wrap(issue.note, width - 2)) do add(" " .. l) end
+  for _, para in ipairs(vim.split(issue.note or "", "\n", { trimempty = true })) do
+    for _, l in ipairs(wrap(para, width - 2)) do add(" " .. l) end
+  end
   add("")
 
   local first = #lines + 1
@@ -222,8 +224,9 @@ function W.step()
   render(pick)
 end
 
---- Record an action for the summary and `u`. `entry.undo(S)` reverts it
---- (buffer edits use `entry.change` instead); `entry.n` counts it n times.
+--- Record an action for the summary and `u`. `entry.change` (from
+--- checkpoint()) undoes a buffer edit, `entry.undo(S)` anything else (both
+--- may be given); `entry.n` counts it n times.
 function W.push(entry)
   entry.pos = { S.issue.row, S.issue.col }
   S.history[#S.history + 1] = entry
@@ -286,11 +289,8 @@ function actions.undo()
   local e = table.remove(S.history)
   if not e then return notify("Nothing to undo", vim.log.levels.WARN) end
   S.count[e.kind] = S.count[e.kind] - (e.n or 1)
-  if e.change then
-    api.nvim_buf_call(S.buf, function() vim.cmd("silent undo " .. e.change) end)
-  elseif e.undo then
-    e.undo(S)
-  end
+  if e.change then api.nvim_buf_call(S.buf, function() vim.cmd("silent undo " .. e.change) end) end
+  if e.undo then e.undo(S) end
   S.pos = e.pos
   W.step()
 end

@@ -600,6 +600,18 @@ own: text leaves Neovim only when you press one of these. See
                 its role and flags (unsupported claim, gap, contradiction,
                 undefined term...), plus document-level notes. In the panel:
                 <CR> jump, ]f / [f next / previous flag, r re-run, q close
+  <leader>Wa    Rigor review (research writing): Claude reads the whole
+                document as a peer reviewer and reports loose reasoning, not
+                grammar: unsupported claims, overclaiming (causal language
+                from correlations, "proves", "always"), non-sequiturs, named
+                fallacies, inconsistencies across sections (numbers,
+                definitions), misused statistics, method gaps, undefined
+                terms, vague claims, and facts to verify. A report panel shows
+                the verdict, strengths, priorities and findings (<CR> jump,
+                w walk, r re-run, q close); the findings are then walked:
+                1 apply the suggested rewording (when wording alone fixes it),
+                e edit, m insert a TODO(review) comment under the passage (in
+                the file's comment syntax), s skip, d dismiss, u undo, q pause
   <leader>Wr    Rewrite the paragraph (normal) or selection (visual) with an
                 instruction (concise, formal, simpler, active voice, flow,
                 translate, custom). Preview float: <CR>/a accept (one undo
@@ -610,10 +622,10 @@ own: text leaves Neovim only when you press one of these. See
                 the file)
   <leader>Wd    Toggle the AI diagnostics (grammar issues and outline flags)
   <leader>Wx    Clear the AI issues of this buffer
-  :Writing {grammar|style|outline|rewrite|ask|chat|clear}
+  :Writing {grammar|style|outline|rigor|rewrite|ask|chat|clear}
 
-Grammar issues are also diagnostics (source "claude"), so ]d / [d, Trouble and
-the sign column show them.
+Grammar issues and rigor findings are also diagnostics (sources "claude" and
+"rigor"), so ]d / [d, Trouble and the sign column show them.
 
  vim:tw=78:ts=8:noet:ft=help:norl:
 </content>

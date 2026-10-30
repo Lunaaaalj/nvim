@@ -92,6 +92,7 @@ local sections = {
     { "<leader>Wg / WG", "Grammar audit with Claude (+ style), walk issues" },
     { "<leader>Wp", "Grammar audit of this paragraph" },
     { "<leader>Wo", "Reverse outline: summary, role, flags per paragraph" },
+    { "<leader>Wa", "Rigor review: loose arguments, claims, evidence (m = TODO)" },
     { "<leader>Wr / Wq", "Rewrite / ask about paragraph or selection" },
     { "<leader>Wc", "Writing companion chat (split)" },
     { "<leader>Wd / Wx", "Toggle / clear AI writing diagnostics" },

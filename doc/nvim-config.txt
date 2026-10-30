@@ -256,7 +256,17 @@ Style guide: put a `.nvim/writing.md` in the project (any directory above the
 file): audience, register, house rules, terms to leave alone. It is sent with
 every request. Words in your spellfile (`zg`) are never "corrected".
 
-Grammar issues come back as exact quotes; one that can't be found in its
+Rigor review (<leader>Wa): one request with the whole document, so problems
+that only show across sections (a sample size that changes, a term defined
+differently) are caught. The model cannot read your sources: a citation
+counts as support, and it flags a cited claim only when the claim goes beyond
+what a citation could plausibly support. Doubtful facts (dates, figures,
+attributions) are reported as "verify", never corrected; check them yourself.
+Its default is haiku at high effort; for a thesis chapter you may prefer a
+stronger model (`require("writing.rigor").config.model = "sonnet"`).
+Reviews are cached per document version.
+
+Grammar issues and rigor findings come back as exact quotes; one that can't be found in its
 paragraph (a hallucination) or overlaps another is dropped. They are anchored
 with extmarks, so they move with your edits and vanish once fixed. Results
 are cached per paragraph (stdpath("cache")/writing), so repeating a pass only
