@@ -276,6 +276,20 @@ Spell-check (auto-enabled for tex/markdown/gitcommit/text):
   <leader>us    Toggle spell-check in the current window
   ]s  /  [s     Next / previous misspelled word
   z=            Suggest corrections
+  zg  /  zG     Add the word to your spellfile / ignore it this session
+  <leader>sa    Spell audit (:SpellAudit)                *nvim-spell-audit*
+                Walks every issue in the buffer, top to bottom, in a float
+                under the word; after each action it jumps to the next one:
+                  1-9 / <CR>   replace with that suggestion
+                  R            replace every occurrence of the word
+                  e            type the replacement
+                  s / <Space>  skip            S   ignore the word (session)
+                  a            add to spellfile (zg)
+                  u            undo the last action and go back to it
+                  q / <Esc>    pause; <leader>sa again resumes
+                It visits exactly what `]s` does, so code blocks, inline code
+                and LaTeX commands (treesitter/syntax @nospell) are left out.
+                Spell is switched on for the audit if it was off.
 
   The language is English unless a `.spelllang` file exists in the buffer's
   directory or any parent; its first line is used as 'spelllang' (e.g.

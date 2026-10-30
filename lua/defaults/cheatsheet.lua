@@ -88,6 +88,7 @@ local sections = {
     { "<leader>uf", "Toggle format on save" },
     { "<leader>uh", "Toggle inlay hints" },
     { "<leader>us", "Toggle spell-check" },
+    { "<leader>sa", "Spell audit: fix/skip/ignore/add each issue, auto-next" },
     { "<leader>xx", "Trouble: workspace diagnostics" },
     { "<leader>xb", "Trouble: buffer diagnostics" },
     { "<leader>xs", "Trouble: document symbols" },

@@ -65,3 +65,4 @@ nvim-plugins-ui	nvim-plugins.txt	/*nvim-plugins-ui*
 nvim-plugins-upstream	nvim-plugins.txt	/*nvim-plugins-upstream*
 nvim-plugins-vimtex	nvim-plugins.txt	/*nvim-plugins-vimtex*
 nvim-plugins.txt	nvim-plugins.txt	/*nvim-plugins.txt*
+nvim-spell-audit	nvim-keymaps.txt	/*nvim-spell-audit*
