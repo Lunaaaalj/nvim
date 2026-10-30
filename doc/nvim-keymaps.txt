@@ -20,6 +20,7 @@ Leader is <Space>; localleader is "\". Modes are noted where not normal mode.
   13. Notebooks (Molten) ....................... |nvim-keymaps-notebooks|
   14. LaTeX (VimTeX), Typst .................... |nvim-keymaps-latex|
   15. Claude Code .............................. |nvim-keymaps-claude|
+  16. Writing companion (Claude) ................ |nvim-keymaps-writing|
 
 Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
 `<leader>k` opens a curated floating cheatsheet.
@@ -581,6 +582,38 @@ In neo-tree's Claude tab:
   d             Stop a running chat (stays resumable under Recent)
   w / s / S / t Open in picked window / vsplit / split / new tab
   R             Refresh
+
+==============================================================================
+16. WRITING COMPANION (CLAUDE)                         *nvim-keymaps-writing*
+
+A cheap Claude model (Haiku, through the `claude` CLI and your Claude Code
+login) as copy editor, developmental editor and reader. Nothing runs on its
+own: text leaves Neovim only when you press one of these. See
+|nvim-config-writing|.
+
+  <leader>Wg    Grammar audit: check, then walk every issue in the float of
+                |nvim-spell-audit| (1-3 fix, e edit, s skip, d dismiss for
+                good, u undo, q pause; <leader>Wg again resumes)
+  <leader>WG    The same, plus style and clarity hints
+  <leader>Wp    Grammar audit of the paragraph under the cursor only
+  <leader>Wo    Reverse outline in a right panel: per paragraph a summary,
+                its role and flags (unsupported claim, gap, contradiction,
+                undefined term...), plus document-level notes. In the panel:
+                <CR> jump, ]f / [f next / previous flag, r re-run, q close
+  <leader>Wr    Rewrite the paragraph (normal) or selection (visual) with an
+                instruction (concise, formal, simpler, active voice, flow,
+                translate, custom). Preview float: <CR>/a accept (one undo
+                step), r retry, q cancel
+  <leader>Wq    Ask about the paragraph / selection (answered with the whole
+                document as context)
+  <leader>Wc    Companion chat in a split (a Claude chat buffer primed to read
+                the file)
+  <leader>Wd    Toggle the AI diagnostics (grammar issues and outline flags)
+  <leader>Wx    Clear the AI issues of this buffer
+  :Writing {grammar|style|outline|rewrite|ask|chat|clear}
+
+Grammar issues are also diagnostics (source "claude"), so ]d / [d, Trouble and
+the sign column show them.
 
  vim:tw=78:ts=8:noet:ft=help:norl:
 </content>

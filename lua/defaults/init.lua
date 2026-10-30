@@ -56,6 +56,9 @@ require("music").setup()
 -- Spell audit: walk every spelling issue (<leader>sa, :SpellAudit).
 require("spellaudit").setup()
 
+-- Writing companion with Claude: grammar audit, reverse outline, rewrite/ask (<leader>W).
+require("writing").setup()
+
 -- Build help tags for this config's own docs so `:help nvim-config` resolves.
 -- Cheap and idempotent: only runs when doc/tags is missing (e.g. fresh clone).
 local doc_dir = vim.fn.stdpath("config") .. "/doc"

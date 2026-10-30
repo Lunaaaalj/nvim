@@ -10,7 +10,8 @@ CONTENTS                                                       *nvim-config*
   5. Editor options ............................... |nvim-config-options|
   6. Colorschemes & transparency ................. |nvim-config-colorscheme|
   7. Project settings ............................. |nvim-config-project|
-  8. Other help files ............................. |nvim-config-help|
+  8. Writing companion ............................ |nvim-config-writing|
+  9. Other help files ............................. |nvim-config-help|
 
 This config also ships these companion help files:
 
@@ -231,7 +232,39 @@ clangd's query driver, the pyright venv) stay off until the settings file is
 trusted (`T` in the float), using the same hash-based trust as 'exrc'.
 
 ==============================================================================
-8. OTHER HELP FILES                                       *nvim-config-help*
+8. WRITING COMPANION                                   *nvim-config-writing*
+
+`lua/writing/` uses Claude as a writing companion for Markdown, LaTeX, Typst
+and plain text (keys: |nvim-keymaps-writing|).
+
+How it talks to Claude: `claude -p` with your Claude Code login, so no API
+key is needed and use counts against your plan. Each request has no tools,
+its own short system prompt, no saved session, and runs in an empty cache
+directory so no CLAUDE.md is read. Default model: haiku (grammar at low
+effort, outline at high, rewrite/ask at medium); change `M.config.model` in
+the module files.
+
+What is sent: the buffer's prose, split into paragraphs. Front matter, code
+blocks, LaTeX's preamble, comments and math environments, and Typst's
+#set/#show/#import/#let lines and raw blocks are left out. The model is told
+to leave markup, math, citations and labels alone.
+
+Language: from 'spelllang' (so a `.spelllang` with `es,en` means Spanish or
+English); suggestions stay in the paragraph's language.
+
+Style guide: put a `.nvim/writing.md` in the project (any directory above the
+file): audience, register, house rules, terms to leave alone. It is sent with
+every request. Words in your spellfile (`zg`) are never "corrected".
+
+Grammar issues come back as exact quotes; one that can't be found in its
+paragraph (a hallucination) or overlaps another is dropped. They are anchored
+with extmarks, so they move with your edits and vanish once fixed. Results
+are cached per paragraph (stdpath("cache")/writing), so repeating a pass only
+sends what changed; outlines are cached per document. Dismissed issues (`d`)
+are remembered in stdpath("state")/writing.
+
+==============================================================================
+9. OTHER HELP FILES                                       *nvim-config-help*
 
   |nvim-keymaps|      Every keymap in the config, grouped by area.
   |nvim-plugins|      Catalog of all plugins with their options and maps.
