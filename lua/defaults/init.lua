@@ -59,6 +59,12 @@ require("spellaudit").setup()
 -- Writing companion with Claude: grammar audit, reverse outline, rewrite/ask (<leader>W).
 require("writing").setup()
 
+-- Panels (terminals, Claude, references) stack in one right column; split keys.
+require("layout").setup()
+
+-- C/C++/Python/R references: <leader>K page, <leader>fd search, :Ref (K via hover.nvim).
+require("refdocs").setup()
+
 -- Build help tags for this config's own docs so `:help nvim-config` resolves.
 -- Cheap and idempotent: only runs when doc/tags is missing (e.g. fresh clone).
 local doc_dir = vim.fn.stdpath("config") .. "/doc"

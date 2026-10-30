@@ -11,7 +11,9 @@ CONTENTS                                                       *nvim-config*
   6. Colorschemes & transparency ................. |nvim-config-colorscheme|
   7. Project settings ............................. |nvim-config-project|
   8. Writing companion ............................ |nvim-config-writing|
-  9. Other help files ............................. |nvim-config-help|
+  9. Language references .......................... |nvim-config-refdocs|
+ 10. Window layout ................................ |nvim-config-layout|
+ 11. Other help files ............................. |nvim-config-help|
 
 This config also ships these companion help files:
 
@@ -53,6 +55,8 @@ External binaries:
   - lazygit              Required by `lazygit.nvim`
   - sioyek               PDF viewer used by `vimtex` (view method)
   - clang-format, black, isort, stylua    Formatters used by `conform.nvim`
+  - cppman, groff        C++ references (`pipx install cppman`,
+                         `brew install groff`); see |nvim-config-refdocs|
 
 Notebooks / Molten (optional, only if you use notebooks):
   - A Python venv at `~/.virtualenvs/neovim` providing the Neovim Python host.
@@ -274,7 +278,64 @@ sends what changed; outlines are cached per document. Dismissed issues (`d`)
 are remembered in stdpath("state")/writing.
 
 ==============================================================================
-9. OTHER HELP FILES                                       *nvim-config-help*
+9. LANGUAGE REFERENCES                                 *nvim-config-refdocs*
+
+`lua/refdocs/` shows reference pages for C, C++, Python and R, offline and
+from the tools that already know your installed versions:
+
+  C         man pages, library sections first (3, 2, then 1): `printf` is
+            printf(3), not the shell command
+  C++       cppreference.com through `cppman`; `v.push_back` is resolved to
+            std::vector::push_back using clangd's type of `v`
+  Python    `python -m pydoc`, run with the file's project venv (`.venv`,
+            `venv`, `env` upward, then $VIRTUAL_ENV), so `np.linspace` is the
+            numpy that project has; `import x as y` aliases are resolved
+  R         the installed help pages (Rd2txt), any installed package,
+            `pkg::fn` honoured; runs in the file's dir so renv applies
+
+The language is the buffer's filetype, or in Quarto / R Markdown / Markdown
+the language of the code chunk under the cursor.
+
+  K             hover.nvim: the "Ref" provider comes right after LSP; switch
+                to it with <C-n> (or `gK` to choose)
+  <leader>K     Full page in a reusable split (:Ref [topic])
+  <leader>fd    Telescope over every topic of the language, page as preview;
+                <C-e> looks up the typed text verbatim (:RefSearch [lang])
+
+Inside a page, `K` / <C-]> follow the word under the cursor relative to the
+page (`push_back` in std::vector's page, `move_to_end` in OrderedDict's) and
+<C-o> goes back; `gO` lists the sections; `q` closes.
+
+C++ pages are fetched from cppreference the first time and cached in
+~/.cache/cppman; run `cppman -c` once to cache everything for offline use.
+
+==============================================================================
+10. WINDOW LAYOUT                                       *nvim-config-layout*
+
+Panels (terminals, including Claude's; reference pages; `:vert help`) live in
+one column on the right, so the editor keeps its width however many are open
+(`lua/layout/`):
+
+  * the first panel opens as the right column, narrowed if needed so the
+    editor keeps 88 columns (a panel is never narrower than 40);
+  * every next one is stacked below it in that column, and the column's
+    heights are evened out;
+  * the column keeps its width, including one you set by hand (<C-w>< / >).
+
+Only panels that open as the rightmost column are moved: a bottom terminal
+(<leader>th) or a split you make inside the column stays where it is.
+<leader>uw turns this off.
+
+'equalalways' is off: a split halves only the window you split and nothing
+else is resized. Sidebars (neo-tree) and panels have fixed widths; file
+windows never do, so they absorb size changes.
+
+Split any buffer yourself with <leader>| (vertical), <leader>- (horizontal)
+or <leader>\ (along the window's longer side; repeating it tiles: vertical,
+then horizontal, then vertical...). |nvim-keymaps-windows| lists the keys.
+
+==============================================================================
+11. OTHER HELP FILES                                      *nvim-config-help*
 
   |nvim-keymaps|      Every keymap in the config, grouped by area.
   |nvim-plugins|      Catalog of all plugins with their options and maps.

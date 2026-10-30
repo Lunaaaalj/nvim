@@ -83,6 +83,12 @@ nvim-ufo ~  (kevinhwang91/nvim-ufo)
   Treesitter+indent folding. foldcolumn = 1, folds start open (foldlevel 99).
   Maps: zR open all, zM close all, zr open-except-kinds, K peek-fold-then-hover.
 
+hover.nvim ~  (lewis6991/hover.nvim)
+  The hover behind K. Providers: diagnostics, LSP, DAP, Ref (C/C++/Python/R
+  references from `lua/refdocs`, see |nvim-config-refdocs|), man (shells and
+  make only; refdocs owns C) and dictionary. Maps: gK choose a provider,
+  <C-n> / <C-p> switch providers.
+
 flash.nvim ~  (folke/flash.nvim)
   Labeled jump motions. `s` jump, `S` treesitter select, `r` remote,
   <C-s> toggle in search. Default `/` search is left unmodified.
