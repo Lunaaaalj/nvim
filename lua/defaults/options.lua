@@ -59,6 +59,10 @@ vim.opt.timeoutlen = 400
 -- New splits open to the right / below
 vim.opt.splitright = true
 vim.opt.splitbelow = true
+-- A split halves only the window it splits, instead of evening out every
+-- window (which also kicks in whenever this option is switched back on).
+-- Panel columns are arranged by lua/layout.
+vim.opt.equalalways = false
 
 -- Mouse support and confirm prompt instead of failing on unsaved :q
 vim.opt.mouse = "a"
@@ -95,7 +99,7 @@ vim.api.nvim_create_autocmd(
 -- .spelllang file above the buffer (one line, e.g. "es,en"), else English.
 -- z= suggests corrections, ]s/[s jump between misspellings. Toggle per-buffer with <leader>us.
 vim.api.nvim_create_autocmd("FileType", {
-  pattern = { "tex", "plaintex", "markdown", "gitcommit", "text" },
+  pattern = { "tex", "plaintex", "markdown", "gitcommit", "text", "typst" },
   callback = function(args)
     vim.opt_local.spell = true
     local marker = vim.fs.find(".spelllang", {

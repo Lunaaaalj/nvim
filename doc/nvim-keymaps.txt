@@ -110,6 +110,20 @@ terminal; elsewhere they stay lists):
   <C-l>         Move to the right window
   <C-h>  (term) Exit terminal mode and move to the left window
 
+Splitting (any buffer; see |nvim-config-layout|):
+  <leader>|     Split vertically (same buffer; pick another with <leader>fb)
+  <leader>-     Split horizontally
+  <leader>\     Split along the window's longer side (repeat to tile)
+  <leader>fb    Buffers (Telescope): <CR> here, <C-v> vsplit, <C-x> split,
+                <C-t> new tab
+  <leader>uw    Toggle auto panel layout
+Built-in window keys worth knowing:
+  <C-w>v / <C-w>s   Vertical / horizontal split
+  <C-w>o            Only this window       <C-w>c   Close this window
+  <C-w>=            Even out sizes         <C-w>x   Swap with the next one
+  <C-w>H/J/K/L      Move the window to the far left / bottom / top / right
+  <C-w>< / > / + / -  Narrower / wider / taller / shorter ([count] cells)
+
   <Tab>         Next buffer        (bufferline)
   <S-Tab>       Previous buffer    (bufferline)
   <leader>x     Close the current buffer (preserves window layout)
@@ -235,10 +249,16 @@ ts_ls, html, cssls, emmet, texlab, tinymist, lua_ls):
 
 Hover (ufo + hover.nvim):
   K             Peek the fold under the cursor; otherwise show hover docs
-                via hover.nvim (LSP / man / dictionary providers)
-  gK            Hover: choose a provider (LSP / man / dictionary)
+                via hover.nvim (LSP / Ref / man / dictionary providers)
+  gK            Hover: choose a provider (LSP / Ref / man / dictionary)
   <C-n>         Hover: switch to the next provider
   <C-p>         Hover: switch to the previous provider
+
+References (C / C++ / Python / R, see |nvim-config-refdocs|):
+  <leader>K     Reference page for the word under the cursor, in a split
+  <leader>fd    Search the language's reference topics (Telescope)
+  K / <C-]>     Inside a page: follow the word under the cursor (<C-o> back)
+  :Ref [topic]  Open a page;  :RefSearch [c|cpp|python|r]  search topics
 
 Diagnostics:
   <leader>d     Show the diagnostic float for the current line
