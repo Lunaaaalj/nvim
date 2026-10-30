@@ -20,7 +20,7 @@ return {
         vim.keymap.set("n", "K", function()
             local winid = require("ufo").peekFoldedLinesUnderCursor()
             if not winid then
-                require("hover").hover()
+                require("hover").open()
             end
         end, { desc = "Peek fold / hover docs" })
     end,
