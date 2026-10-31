@@ -118,6 +118,8 @@ Splitting (any buffer; see |nvim-config-layout|):
   <leader>fb    Buffers (Telescope): <CR> here, <C-v> vsplit, <C-x> split,
                 <C-t> new tab
   <leader>uw    Toggle auto panel layout
+  <leader>u=    Rebalance: neo-tree/panels back to their widths, editors and
+                panel heights evened out
 Built-in window keys worth knowing:
   <C-w>v / <C-w>s   Vertical / horizontal split
   <C-w>o            Only this window       <C-w>c   Close this window
