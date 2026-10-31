@@ -11,6 +11,7 @@ return {
   config = function()
     local cmp = require("cmp")
     local luasnip = require("luasnip")
+    cmp.register_source("ibid", require("ibid").cmp_source())
 
     cmp.setup({
       snippet = {
@@ -44,6 +45,8 @@ return {
       sources = cmp.config.sources({
         { name = "nvim_lsp" },
         { name = "luasnip" },
+        -- Zotero citation keys in \cite{…} / @… (lua/plugins/ibid.lua)
+        { name = "ibid" },
       }, {
         { name = "buffer" },
         { name = "path" },
