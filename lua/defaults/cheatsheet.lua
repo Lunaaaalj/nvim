@@ -83,6 +83,7 @@ local sections = {
     { "<C-w>H/J/K/L", "Move window to far left / bottom / top / right" },
     { "<leader>fb", "Buffers (<C-v>/<C-x> open in a split)" },
     { "<leader>uw", "Toggle auto panel layout (stack panels on the right)" },
+    { "<leader>u=", "Rebalance windows (sidebar/panels keep width)" },
     { "<Tab> / <S-Tab>", "Next / previous buffer" },
     { "<leader>x", "Close buffer (keep layout)" },
     { ":q", "Close buffer (dashboard if last); :quit = real quit" },

@@ -135,6 +135,8 @@ Splitting (any buffer; see |nvim-config-layout|):
   <leader>fb    Buffers (Telescope): <CR> here, <C-v> vsplit, <C-x> split,
                 <C-t> new tab
   <leader>uw    Toggle auto panel layout
+  <leader>u=    Rebalance: neo-tree/panels back to their widths, editors and
+                panel heights evened out
 Built-in window keys worth knowing:
   <C-w>v / <C-w>s   Vertical / horizontal split
   <C-w>o            Only this window       <C-w>c   Close this window
@@ -148,9 +150,11 @@ Built-in window keys worth knowing:
   :q            Close the current BUFFER, not Neovim      *nvim-keymaps-quit*
                 (`lua/defaults/bufclose.lua`). In a split, a float, neo-tree
                 or with several tabs it just closes that window/tab. In the
-                last editing window it shows the next buffer (files before
-                terminals, then most recent), or the dashboard when none is
-                left; `:q` on that dashboard quits. Modified buffers prompt
+                last editing window (panels such as the Claude terminal,
+                help and previews don't count, so neo-tree or a panel never
+                swallows the editor's space) it shows the next buffer (files
+                before terminals, then most recent), or the dashboard when
+                none is left; `:q` on that dashboard quits. Modified buffers prompt
                 Save / Discard / Cancel. Terminals and unlisted buffers are
                 hidden, not deleted, so their jobs keep running.
   :q!  :wq  :wq!  Same, discarding / writing first.
