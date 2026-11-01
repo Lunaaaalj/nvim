@@ -244,13 +244,15 @@ spec (`lua/plugins/quill.lua`). Its own help is the reference: |quill|
 (`:checkhealth writing` checks `claude` and the login). Keys:
 |nvim-keymaps-writing| and |nvim-spell-audit|.
 
-In short: a cheap Claude model (haiku) through `claude -p` and your Claude
-Code login (no API key) as copy editor (grammar), peer reviewer (rigor),
-developmental editor (reverse outline) and reader (rewrite, ask, chat).
-Nothing runs on its own. Only the buffer's prose is sent, with the language
-from 'spelllang', the words in your spellfile as a glossary, and a style
-guide from the nearest `.nvim/writing.md` above the file. Results are cached,
-so repeating a pass only sends what changed.
+In short: Claude through `claude -p` and your Claude Code login (no API key)
+as copy editor (grammar), house-style checker (conform, against STYLE.md),
+peer reviewer (rigor), developmental editor (reverse outline) and reader
+(rewrite, ask, chat). Nothing runs on its own. Only the buffer's prose is
+sent, with the language from 'spelllang', the words in your spellfile as a
+glossary, and the style guide: the nearest `STYLE.md` above the file
+(committed with the project, so collaborators share it; `.nvim/writing.md`
+is still read as a fallback). Results are cached, so repeating a pass only
+sends what changed.
 
 What this config adds in the spec:
 - theme colours for the plugin's highlight groups, from defaults/colors.lua
@@ -261,8 +263,11 @@ What this config adds in the spec:
 The filetypes `spellaudit` and `writingoutline` are in cursorline.lua's
 `unmanaged_ft` (their cursorline is the selection).
 
-For a stronger reviewer, set `rigor = { model = "sonnet" }` in the spec's
-`opts` (see |quill-config|).
+Models: grammar, outline, rigor and assist default to haiku; the STYLE.md
+check and talk to sonnet. For a stronger reviewer, set
+`rigor = { model = "sonnet" }` in the spec's `opts`, pick one for the
+session with <leader>Wm, or pass it for one run
+(`:Writing rigor model=opus`). See |quill-models|.
 
 ==============================================================================
 9. LANGUAGE REFERENCES                                 *nvim-config-refdocs*

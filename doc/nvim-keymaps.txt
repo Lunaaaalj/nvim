@@ -627,16 +627,25 @@ In neo-tree's Claude tab:
 ==============================================================================
 16. WRITING COMPANION (CLAUDE)                         *nvim-keymaps-writing*
 
-A cheap Claude model (Haiku, through the `claude` CLI and your Claude Code
-login) as copy editor, developmental editor and reader. Nothing runs on its
-own: text leaves Neovim only when you press one of these. See
+Claude (through the `claude` CLI and your Claude Code login) as copy
+editor, house-style checker, developmental editor and reader. Nothing runs
+on its own: text leaves Neovim only when you press one of these. See
 |nvim-config-writing|.
 
+In every walk, `l` leaves the issue for later (saved; it comes back after
+the fresh ones next time) and, in the grammar, STYLE.md and rigor walks, `t`
+talks about it: type a message, read the reply in the float, and the new
+suggestion becomes 1 (u takes it back).
+
   <leader>Wg    Grammar audit: check, then walk every issue in the float of
-                |nvim-spell-audit| (1-3 fix, e edit, s skip, d dismiss for
-                good, u undo, q pause; <leader>Wg again resumes)
+                |nvim-spell-audit| (1-4 fix, e edit, t talk, s skip, l later,
+                d dismiss for good, u undo, q pause; <leader>Wg again resumes)
   <leader>WG    The same, plus style and clarity hints
   <leader>Wp    Grammar audit of the paragraph under the cursor only
+  <leader>Ws    Check against the nearest STYLE.md (Sonnet): every finding
+                cites the rule it breaks, word for word, with a rewrite.
+                1-4 accept, e edit, t talk, s skip, l later, d reject for
+                good, u undo, q pause
   <leader>Wo    Reverse outline in a right panel: per paragraph a summary,
                 its role and flags (unsupported claim, gap, contradiction,
                 undefined term...), plus document-level notes. In the panel:
@@ -652,7 +661,8 @@ own: text leaves Neovim only when you press one of these. See
                 w walk, r re-run, q close); the findings are then walked:
                 1 apply the suggested rewording (when wording alone fixes it),
                 e edit, m insert a TODO(review) comment under the passage (in
-                the file's comment syntax), s skip, d dismiss, u undo, q pause
+                the file's comment syntax), t talk, s skip, l later,
+                d dismiss, u undo, q pause
   <leader>Wr    Rewrite the paragraph (normal) or selection (visual) with an
                 instruction (concise, formal, simpler, active voice, flow,
                 translate, custom). Preview float: <CR>/a accept (one undo
@@ -661,13 +671,19 @@ own: text leaves Neovim only when you press one of these. See
                 document as context)
   <leader>Wc    Companion chat in a split (a Claude chat buffer primed to read
                 the file)
-  <leader>Wd    Toggle the AI diagnostics (grammar, rigor, outline flags)
+  <leader>Wl    Everything left for later (`l`) in this buffer, in the
+                quickfix list
+  <leader>Wm    Pick the model and effort of a task (grammar, conform, rigor,
+                outline, assist, talk) for this session
+  <leader>Wd    Toggle the AI diagnostics (grammar, STYLE.md, rigor, outline)
   <leader>Wx    Clear the AI issues of this buffer
-  :Writing {grammar|style|paragraph|outline|rigor|rewrite|ask|chat|
-            diagnostics|clear}          (all from quill.nvim, see |quill|)
+  :Writing {grammar|style|paragraph|conform|outline|rigor|rewrite|ask|
+            chat|later|model|diagnostics|clear} [model=… effort=…]
+                                        (all from quill.nvim, see |quill|)
 
-Grammar issues and rigor findings are also diagnostics (sources "claude" and
-"rigor"), so ]d / [d, Trouble and the sign column show them.
+Grammar issues, STYLE.md findings and rigor findings are also diagnostics
+(sources "claude", "conform" and "rigor"), so ]d / [d, Trouble and the sign
+column show them.
 
  vim:tw=78:ts=8:noet:ft=help:norl:
 </content>
