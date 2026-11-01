@@ -67,6 +67,23 @@ re-run), L run log, A AI menu, gx browser, ? all keys. In the review tab:
 c comment (visual: range), r reply, x resolve, ]t/[t threads, S submit,
 A AI review assist, gd its drafts.
 
+Zotero ~                                                  *nvim-keymaps-zotero*
+
+ibid.nvim (|nvim-plugins-ibid|, full reference: |ibid|). The item actions
+use the citation key under the cursor, else open a picker.
+
+  <leader>Zc    Cite: pick items (<Tab> marks several), insert a citation
+  <leader>ZC    Cite with Zotero's own picker (Better BibTeX CAYW)
+  <leader>Zs    Sync the document's .bib with the cited entries
+  <leader>ZS    Same, re-exporting all (takes over a hand-written .bib)
+  <leader>Zi    Item card (o PDF, gx DOI/URL, gz show in Zotero)
+  <leader>Zp    Open the PDF          <leader>Zz    Show in Zotero
+  <leader>Zu    Open the DOI/URL
+  <leader>Zb    Yank the BibTeX entry <leader>Zr    Yank a formatted reference
+
+In the picker: <C-y> yank key, <C-b> BibTeX, <C-r> reference, <C-o> PDF,
+<C-z> show in Zotero. K on a key shows its card (hover.nvim).
+
 Music ~                                                    *nvim-keymaps-music*
 
 Drives the Apple Music app (|nvim-plugins-music|); the statusline shows the

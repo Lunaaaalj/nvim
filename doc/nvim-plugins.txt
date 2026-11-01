@@ -242,6 +242,19 @@ upstream ~  (~/Downloads/GitHub/upstream.nvim, local) *nvim-plugins-upstream*
   the issue as the first prompt), and a dashboard stats refresh after
   every write. The dashboard's `G` key opens it.
 
+ibid ~  (~/Downloads/GitHub/ibid.nvim, local)            *nvim-plugins-ibid*
+  Zotero citations for LaTeX, Markdown/Quarto and Typst: a Telescope
+  picker that inserts the right citation syntax, an nvim-cmp source for
+  keys, a hover card on the key under the cursor, warnings on keys that
+  aren't in Zotero, and a managed .bib holding exactly the cited entries
+  (exported by Better BibTeX, synced on |:w|). Its own docs: |ibid|.
+  Keys: |nvim-keymaps-zotero|.
+
+  Glue in `lua/plugins/ibid.lua`: colours from the active scheme's accent
+  and PDFs opened in the in-terminal viewer (|nvim-plugins-pdfview|
+  claims *.pdf). The cmp source is registered in `cmp.lua`, the hover
+  provider listed in `hover.lua`.
+
 projectrc ~  (~/Downloads/GitHub/projectrc.nvim, local) *nvim-plugins-projectrc*
   Per-project settings (`.nvim/settings.json` plus the tools' own
   `.clang-format` / `.clangd`) edited in a float, with trust for settings

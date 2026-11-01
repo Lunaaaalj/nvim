@@ -74,6 +74,9 @@ A `.luarc.json` at the config root configures lua_ls for this repo: it declares 
 
 ### GitHub (upstream.nvim)
 `lua/plugins/upstream.lua` loads **upstream.nvim**, a standalone plugin developed in `~/Downloads/GitHub/upstream.nvim` (`dir =` spec; its own README and `:help upstream` are the reference). It is a full-screen GitHub float on the `gh` CLI (issues, PRs, review requests, Actions runs; manage, compose buffers where `:w` submits, PR review with a pending review, Claude drafts for PR bodies and review comments). **No `require` of this config from the plugin**: the glue is all in the spec file. Theme colours go through `defaults/colors.lua` (`UpstreamAccent`/`Title`/`TabActive`/`Muted`/`Sel`, re-applied on `ColorScheme`; the plugin's own groups are `default` links, so these win). `ai.open_chat` opens "work on this issue" chats through `claude_chats.open({ prompt = … })`, where `prompt` is passed as claude's positional argument. `User UpstreamChanged` with `data.item` (a write) forces a `dashboard_data.refresh(true)`. The list's filetype `upstream` is in cursorline.lua's `unmanaged_ft`. The dashboard's hidden `G` key runs `:Upstream`. Compose buffers are `acwrite` and open in the current window, so `:q` on an unsent one goes through bufclose's Save/Discard/Cancel (Save = submit).
+### Zotero (ibid.nvim)
+`lua/plugins/ibid.lua` loads **ibid.nvim**, a standalone plugin developed in `~/Downloads/GitHub/ibid.nvim` (`dir =` spec, `ft` = tex/markdown/quarto/rmd/typst + `cmd = "Ibid"`; its README and `:help ibid` are the reference; the unbuilt phases are in its `issues/`). It cites from Zotero and keeps each document's `.bib` equal to the entries it cites. **Reads** come from a per-process copy of `zotero.sqlite` + `-wal` (Zotero locks the file; `immutable=1` would miss the WAL), one `sqlite3` query returning the library as JSON, re-read only when the db/WAL signature changes; **writes** to the `.bib` go through Better BibTeX's JSON-RPC (`item.export`), so Zotero only has to run when a *new* key is cited (existing entries are kept unless the item's `dateModified` is newer than the file). The managed `.bib` is the one the document declares (`\addbibresource`/`\bibliography`, `bibliography:` front matter / `_quarto.yml`, `#bibliography(...)`), marked by a `%` header line; a hand-written one is only taken over with `:Ibid sync!`, and once managed every `:w` syncs it. Nothing writes to Zotero's database. **No `require` of this config from the plugin**: the glue is theme colours (`IbidAuthor`/`IbidYear`/`IbidMuted` via `defaults/colors.lua`, re-applied on `ColorScheme`) and `open_pdf` = `:edit` (pdfview's `BufReadCmd`) in the spec; the cmp source is registered in `cmp.lua` (`{ name = "ibid" }`) and the hover provider `ibid.hover` (priority 1001, enabled only on a known key) is listed in `hover.lua`. Keys under `<leader>Z` (`<leader>z` is Zen).
+
 ### Molten / notebooks
 `molten.nvim` runs code in Jupyter kernels and `jupytext.nvim` handles `.ipynb` ↔ markdown conversion. Requires `:UpdateRemotePlugins` after install.
 
@@ -209,12 +212,17 @@ The authoritative human-facing reference is the in-editor `:help` documentation 
 | `<leader>Mn` / `<leader>MN` / `<leader>Ms` | Music: next / previous / search songs (player on the Songs tab) |
 | `<leader>Go` / `<leader>Gi` / `<leader>Gp` / `<leader>Gr` | GitHub float (upstream.nvim): last tab / issues / PRs / review requests |
 | `<leader>Gn` / `<leader>Gc` | GitHub: new issue / create PR from the current branch (Claude drafts title + body) |
+| `<leader>Zc` / `<leader>ZC` | Zotero (ibid.nvim): cite from the picker / with Zotero's own picker (CAYW) |
+| `<leader>Zs` / `<leader>ZS` | Zotero: sync the document's `.bib` / re-export all (and adopt a hand-written one) |
+| `<leader>Zi` / `<leader>Zp` / `<leader>Zz` / `<leader>Zu` | Zotero: item card / open PDF / show in Zotero / DOI-URL (key under cursor, else picker) |
+| `<leader>Zb` / `<leader>Zr` | Zotero: yank BibTeX entry / formatted reference (APA) |
 
 ## External dependencies
 
 - `lazygit` binary (for lazygit.nvim)
 - `gh` CLI, authenticated (`gh auth login`) — optional; powers the dashboard's GitHub stats line (PRs, issues, contributions, streak) and upstream.nvim (`<leader>G`). Without it the stats line simply doesn't render.
 - `make` (for telescope-fzf-native)
+- Zotero 7+ with the Better BibTeX add-on, plus `sqlite3` and `curl`, for ibid.nvim (`<leader>Z`); citing/completion/hover work with Zotero closed, syncing newly cited keys needs it running
 - `claude` (Claude Code CLI), logged in — for the writing companion (`lua/writing/`, `<leader>W`), which runs `claude -p` headless with your plan
 - `cppman` (`pipx install cppman`) and `groff` (`brew install groff`) for C++ references (`lua/refdocs/`); `cppman -c` caches all of cppreference offline
 - `poppler` (`pdftoppm`, `pdfinfo`, `pdftohtml`, `pdftotext`) and ImageMagick (`magick`), both via Homebrew, for the in-terminal PDF viewer (`lua/pdfview/`); plus `pandoc` and `typst` (`brew install pandoc typst`) for its Markdown preview; `typst` alone for the Typst preview (tinymist bundles its own compiler for LSP/export)

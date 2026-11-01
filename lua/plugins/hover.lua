@@ -3,6 +3,8 @@ return {
     config = function()
         require("hover").config({
             providers = {
+                -- Zotero card on a citation key (ibid.nvim); only enabled on one
+                "ibid.hover",
                 "hover.providers.diagnostic",
                 "hover.providers.lsp",
                 "hover.providers.dap",
