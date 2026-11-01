@@ -238,44 +238,31 @@ trusted (`T` in the float), using the same hash-based trust as 'exrc'.
 ==============================================================================
 8. WRITING COMPANION                                   *nvim-config-writing*
 
-`lua/writing/` uses Claude as a writing companion for Markdown, LaTeX, Typst
-and plain text (keys: |nvim-keymaps-writing|).
+The spell audit and the Claude writing companion are quill.nvim, a separate
+plugin developed in `~/Downloads/GitHub/quill.nvim` and loaded with a `dir =`
+spec (`lua/plugins/quill.lua`). Its own help is the reference: |quill|
+(`:checkhealth writing` checks `claude` and the login). Keys:
+|nvim-keymaps-writing| and |nvim-spell-audit|.
 
-How it talks to Claude: `claude -p` with your Claude Code login, so no API
-key is needed and use counts against your plan. Each request has no tools,
-its own short system prompt, no saved session, and runs in an empty cache
-directory so no CLAUDE.md is read. Default model: haiku (grammar at low
-effort, outline at high, rewrite/ask at medium); change `M.config.model` in
-the module files.
+In short: a cheap Claude model (haiku) through `claude -p` and your Claude
+Code login (no API key) as copy editor (grammar), peer reviewer (rigor),
+developmental editor (reverse outline) and reader (rewrite, ask, chat).
+Nothing runs on its own. Only the buffer's prose is sent, with the language
+from 'spelllang', the words in your spellfile as a glossary, and a style
+guide from the nearest `.nvim/writing.md` above the file. Results are cached,
+so repeating a pass only sends what changed.
 
-What is sent: the buffer's prose, split into paragraphs. Front matter, code
-blocks, LaTeX's preamble, comments and math environments, and Typst's
-#set/#show/#import/#let lines and raw blocks are left out. The model is told
-to leave markup, math, citations and labels alone.
+What this config adds in the spec:
+- theme colours for the plugin's highlight groups, from defaults/colors.lua
+  (the `highlights` option is a function, re-run on every ColorScheme);
+- the companion chat (<leader>Wc) opens through lua/claude_chats, so it gets
+  the IDE env and shows in the neo-tree Claude tab;
+- a "Translate to Spanish" rewrite preset.
+The filetypes `spellaudit` and `writingoutline` are in cursorline.lua's
+`unmanaged_ft` (their cursorline is the selection).
 
-Language: from 'spelllang' (so a `.spelllang` with `es,en` means Spanish or
-English); suggestions stay in the paragraph's language.
-
-Style guide: put a `.nvim/writing.md` in the project (any directory above the
-file): audience, register, house rules, terms to leave alone. It is sent with
-every request. Words in your spellfile (`zg`) are never "corrected".
-
-Rigor review (<leader>Wa): one request with the whole document, so problems
-that only show across sections (a sample size that changes, a term defined
-differently) are caught. The model cannot read your sources: a citation
-counts as support, and it flags a cited claim only when the claim goes beyond
-what a citation could plausibly support. Doubtful facts (dates, figures,
-attributions) are reported as "verify", never corrected; check them yourself.
-Its default is haiku at high effort; for a thesis chapter you may prefer a
-stronger model (`require("writing.rigor").config.model = "sonnet"`).
-Reviews are cached per document version.
-
-Grammar issues and rigor findings come back as exact quotes; one that can't be found in its
-paragraph (a hallucination) or overlaps another is dropped. They are anchored
-with extmarks, so they move with your edits and vanish once fixed. Results
-are cached per paragraph (stdpath("cache")/writing), so repeating a pass only
-sends what changed; outlines are cached per document. Dismissed issues (`d`)
-are remembered in stdpath("state")/writing.
+For a stronger reviewer, set `rigor = { model = "sonnet" }` in the spec's
+`opts` (see |quill-config|).
 
 ==============================================================================
 9. LANGUAGE REFERENCES                                 *nvim-config-refdocs*

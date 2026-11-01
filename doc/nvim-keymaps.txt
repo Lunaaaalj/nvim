@@ -640,9 +640,10 @@ own: text leaves Neovim only when you press one of these. See
                 document as context)
   <leader>Wc    Companion chat in a split (a Claude chat buffer primed to read
                 the file)
-  <leader>Wd    Toggle the AI diagnostics (grammar issues and outline flags)
+  <leader>Wd    Toggle the AI diagnostics (grammar, rigor, outline flags)
   <leader>Wx    Clear the AI issues of this buffer
-  :Writing {grammar|style|outline|rigor|rewrite|ask|chat|clear}
+  :Writing {grammar|style|paragraph|outline|rigor|rewrite|ask|chat|
+            diagnostics|clear}          (all from quill.nvim, see |quill|)
 
 Grammar issues and rigor findings are also diagnostics (sources "claude" and
 "rigor"), so ]d / [d, Trouble and the sign column show them.
