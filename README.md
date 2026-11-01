@@ -32,7 +32,7 @@ Most of this is a careful arrangement of good plugins. A few parts are written f
   <img src=".github/readme/frames/pdf-tex.webp" width="100%" alt="Lecture notes on complex integration in LaTeX on the left, with texlab showing equation numbers beside each label, and the compiled two-column PDF on the right, recoloured to the theme.">
 </p>
 
-**LaTeX.** <kbd>␣ l v</kbd> opens the compiled PDF next to the source, sized to the page's aspect ratio. SyncTeX works in both directions: the cursor's line is boxed on the page, and clicking a word on the page jumps to its line. <kbd>␣ l F</kbd> keeps following you as you type and recompile. VimTeX drives compilation, Skim is one key away (<kbd>␣ l V</kbd>), and a Castel-style snippet set handles math as you write.
+**LaTeX.** <kbd>␣ l v</kbd> opens the compiled PDF next to the source, sized to the page's aspect ratio. SyncTeX works in both directions: the cursor's line is boxed on the page, and clicking a word on the page jumps to its line. <kbd>␣ l F</kbd> keeps following you as you type and recompile. VimTeX drives compilation, the first compile opens the preview, the system viewer is one key away (<kbd>␣ l V</kbd>), and a Castel-style snippet set handles math as you write.
 
 **Markdown.** <kbd>␣ p v</kbd> pipes the buffer through pandoc and typst with a GitHub-flavoured template. The page is cut to the shape of the split, so text reflows when you resize it and <kbd>j</kbd> <kbd>k</kbd> move screen to screen. It re-renders as you type. Without SyncTeX, both directions match text instead.
 
@@ -181,7 +181,7 @@ nvim   # lazy.nvim bootstraps itself; Mason installs servers, formatters and deb
 | **Notebooks** | a `~/.virtualenvs/neovim` venv with `pynvim jupyter_client jupytext`, then `:UpdateRemotePlugins` |
 | **R / Quarto** | `brew install r quarto`, then `IRkernel::installspec()` once in R |
 | **Dashboard stats** | `gh auth login`. Without it, the stats line simply doesn't appear |
-| **LaTeX** | a TeX distribution with `latexmk`. Skim is optional, as an external viewer |
+| **LaTeX** | a TeX distribution with `latexmk` |
 
 </details>
 

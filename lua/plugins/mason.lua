@@ -34,7 +34,7 @@ return {
         tinymist = {
           settings = {
             formatterMode = "typstyle",
-            -- foo.pdf next to foo.typ on save, for Skim/<leader>lV; the live
+            -- foo.pdf next to foo.typ on save, for <leader>lV; the live
             -- preview (<leader>lv) compiles into its own cache instead.
             exportPdf = "onSave",
           },

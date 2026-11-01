@@ -116,6 +116,33 @@ function M.view()
   M.sync(v, v.tex_win, l1, l2)
 end
 
+-- PDFs whose preview was auto-opened in the current compile session (VimTeX's
+-- `started_through_callback`): opened once, so closing it sticks until the
+-- compiler is stopped and started again.
+local auto_opened = {} ---@type table<string, true>
+
+-- First successful compile: open the preview, like VimTeX's view_automatic.
+-- Only from a window showing a TeX buffer, and without taking focus.
+local function auto_open()
+  if not require("pdfview").supported() then return end
+  local pdf = pdf_for(0)
+  if not pdf or auto_opened[pdf] or vim.fn.filereadable(pdf) == 0 then return end
+  local win = vim.api.nvim_get_current_win()
+  if vim.bo[vim.api.nvim_win_get_buf(win)].filetype ~= "tex" then
+    win = nil
+    for _, w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+      if vim.bo[vim.api.nvim_win_get_buf(w)].filetype == "tex" then win = w break end
+    end
+    if not win then return end
+  end
+  auto_opened[pdf] = true
+  local v = preview(pdf)
+  v.status = nil
+  v.tex_win = win
+  if not v:win() then v:open_split() end
+  M.sync(v, win)
+end
+
 -- Put the cursor on `file`:`line` in a source window, then mark that line on
 -- the page so the jump is visible on both sides.
 function M.jump(v, file, line)
@@ -196,9 +223,9 @@ function M.setup()
     pattern = "VimtexEventCompileSuccess",
     callback = function()
       local v = viewer()
-      if not (v and ours(v)) then return end
+      if not (v and v:win()) then return auto_open() end
+      if not ours(v) then return end
       v.status = nil
-      if not v:win() then return end
       local tw = v.tex_win
       if cfg().follow and tw and vim.api.nvim_win_is_valid(tw) and vim.bo[vim.api.nvim_win_get_buf(tw)].filetype == "tex" then
         M.sync(v, tw)
@@ -206,6 +233,14 @@ function M.setup()
         v:winbar()
         v:render()
       end
+    end,
+  })
+  vim.api.nvim_create_autocmd("User", {
+    group = group,
+    pattern = "VimtexEventCompileStopped",
+    callback = function()
+      local pdf = pdf_for(0)
+      if pdf then auto_opened[pdf] = nil end
     end,
   })
   vim.api.nvim_create_autocmd("CursorHold", {

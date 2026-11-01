@@ -461,13 +461,16 @@ All maps in this section are buffer-local to TeX buffers.
 
 Compile & view ~
 
-  <leader>ll    Toggle continuous compilation (:VimtexCompile)
+  <leader>ll    Toggle continuous compilation (:VimtexCompile). The first
+                successful compile opens the kitty preview (once per
+                compile session, so closing it sticks)
   <leader>lo    Compile once, single shot (:VimtexCompileSS)
   <leader>lv    Preview the PDF in a split on the right, drawn with kitty
                 graphics, highlighting the cursor line on its page
                 (lua/pdfview). In visual mode it highlights the selected
-                lines. Again re-syncs. Falls back to Skim outside kitty.
-  <leader>lV    View the PDF in Skim, forward-searching (:VimtexView)
+                lines. Again re-syncs. Falls back to the system
+                viewer outside kitty.
+  <leader>lV    Open the PDF in the system viewer (:VimtexView)
   <leader>lF    Toggle live follow: the preview tracks the cursor on
                 CursorHold
 
@@ -493,7 +496,7 @@ There is no continuous-compile key: the preview recompiles as you type.
                 CursorHold
   <leader>lk    Close the preview
   <leader>lo    Compile once to `foo.pdf` next to the file
-  <leader>lV    Compile and open `foo.pdf` in the system viewer (Skim)
+  <leader>lV    Compile and open `foo.pdf` in the system viewer
   <leader>le    Diagnostics in the location list
   <leader>ln    New document from a template (global, works anywhere; also
                 `:TypstNew [name]`). A Telescope list of Typst Universe

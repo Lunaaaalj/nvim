@@ -184,11 +184,11 @@ vim.keymap.set("n", "<leader>oP", ":QuartoClosePreview<CR>", { desc = "Quarto: s
 local vimtex_maps = {
   { "ll", "<cmd>VimtexCompile<cr>",       "LaTeX: toggle continuous compile" },
   { "lo", "<cmd>VimtexCompileSS<cr>",     "LaTeX: compile once (single shot)" },
-  -- In-terminal kitty preview (lua/pdfview/tex.lua); Skim outside kitty. In
+  -- In-terminal kitty preview (lua/pdfview/tex.lua); system viewer outside kitty. In
   -- visual mode it highlights the selected lines on the page.
   { "lv", function() require("pdfview.tex").view() end, "LaTeX: preview PDF in a split (forward search)", { "n", "x" } },
   { "lF", function() require("pdfview.tex").toggle_live() end, "LaTeX: toggle live follow in the preview" },
-  { "lV", "<cmd>VimtexView<cr>",          "LaTeX: view PDF in Skim (forward search)" },
+  { "lV", "<cmd>VimtexView<cr>",          "LaTeX: open PDF in the system viewer" },
   { "lk", "<cmd>VimtexStop<cr>",          "LaTeX: stop compilation" },
   { "lK", "<cmd>VimtexStopAll<cr>",       "LaTeX: stop all compilations" },
   { "lc", "<cmd>VimtexClean<cr>",         "LaTeX: clean aux files" },

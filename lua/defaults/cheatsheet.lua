@@ -192,11 +192,11 @@ local sections = {
   } },
   { "LaTeX (VimTeX)", {
     { "<leader>ll / lo", "Compile continuous / once" },
-    { "<leader>lv / lV", "Preview PDF in a kitty split / in Skim" },
+    { "<leader>lv / lV", "Preview PDF in a kitty split / system viewer" },
     { "<leader>lF", "Toggle live follow (preview tracks the cursor)" },
     { "<leader>pv / pF", "Markdown: preview in a split / live follow" },
     { "<leader>lv / lF / lk", "Typst: live preview / follow / close" },
-    { "<leader>lo / lV / le", "Typst: compile to PDF / open in Skim / errors" },
+    { "<leader>lo / lV / le", "Typst: compile to PDF / open externally / errors" },
     { "<leader>ln", "Typst: new document from a template (:TypstNew)" },
     { "PDF: j k / J K", "Scroll (flows across pages) / turn page" },
     { "PDF: + - 0 w / s", "Zoom in / out / fit page / width; s spread" },

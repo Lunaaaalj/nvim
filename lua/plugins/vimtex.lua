@@ -10,17 +10,23 @@ return {
   -- still accepts nvim 0.10+. Drop this pin after upgrading to nvim 0.12.4.
   tag = "v2.18",
   init = function()
-    -- PDF viewer. Skim over sioyek: sioyek ships unsigned, so Gatekeeper
-    -- kills it on launch -- and since VimTeX starts viewers detached, that
-    -- failure is completely silent (`\lv` just does nothing). Homebrew
-    -- deprecated the sioyek cask for that same reason, disabling 2026-09-01.
-    -- Skim is notarized and is the de-facto LaTeX viewer on macOS.
-    vim.g.vimtex_view_method = "skim"
-    vim.g.vimtex_view_skim_sync = 1 -- forward search: jump PDF to cursor line
-    vim.g.vimtex_view_skim_activate = 1 -- focus the Skim window on view
-    vim.g.vimtex_view_skim_reading_bar = 1 -- highlight the synced line
-    -- Don't jump to the PDF as soon as compilation starts; `\lv` is explicit.
+    -- PDF viewer: the in-terminal kitty preview (lua/pdfview/tex.lua) is the
+    -- viewer. VimTeX's own viewer only backs `<leader>lV` and the fallback
+    -- outside a graphics terminal, and is the system viewer (`open`), not
+    -- Skim: the skim viewer's compiler_callback talks to Skim after *every*
+    -- compile, even with view_automatic off.
+    vim.g.vimtex_view_method = "general"
+    vim.g.vimtex_view_general_viewer = "open"
+    vim.g.vimtex_view_general_options = "@pdf"
+    -- Never auto-open VimTeX's viewer on the first successful compile;
+    -- pdfview.tex opens the kitty preview instead (same once-per-session rule).
+    vim.g.vimtex_view_automatic = 0
     vim.g.vimtex_view_forward_search_on_start = 0
+    -- Register the preview's compile hooks before the first `<leader>ll`.
+    vim.api.nvim_create_autocmd("User", {
+      pattern = "VimtexEventInitPost",
+      callback = function() require("pdfview.tex").setup() end,
+    })
   end
 }
 }

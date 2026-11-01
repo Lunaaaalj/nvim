@@ -392,17 +392,17 @@ vimtex ~  (lervag/vimtex)                              *nvim-plugins-vimtex*
   compile runs, the winbar shows "compiling"; a failed compile shows
   "compile failed" until the next success, so a stale PDF is never mistaken
   for a fresh one. `<leader>lF` turns on live follow (sync on CursorHold).
-  Outside a graphics terminal `<leader>lv` falls back to Skim.
+  The first successful compile after `<leader>ll` opens the preview by
+  itself (VimTeX's `vimtex_view_automatic` is off and pdfview does it
+  instead), once per compile session: close it and it stays closed until
+  the compiler is stopped and restarted.
+  Outside a graphics terminal `<leader>lv` falls back to the system viewer.
 
-  Viewer (VimTeX / `<leader>lV`): Skim, with forward search, window
-  activation and the reading bar enabled;
-  `vimtex_view_forward_search_on_start` is off, so a map is the explicit way
-  to open the PDF. Skim is driven over AppleScript/JXA rather than CLI flags,
-  so macOS may ask for automation permission the first time Neovim controls
-  it (Settings -> Privacy & Security -> Automation); denying it makes
-  `<leader>lV` fail silently.
+  Viewer (VimTeX / `<leader>lV`): the `general` method with `open`, i.e.
+  the macOS default PDF app, without forward search. Skim is no longer used:
+  its VimTeX viewer talks to Skim after every compile.
 
-  Note that VimTeX starts viewers detached, so *any* Skim failure is
+  Note that VimTeX starts viewers detached, so *any* viewer failure is
   invisible from inside Neovim. When `<leader>lV` appears to do nothing, run
   `<leader>li` (:VimtexInfo) and try the printed viewer command in a shell,
   where stderr is actually visible.

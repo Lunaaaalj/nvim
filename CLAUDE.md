@@ -109,13 +109,13 @@ Five layers, all of which hang off VimTeX initialising correctly:
 
 - **`lua/plugins/vimtex.lua`** — VimTeX itself, `lazy = false` (its ftplugin must register before the first `.tex` buffer). **Pinned to `tag = "v2.18"`**: VimTeX HEAD raised its floor to Neovim 0.12.4 on 2026-07-22, and on an older Neovim the version gate `finish`es `ftplugin/tex.vim` _before_ `vimtex#init()` — killing every mapping, the latexmk compiler, and `vimtex#syntax#in_mathzone()`. Drop the pin once Neovim is 0.12.4+.
 - **In-terminal preview: `lua/pdfview/tex.lua`** (`<leader>lv`, also visual; `<leader>lF` live follow). It builds on the PDF viewer (see **PDF viewer** below). Forward search runs `synctex view` once per line, and the `h/v/W/H` boxes become accent highlights. Inverse search maps the clicked page point to `synctex edit -o page:x:y:pdf`. Paths need `simplify()` because synctex reports `dir/./file`. The PDF comes from `b:vimtex.compiler.get_file('pdf')`; v2.18 has no `b:vimtex.out()`. `VimtexEventCompiling`/`CompileFailed`/`CompileSuccess` set the winbar status. Success with `config.follow` re-syncs to the cursor. Outside a graphics terminal it falls back to `:VimtexView`.
-- **External viewer: Skim** (`<leader>lV`) (`vimtex_view_method = "skim"`, sync/activate/reading-bar on). Not sioyek — sioyek ships unsigned, so Gatekeeper kills it, and Homebrew deprecated the cask (disabled 2026-09-01). VimTeX drives Skim over AppleScript/JXA, so macOS may prompt for automation permission on first use.
+- **No Skim.** `vimtex_view_automatic = 0` and `vimtex_view_method = "general"` with `open` (system viewer, only for `<leader>lV` and the non-graphics fallback). The skim method's `compiler_callback` talks to Skim after _every_ compile even with automatic off, so don't switch back to it. Instead `pdfview.tex` opens the kitty preview on the first `VimtexEventCompileSuccess` (once per PDF per compile session, reset on `VimtexEventCompileStopped`); its hooks are registered on `VimtexEventInitPost` from the vimtex spec, so they exist before the first `<leader>ll`.
 - **LSP/format** — `texlab` (mason `ensure_installed`) and `latexindent` for `tex` in conform.
 - **Snippets** — `lua/snippets/tex.lua`, a Castel-style set loaded by LuaSnip's `from_lua` loader. Math-mode autosnippets gate on `vimtex#syntax#in_mathzone()`, so **they die silently whenever VimTeX fails to init** — check VimTeX first if snippets stop firing.
 
 Treesitter highlighting is deliberately `disable`d for `latex` (`lua/plugins/treesitter.lua`) so VimTeX owns syntax + conceal; the parser stays installed for folding/textobjects/context.
 
-Debugging tip: VimTeX starts viewers **detached**, so Skim failures are invisible inside Neovim (`<leader>lV` just does nothing). Run `<leader>li` (`:VimtexInfo`) and reproduce the printed viewer command in a shell, where stderr is visible.
+Debugging tip: VimTeX starts viewers **detached**, so viewer failures are invisible inside Neovim (`<leader>lV` just does nothing). Run `<leader>li` (`:VimtexInfo`) and reproduce the printed viewer command in a shell, where stderr is visible.
 
 ### Typst
 
@@ -197,7 +197,7 @@ The authoritative human-facing reference is the in-editor `:help` documentation 
 | `<leader>oi`                                              | Molten open image output externally                                                                                    |
 | `<leader>op` / `<leader>oP`                               | Quarto: start / stop live-reload preview                                                                               |
 | `<leader>ll` / `<leader>lo`                               | LaTeX: compile continuous / once                                                                                       |
-| `<leader>lv` / `<leader>lV`                               | LaTeX: preview PDF in a kitty split / view in Skim                                                                     |
+| `<leader>lv` / `<leader>lV`                               | LaTeX: preview PDF in a kitty split / open in system viewer                                                            |
 | `<leader>lF`                                              | LaTeX: toggle live follow in the preview                                                                               |
 | `<leader>pv` / `<leader>pF`                               | Markdown: preview in a split (pandoc → typst; also visual) / live follow                                               |
 | `<leader>lv` / `<leader>lF` / `<leader>lk` (typst)        | Typst: live preview in the kitty split / follow / close                                                                |
