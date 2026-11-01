@@ -67,6 +67,13 @@ local sections = {
     { ":w in compose", "Submit (comment, issue, PR, review body)" },
     { "c r x ]t S A", "Review: comment / reply / resolve / next thread / submit / AI" },
   } },
+  { "Zotero (ibid.nvim)", {
+    { "<leader>Zc / ZC", "Cite from picker (⇥ marks several) / Zotero's picker" },
+    { "<leader>Zs / ZS", "Sync the document's .bib / re-export all" },
+    { "<leader>Zi / Zp / Zz / Zu", "Item card / PDF / show in Zotero / DOI" },
+    { "<leader>Zb / Zr", "Yank BibTeX entry / formatted reference" },
+    { "<C-y> <C-b> <C-r> <C-o>", "In picker: yank key / BibTeX / reference / PDF" },
+  } },
   { "Windows / Buffers", {
     { "<C-h/j/k/l>", "Move between windows" },
     { "<leader>| / <leader>-", "Split vertically / horizontally" },
@@ -76,6 +83,7 @@ local sections = {
     { "<C-w>H/J/K/L", "Move window to far left / bottom / top / right" },
     { "<leader>fb", "Buffers (<C-v>/<C-x> open in a split)" },
     { "<leader>uw", "Toggle auto panel layout (stack panels on the right)" },
+    { "<leader>u=", "Rebalance windows (sidebar/panels keep width)" },
     { "<Tab> / <S-Tab>", "Next / previous buffer" },
     { "<leader>x", "Close buffer (keep layout)" },
     { ":q", "Close buffer (dashboard if last); :quit = real quit" },

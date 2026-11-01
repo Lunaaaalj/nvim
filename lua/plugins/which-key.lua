@@ -44,6 +44,7 @@ return {
             { "<leader>u", group = "UI" },
             { "<leader>W", group = "Writing (Claude)" },
             { "<leader>x", group = "Trouble/Diagnostics" },
+            { "<leader>Z", group = "Zotero" },
             -- git-conflict default chord prefix
             { "c", group = "conflict", mode = "n" },
         },

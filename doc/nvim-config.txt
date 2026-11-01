@@ -309,6 +309,19 @@ one column on the right, so the editor keeps its width however many are open
     heights are evened out;
   * the column keeps its width, including one you set by hand (<C-w>< / >).
 
+The layout is re-established after anything changes it, not only when a
+panel opens: when a window closes, the terminal is resized, or neo-tree
+opens or closes,
+
+  * neo-tree and the panel column get their widths back (yours, if you
+    resized them), and the editors take whatever is left over;
+  * the panel column narrows only as far as the editor needs to keep 88
+    columns, and widens back to your width as soon as there is room again;
+  * a panel column that lost a window evens out its heights.
+
+<leader>u= does the same on demand and also evens out the editor windows
+and the panel heights.
+
 Only panels that open as the rightmost column are moved: a bottom terminal
 (<leader>th) or a split you make inside the column stays where it is.
 <leader>uw turns this off.

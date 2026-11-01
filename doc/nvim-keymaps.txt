@@ -67,6 +67,23 @@ re-run), L run log, A AI menu, gx browser, ? all keys. In the review tab:
 c comment (visual: range), r reply, x resolve, ]t/[t threads, S submit,
 A AI review assist, gd its drafts.
 
+Zotero ~                                                  *nvim-keymaps-zotero*
+
+ibid.nvim (|nvim-plugins-ibid|, full reference: |ibid|). The item actions
+use the citation key under the cursor, else open a picker.
+
+  <leader>Zc    Cite: pick items (<Tab> marks several), insert a citation
+  <leader>ZC    Cite with Zotero's own picker (Better BibTeX CAYW)
+  <leader>Zs    Sync the document's .bib with the cited entries
+  <leader>ZS    Same, re-exporting all (takes over a hand-written .bib)
+  <leader>Zi    Item card (o PDF, gx DOI/URL, gz show in Zotero)
+  <leader>Zp    Open the PDF          <leader>Zz    Show in Zotero
+  <leader>Zu    Open the DOI/URL
+  <leader>Zb    Yank the BibTeX entry <leader>Zr    Yank a formatted reference
+
+In the picker: <C-y> yank key, <C-b> BibTeX, <C-r> reference, <C-o> PDF,
+<C-z> show in Zotero. K on a key shows its card (hover.nvim).
+
 Music ~                                                    *nvim-keymaps-music*
 
 Drives the Apple Music app (|nvim-plugins-music|); the statusline shows the
@@ -118,6 +135,8 @@ Splitting (any buffer; see |nvim-config-layout|):
   <leader>fb    Buffers (Telescope): <CR> here, <C-v> vsplit, <C-x> split,
                 <C-t> new tab
   <leader>uw    Toggle auto panel layout
+  <leader>u=    Rebalance: neo-tree/panels back to their widths, editors and
+                panel heights evened out
 Built-in window keys worth knowing:
   <C-w>v / <C-w>s   Vertical / horizontal split
   <C-w>o            Only this window       <C-w>c   Close this window
@@ -131,9 +150,11 @@ Built-in window keys worth knowing:
   :q            Close the current BUFFER, not Neovim      *nvim-keymaps-quit*
                 (`lua/defaults/bufclose.lua`). In a split, a float, neo-tree
                 or with several tabs it just closes that window/tab. In the
-                last editing window it shows the next buffer (files before
-                terminals, then most recent), or the dashboard when none is
-                left; `:q` on that dashboard quits. Modified buffers prompt
+                last editing window (panels such as the Claude terminal,
+                help and previews don't count, so neo-tree or a panel never
+                swallows the editor's space) it shows the next buffer (files
+                before terminals, then most recent), or the dashboard when
+                none is left; `:q` on that dashboard quits. Modified buffers prompt
                 Save / Discard / Cancel. Terminals and unlisted buffers are
                 hidden, not deleted, so their jobs keep running.
   :q!  :wq  :wq!  Same, discarding / writing first.

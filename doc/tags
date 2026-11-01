@@ -41,6 +41,7 @@ nvim-keymaps-test	nvim-keymaps.txt	/*nvim-keymaps-test*
 nvim-keymaps-typst	nvim-keymaps.txt	/*nvim-keymaps-typst*
 nvim-keymaps-windows	nvim-keymaps.txt	/*nvim-keymaps-windows*
 nvim-keymaps-writing	nvim-keymaps.txt	/*nvim-keymaps-writing*
+nvim-keymaps-zotero	nvim-keymaps.txt	/*nvim-keymaps-zotero*
 nvim-keymaps.txt	nvim-keymaps.txt	/*nvim-keymaps.txt*
 nvim-notebooks	nvim-notebooks.txt	/*nvim-notebooks*
 nvim-notebooks-concept	nvim-notebooks.txt	/*nvim-notebooks-concept*
@@ -56,6 +57,7 @@ nvim-plugins-ai	nvim-plugins.txt	/*nvim-plugins-ai*
 nvim-plugins-colorschemes	nvim-plugins.txt	/*nvim-plugins-colorschemes*
 nvim-plugins-editing	nvim-plugins.txt	/*nvim-plugins-editing*
 nvim-plugins-git	nvim-plugins.txt	/*nvim-plugins-git*
+nvim-plugins-ibid	nvim-plugins.txt	/*nvim-plugins-ibid*
 nvim-plugins-lsp	nvim-plugins.txt	/*nvim-plugins-lsp*
 nvim-plugins-music	nvim-plugins.txt	/*nvim-plugins-music*
 nvim-plugins-navigation	nvim-plugins.txt	/*nvim-plugins-navigation*

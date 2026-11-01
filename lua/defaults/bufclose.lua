@@ -21,11 +21,20 @@ local function is_float(win)
   return vim.api.nvim_win_get_config(win).relative ~= ""
 end
 
--- Windows that count as editing windows: not floats, not the neo-tree sidebar.
+-- Windows that count as editing windows: file buffers (and the dashboard),
+-- not floats, the neo-tree sidebar or panels (terminals such as Claude's,
+-- help, previews). Panels must not count: closing the editor beside one
+-- would hand its columns to neo-tree or the panel, both 'winfixwidth'.
+local function is_editing(w)
+  if is_float(w) then return false end
+  local buf = vim.api.nvim_win_get_buf(w)
+  local bt, ft = vim.bo[buf].buftype, vim.bo[buf].filetype
+  if ft == "neo-tree" then return false end
+  return bt == "" or bt == "acwrite" or bt == "nowrite" or ft == "snacks_dashboard"
+end
+
 local function editing_wins()
-  return vim.tbl_filter(function(w)
-    return not is_float(w) and vim.bo[vim.api.nvim_win_get_buf(w)].filetype ~= "neo-tree"
-  end, vim.api.nvim_tabpage_list_wins(0))
+  return vim.tbl_filter(is_editing, vim.api.nvim_tabpage_list_wins(0))
 end
 
 -- Other listed buffers: files before terminals, then most recently used first,
@@ -84,7 +93,10 @@ end
 function M.quit(force)
   local win = vim.api.nvim_get_current_win()
   local wins = editing_wins()
-  if is_float(win) or #wins > 1 or not vim.tbl_contains(wins, win) or vim.fn.tabpagenr("$") > 1 then
+  -- A panel's `:q` closes the panel while an editor remains; the editor's
+  -- space then goes back to it. A lone panel (no editor left) swaps buffers.
+  if is_float(win) or vim.bo.filetype == "neo-tree" or vim.fn.tabpagenr("$") > 1
+    or #wins > 1 or (#wins == 1 and wins[1] ~= win) then
     return vim.cmd(force and "quit!" or "quit")
   end
   if vim.bo.filetype == "snacks_dashboard" and #others(vim.api.nvim_get_current_buf()) == 0 then
