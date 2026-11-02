@@ -149,6 +149,7 @@ local sections = {
     { "<leader>gh", "Diffview: current file history" },
     { "<leader>gH", "Diffview: repo history" },
     { "<leader>gc", "Diffview: close" },
+    { "<leader>gw", "Switch worktree (cd; :Worktree [name])" },
     { "co / ct / cb / c0", "Conflict: ours / theirs / both / none" },
   } },
   { "Test (Neotest)", {

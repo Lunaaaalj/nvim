@@ -369,6 +369,11 @@ Diffview:
   <leader>gH    Repository-wide history
   <leader>gc    Close Diffview
 
+Worktrees:
+  <leader>gw    Pick a worktree of this repo and |:cd| into it (preview =
+                its status + log; the current file reopens at the same path
+                in the new worktree). Also `:Worktree [branch-or-dir]`.
+
 Gitsigns (buffer-local):
   ]c  /  [c     Next / previous hunk (respects diff mode)
   <leader>hs    Stage hunk            (visual: stage selected lines)
