@@ -35,6 +35,46 @@ local function on_attach(client, bufnr)
   end
 end
 
+-- Inlay hint labels go into inline virtual text verbatim. Some servers put
+-- control characters in them (texlab's \ref hints copy the figure's \caption,
+-- line breaks included). The terminal acts on a raw "\n", so the drawn text
+-- and Neovim's grid disagree, and scrolling smears it over neighbouring
+-- windows (the kitty PDF preview). Flatten whitespace, and cap the label so
+-- a long caption doesn't push the line past the window.
+local max_hint_width = 40
+
+local function clean_hints(hints)
+  for _, hint in ipairs(hints or {}) do
+    local is_str = type(hint.label) == "string"
+    local parts = is_str and { { value = hint.label } } or hint.label --[[@as table]]
+    local room = max_hint_width
+    local kept = {}
+    for _, part in ipairs(parts) do
+      local v = part.value:gsub("%s+", " ")
+      local w = vim.fn.strdisplaywidth(v)
+      if w > room then
+        v = vim.fn.strcharpart(v, 0, math.max(room - 1, 0)) .. "…"
+        while vim.fn.strdisplaywidth(v) > room and #v > 3 do
+          v = vim.fn.strcharpart(v, 0, vim.fn.strchars(v) - 2) .. "…"
+        end
+        part.value = v
+        kept[#kept + 1] = part
+        break
+      end
+      part.value = v
+      kept[#kept + 1] = part
+      room = room - w
+    end
+    hint.label = is_str and (kept[1] and kept[1].value or "") or kept
+  end
+  return hints
+end
+
+local inlay_handler = vim.lsp.handlers["textDocument/inlayHint"]
+vim.lsp.handlers["textDocument/inlayHint"] = function(err, result, ctx, config)
+  return inlay_handler(err, clean_hints(result), ctx, config)
+end
+
 vim.api.nvim_create_autocmd("LspAttach", {
   group = vim.api.nvim_create_augroup("UserLspAttach", { clear = true }),
   callback = function(ev)
