@@ -127,6 +127,19 @@ return {
                 return require("music").state.playing and "MusicAccent" or "MusicMuted"
               end,
             },
+            -- quill.nvim: findings that need facts from you / left for later
+            -- (only once the plugin is loaded; never loads it)
+            {
+              function()
+                local c = require("writing").counts()
+                local t = {}
+                if c.needs > 0 then t[#t + 1] = "✎ " .. c.needs .. " need input" end
+                if c.later > 0 then t[#t + 1] = "◷ " .. c.later .. " later" end
+                return table.concat(t, " · ")
+              end,
+              cond = function() return package.loaded["writing.issues"] ~= nil end,
+              color = "DiagnosticWarn",
+            },
             { "diagnostics", sources = { "nvim_lsp" }, symbols = { error = " ", warn = " ", info = " ", hint = " " } },
             { lsp_clients, color = { gui = "italic" } },
             { "filetype", colored = true, icon_only = false },

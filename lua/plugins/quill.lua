@@ -1,7 +1,9 @@
 -- quill.nvim: spell audit (<leader>sa) and the Claude writing companion
--- (<leader>W: grammar, STYLE.md check, rigor review, reverse outline,
--- rewrite/ask/chat, later list, model picker). In every walk, `l` leaves an
--- issue for later and `t` talks about a finding.
+-- (<leader>W: grammar, STYLE.md restyle and check, rigor review, reverse
+-- outline, rewrite/ask/chat, later and needs-input lists, model picker). In
+-- every walk, `l` leaves an issue for later and `t` talks about a finding.
+-- Findings that need facts from you (quill never makes them up) are counted
+-- in lualine (lua/plugins/lualine.lua) and listed by <leader>Wn.
 -- Developed in its own repo; see its README / :help quill. The Lua module is
 -- `writing`, so `:checkhealth writing`.
 --
@@ -53,13 +55,15 @@ return {
         plug("<leader>Wg", "WritingGrammar", "Writing: grammar audit"),
         plug("<leader>WG", "WritingStyle", "Writing: grammar + style audit"),
         plug("<leader>Wp", "WritingParagraph", "Writing: grammar audit of this paragraph"),
-        plug("<leader>Ws", "WritingConform", "Writing: check against STYLE.md"),
+        plug("<leader>Ws", "WritingRestyle", "Writing: rewrite paragraphs to follow STYLE.md"),
+        plug("<leader>WS", "WritingConform", "Writing: check against STYLE.md, finding by finding"),
         plug("<leader>Wo", "WritingOutline", "Writing: reverse outline"),
         plug("<leader>Wa", "WritingRigor", "Writing: rigor review (arguments, claims, evidence)"),
         plug("<leader>Wr", "WritingRewrite", "Writing: rewrite paragraph / selection", { "n", "x" }),
         plug("<leader>Wq", "WritingAsk", "Writing: ask about paragraph / selection", { "n", "x" }),
         plug("<leader>Wc", "WritingChat", "Writing: companion chat"),
         plug("<leader>Wl", "WritingLater", "Writing: issues left for later (quickfix)"),
+        plug("<leader>Wn", "WritingNeeds", "Writing: findings that need your input (quickfix)"),
         plug("<leader>Wm", "WritingModel", "Writing: pick a task's model for this session"),
         plug("<leader>Wd", "WritingDiagnostics", "Writing: toggle AI diagnostics"),
         plug("<leader>Wx", "WritingClear", "Writing: clear AI issues"),

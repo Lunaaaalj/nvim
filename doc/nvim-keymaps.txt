@@ -640,15 +640,26 @@ the fresh ones next time) and, in the grammar, STYLE.md and rigor walks, `t`
 talks about it: type a message, read the reply in the float, and the new
 suggestion becomes 1 (u takes it back).
 
+Nothing is made up: a suggestion with a number, citation or placeholder
+(X, [number]) your document doesn't have is withheld, and the finding is
+marked "needs input" instead (a `needs-input` warning). Tell it the facts
+with `t`, or `m` for a TODO. lualine shows how many need input / are left
+for later.
+
   <leader>Wg    Grammar audit: check, then walk every issue in the float of
                 |nvim-spell-audit| (1-4 fix, e edit, t talk, s skip, l later,
                 d dismiss for good, u undo, q pause; <leader>Wg again resumes)
   <leader>WG    The same, plus style and clarity hints
   <leader>Wp    Grammar audit of the paragraph under the cursor only
-  <leader>Ws    Check against the nearest STYLE.md (Sonnet): every finding
+  <leader>Ws    Restyle: <leader>Wr for every paragraph, with the nearest
+                STYLE.md as the instruction (Sonnet). Walks the rewritten
+                paragraphs as word diffs, each change with its rule.
+                1 accept, e accept and finish by hand, t talk, m TODO,
+                s skip, l later, d reject, u undo, q pause
+  <leader>WS    Check against STYLE.md finding by finding: every finding
                 cites the rule it breaks, word for word, with a rewrite.
-                1-4 accept, e edit, t talk, s skip, l later, d reject for
-                good, u undo, q pause
+                1-4 accept, e edit, t talk, m TODO, s skip, l later,
+                d reject for good, u undo, q pause
   <leader>Wo    Reverse outline in a right panel: per paragraph a summary,
                 its role and flags (unsupported claim, gap, contradiction,
                 undefined term...), plus document-level notes. In the panel:
@@ -676,16 +687,19 @@ suggestion becomes 1 (u takes it back).
                 the file)
   <leader>Wl    Everything left for later (`l`) in this buffer, in the
                 quickfix list
-  <leader>Wm    Pick the model and effort of a task (grammar, conform, rigor,
-                outline, assist, talk) for this session
+  <leader>Wn    Every finding that needs your input in this buffer, in the
+                quickfix list
+  <leader>Wm    Pick the model and effort of a task (grammar, conform,
+                restyle, rigor, outline, assist, talk) for this session
   <leader>Wd    Toggle the AI diagnostics (grammar, STYLE.md, rigor, outline)
   <leader>Wx    Clear the AI issues of this buffer
-  :Writing {grammar|style|paragraph|conform|outline|rigor|rewrite|ask|
-            chat|later|model|diagnostics|clear} [model=… effort=…]
+  :Writing {grammar|style|paragraph|conform|restyle|outline|rigor|
+            rewrite|ask|chat|later|needs|model|diagnostics|clear}
+            [model=… effort=…]
                                         (all from quill.nvim, see |quill|)
 
-Grammar issues, STYLE.md findings and rigor findings are also diagnostics
-(sources "claude", "conform" and "rigor"), so ]d / [d, Trouble and the sign
+Grammar issues, STYLE.md findings, restyle paragraphs and rigor findings
+are also diagnostics (sources "claude", "conform", "restyle" and "rigor"), so ]d / [d, Trouble and the sign
 column show them.
 
  vim:tw=78:ts=8:noet:ft=help:norl:
