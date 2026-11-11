@@ -142,7 +142,7 @@ function M.render_stats()
   if (c.streak or 0) > 0 then parts[#parts + 1] = { c.streak, "day streak" } end
   local out = {}
   for i, p in ipairs(parts) do
-    if i > 1 then out[#out + 1] = { "   ·   ", hl = "DashboardMuted" } end
+    if i > 1 then out[#out + 1] = { "  ·  ", hl = "DashboardMuted" } end
     out[#out + 1] = { thousands(p[1] or 0), hl = "DashboardAccent" }
     out[#out + 1] = { " " .. p[2], hl = "DashboardMuted" }
   end

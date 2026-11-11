@@ -3,10 +3,12 @@
 --   * dashboard — a minimal, single-column start screen (see below)
 --   * scroll    — smooth animated scrolling (pairs with smear_cursor); currently OFF
 --
--- Dashboard, top to bottom, all centered: header art, a live clock + date, a
+-- Dashboard, top to bottom, all centered: header art, a big block-digit clock + date
+-- (lua/defaults/bigclock.lua), a
 -- GitHub stats line (open PRs · issues · contributions · streak), and a one-line
--- key hint. Quiet colors: muted text plus ONE accent taken from the active
--- scheme, so it matches every theme, transparent or solid.
+-- key hint. Quiet colors: muted text (Comment fg) plus the scheme's own
+-- foreground (Normal fg) for the clock, numbers and keys, so it matches every
+-- theme, transparent or solid.
 --
 -- Header art: drop any ASCII art into `dashboard-header.txt` in the config root
 -- (e.g. paste from https://www.asciiart.eu or https://patorjk.com/software/taag)
@@ -129,9 +131,11 @@ local function hint_line()
   return out
 end
 
+-- DashboardAccent is the scheme's own text colour (Normal fg, bold), not the
+-- Function-fg accent: the dashboard should read like the scheme's text.
 local function set_hl()
   local colors = require("defaults.colors")
-  vim.api.nvim_set_hl(0, "DashboardAccent", { fg = colors.accent(), bold = true })
+  vim.api.nvim_set_hl(0, "DashboardAccent", { fg = colors.fg("Normal") or colors.accent(), bold = true })
   vim.api.nvim_set_hl(0, "DashboardMuted", { fg = colors.fg("Comment") })
 end
 
@@ -183,22 +187,24 @@ return {
         { text = table.concat(header_lines, "\n"), align = "center", padding = 2, hl = "SnacksDashboardHeader" },
         -- Sections-as-functions re-run on every render, so the time stays current.
         function()
-          local time = os.date("%H:%M"):gsub(".", "%0 "):sub(1, -2) -- "1 4 : 3 2", a little larger
-          return {
-            align = "center",
-            padding = 2,
-            text = {
-              { time, hl = "DashboardAccent" },
-              { "\n" },
-              { os.date("%A · %d %B %Y"), hl = "DashboardMuted" },
-            },
-          }
+          local text = {}
+          for _, row in ipairs(require("defaults.bigclock").render(os.date("%H:%M"))) do
+            text[#text + 1] = { row, hl = "DashboardAccent" }
+            text[#text + 1] = { "\n" }
+          end
+          text[#text + 1] = { "\n" } -- one blank row between the digits and the date
+          text[#text + 1] = { os.date("%A · %d %B %Y"), hl = "DashboardMuted" }
+          return { align = "center", padding = 2, text = text }
         end,
+        -- Stats and key hints sit together as a two-line footer under the clock,
+        -- so the whole block stays compact and the art keeps clear of one box.
         function()
           local stats = data.render_stats()
-          return stats and { text = stats, align = "center", padding = 2 } or nil
+          return stats and { text = stats, align = "center", padding = 1 } or nil
         end,
-        { text = hint_line(), align = "center" },
+        function()
+          return { text = hint_line(), align = "center" }
+        end,
         -- every key stays bound, without its own row
         vim.tbl_map(function(k) return { key = k.key, action = k.action, hidden = true } end, keys),
       },
