@@ -1,7 +1,7 @@
 -- snacks.nvim is already pulled in as a dependency of claudecode.nvim. This spec
 -- turns on two of its modules:
 --   * dashboard — a minimal, single-column start screen (see below)
---   * scroll    — smooth animated scrolling (pairs with smear_cursor)
+--   * scroll    — smooth animated scrolling (pairs with smear_cursor); currently OFF
 --
 -- Dashboard, top to bottom, all centered: header art, a live clock + date, a
 -- GitHub stats line (open PRs · issues · contributions · streak), and a one-line
@@ -148,10 +148,12 @@ return {
   priority = 1000,
   lazy = false,
   opts = {
-    -- Snappier than the 200ms default so <C-d> / n / G don't feel laggy;
-    -- held-key repeats (j/k) get a short linear animation instead.
+    -- Smooth scrolling is OFF for now (it made the view and cursor jump back and
+    -- forth on the dashboard). Set `enabled = true` to bring it back; the
+    -- timings below are kept: snappier than the 200ms default so <C-d> / n / G
+    -- don't feel laggy, with a short linear animation for held-key repeats.
     scroll = {
-      enabled = true,
+      enabled = false,
       animate = { duration = { step = 10, total = 140 }, easing = "outQuad" },
       animate_repeat = { delay = 100, duration = { step = 5, total = 50 }, easing = "linear" },
     },
