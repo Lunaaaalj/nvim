@@ -104,6 +104,7 @@ local sections = {
     { "<leader>cf", "Format buffer (conform)" },
     { "<leader>uf", "Toggle format on save" },
     { "<leader>uh", "Toggle inlay hints" },
+    { "<leader>ua / uA", "Dashboard background art: toggle / pick (live preview, persisted)" },
     { "<leader>us", "Toggle spell-check" },
     { "<leader>sa", "Spell audit: fix/skip/ignore/add each issue, auto-next" },
     { "<leader>Wg / WG", "Grammar audit with Claude (+ style), walk issues" },

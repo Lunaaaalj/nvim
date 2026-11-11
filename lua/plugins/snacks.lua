@@ -10,6 +10,10 @@
 -- foreground (Normal fg) for the clock, numbers and keys, so it matches every
 -- theme, transparent or solid.
 --
+-- Background: the window behind the content is filled by lua/header_art/
+-- (animated plasma by default, see `header_art_opts`). The static header below
+-- is what shows when that is switched off.
+--
 -- Header art: drop any ASCII art into `dashboard-header.txt` in the config root
 -- (e.g. paste from https://www.asciiart.eu or https://patorjk.com/software/taag)
 -- and it is used verbatim — no Lua editing needed. With no file, the built-in
@@ -21,6 +25,21 @@
 -- `gh api graphql` call), so they never block startup.
 
 local data = require("defaults.dashboard_data")
+
+-- Generative art behind the whole window (lua/header_art/). Every option is
+-- overridable here; `:HeaderArt` and <leader>ua/<leader>uA change them live.
+-- With `enabled = false` the braille header (below) is shown instead.
+local header_art_opts = {
+  enabled = true,
+  piece = "plasma", -- plasma | torus | orb | rings | flow | terrain | galaxy | galaxies | descent
+  charset = "classic", -- classic | blocks | dots | binary
+  fps = 30,
+  speed = 0.4,
+  brightness = 0.7, -- 0..1: how bright the brightest cells get
+  halo = true, -- keep a clear border around the text
+  steps = 8, -- colour steps between dim and accent
+  animate = true, -- false: one still frame
+}
 
 -- Built-in fallback header: a coiled Python snake.
 local default_header = [[
@@ -184,7 +203,11 @@ return {
       enabled = true,
       width = math.max(header_width, 60),
       sections = {
-        { text = table.concat(header_lines, "\n"), align = "center", padding = 2, hl = "SnacksDashboardHeader" },
+        -- The braille header only shows when the generative art is off (re-run on every render).
+        function()
+          if require("header_art").enabled() then return nil end
+          return { text = table.concat(header_lines, "\n"), align = "center", padding = 2, hl = "SnacksDashboardHeader" }
+        end,
         -- Sections-as-functions re-run on every render, so the time stays current.
         function()
           local text = {}
@@ -214,6 +237,7 @@ return {
     require("snacks").setup(opts)
     data.setup({ issues = "assignee" }) -- or "author"
     set_hl()
+    require("header_art").setup(header_art_opts)
 
     local grp = vim.api.nvim_create_augroup("DashboardLive", { clear = true })
     vim.api.nvim_create_autocmd("ColorScheme", { group = grp, callback = set_hl })
