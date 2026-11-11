@@ -44,28 +44,23 @@ for _, l in ipairs(header_lines) do
   header_width = math.max(header_width, vim.api.nvim_strwidth(l))
 end
 
--- Fuzzy-pick any directory under $HOME and :cd into it. Snacks' `files` source
--- only lists files, so this streams `find -type d` through the generic `proc`
--- finder (no fd/zoxide dependency), pruning dotdirs, node_modules and ~/Library
--- to keep the walk fast.
-local function pick_dir()
+-- Fuzzy-pick a directory under $HOME and :cd into it. Snacks' `files` source
+-- only lists files, so this streams `find` through the generic `proc` finder (no
+-- fd/zoxide dependency). `find_args` is the expression after the start point and
+-- `to_dir` turns one output line into the directory (relative to $HOME).
+local function pick_cd(title, find_args, to_dir)
   local home = vim.fn.expand("~")
   Snacks.picker.pick({
-    title = "cd",
+    title = title,
     finder = "proc",
     cmd = "find",
     notify = false, -- find exits non-zero on TCC-protected dirs; results still stream
     cwd = home,
-    args = {
-      ".", "-mindepth", "1", "-maxdepth", "5",
-      "(", "-name", ".*", "-o", "-name", "node_modules", "-o", "-name", "__pycache__",
-      "-o", "-path", "./Library", ")", "-prune",
-      "-o", "-type", "d", "-print",
-    },
+    args = vim.list_extend({ ".", "-mindepth", "1" }, find_args),
     transform = function(item)
-      -- strip "./"; must be idempotent: snacks applies `transform` twice
-      -- (in the proc finder and again in the picker's item pipeline)
-      item.file = item.text:gsub("^%./", "")
+      -- strip "./" (and the repo's "/.git"); must be idempotent: snacks applies
+      -- `transform` twice (in the proc finder and again in the picker's item pipeline)
+      item.file = to_dir(item.text)
       item.text = item.file
       item.cwd = home
       item.dir = true
@@ -81,12 +76,36 @@ local function pick_dir()
   })
 end
 
+-- Any directory, pruning dotdirs, node_modules and ~/Library to keep the walk fast.
+local function pick_dir()
+  pick_cd("cd", {
+    "-maxdepth", "5",
+    "(", "-name", ".*", "-o", "-name", "node_modules", "-o", "-name", "__pycache__",
+    "-o", "-path", "./Library", ")", "-prune",
+    "-o", "-type", "d", "-print",
+  }, function(line) return (line:gsub("^%./", "")) end)
+end
+
+-- Git repositories only: every directory that has a `.git` (dir or file, so
+-- worktrees count) is listed once and not descended into. Dotdirs are pruned
+-- except `.config`, where this very config lives; $HOME's own `.git` is skipped.
+local function pick_repo()
+  pick_cd("git repos", {
+    "-maxdepth", "6",
+    "(", "-path", "./Library", "-o", "-path", "./.git", "-o", "-name", "node_modules",
+    "-o", "-name", "__pycache__",
+    "-o", "(", "-name", ".?*", "!", "-name", ".git", "!", "-name", ".config", ")", ")", "-prune",
+    "-o", "-name", ".git", "-prune", "-print",
+  }, function(line) return (line:gsub("^%./", ""):gsub("/%.git$", "")) end)
+end
+
 -- One table drives both the visible hint line (entries with `hint`) and the
 -- key bindings (every entry, as hidden items), so the two can't drift apart.
 local keys = {
   { key = "f", hint = "find", action = ":lua Snacks.dashboard.pick('files')" },
   { key = "r", hint = "recent", action = ":lua Snacks.dashboard.pick('oldfiles')" },
   { key = "d", hint = "cd", action = pick_dir },
+  { key = "R", hint = "repo", action = pick_repo },
   { key = "g", action = ":lua Snacks.dashboard.pick('live_grep')" },
   { key = "n", action = ":ene | startinsert" },
   { key = "p", action = ":lua Snacks.picker.projects()" },
