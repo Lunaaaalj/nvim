@@ -188,23 +188,55 @@ nvim-notify ~  (rcarriga/nvim-notify)
 snacks.nvim dashboard ~  (folke/snacks.nvim)
   Minimal single-column start screen, everything centered: the header art
   (`dashboard-header.txt` in the config root, verbatim; a built-in Python
-  snake otherwise), a live clock + date, a GitHub stats line (open PRs ·
+  snake otherwise), a big block-digit clock (`lua/defaults/bigclock.lua`, 5 rows)
+  + date, a GitHub stats line (open PRs ·
   open issues · contributions in the last year · current streak), and a
-  one-line key hint (f find · r recent · d cd · s session · c config · q quit).
+  one-line key hint (f find · r recent · d cd · R repo · s session · c config · q
+  quit).
   The width follows the art's widest line. g/n/p/l/m (grep, new file,
   projects, Lazy, Mason) are bound too, just not listed. The clock ticks
   once a minute and only while the dashboard is visible.
-  `d` fuzzy-picks any directory under ~ and `:cd`s into it. The launching
+  `d` fuzzy-picks any directory under ~ and `:cd`s into it; `R` does the same
+  for git repositories only (anything with a `.git`, worktrees included; dotdirs
+  are skipped except `.config`, depth 6). The launching
   shell follows on exit via the zsh `nvim` wrapper ($NVIM_CWD_FILE, see
   lua/defaults/shell_cwd.lua).
   The stats come from one async `gh api graphql` call, cached 30 min in
   `stdpath("cache")/dashboard/stats.json`, so the counts are exact (not
   capped at 30). Without `gh`/auth the stats line is hidden. "issues" means
   assigned to you; pass `issues = "author"` to `dashboard_data.setup()` in
-  `lua/plugins/snacks.lua` to count issues you filed instead. Colors are
-  muted text plus one accent taken from the active scheme.
-  The `scroll` module (smooth scrolling) is enabled from the same spec:
-  140ms outQuad per jump (<C-d>, n, G, ...), 50ms linear for held-key repeats.
+  `lua/plugins/snacks.lua` to count issues you filed instead. The stats
+  line and the key hint sit together as a two-line footer under the clock.
+  Colors are muted text (Comment) plus the scheme's own foreground (Normal,
+  bold) for the clock, numbers and keys.
+  Background art (`lua/header_art/`): a generative piece fills the whole
+  dashboard window behind the content (default: plasma, `classic` characters,
+  30 fps, speed 0.4). Snacks keeps rendering the clock/stats/hints as real
+  text; the art is overlay extmarks on the cells without text (own
+  namespace) plus `virt_lines` below the buffer. The art keeps clear of one
+  rectangle around all the content (padded 1 row / 6 cols with `halo`) and
+  fades in over 8 cells outside it, so the content sits on a calm card.
+  Colours are 8 steps from a dim tone to the scheme's foreground
+  (`HeaderArt1..N`). `descent` is the portfolio's loss surface: level sets
+  as one-cell hairlines drawn with their direction (- / | \), short gradient
+  probes from random points every half second, and two ripples from each
+  probe that settles in a well. The timer runs only while the dashboard is visible and
+  Neovim is focused. Options live in `header_art_opts` in
+  `lua/plugins/snacks.lua`: `enabled` (false shows the static braille
+  header instead), `piece` (plasma | torus | orb | rings | flow | terrain |
+  galaxy | galaxies | descent), `charset` (classic | blocks | dots | binary), `fps`,
+  `speed`,
+  `brightness`, `halo`, `steps`, `animate` (false = one still frame).
+  `<leader>uA` (`:HeaderArt pick`) is a Telescope picker over the pieces
+  (plus "off") with an animated preview; the dashboard behind it switches
+  live, <CR> keeps the choice and <Esc> reverts. The piece and on/off are
+  saved to `stdpath("state")/header_art.json` (by the picker, `<leader>ua`
+  and `:HeaderArt next`) and win over `header_art_opts` on startup.
+  `:HeaderArt [pick|toggle|next|halo|animate|piece X|charset X|fps N|speed X|
+  brightness X]` changes the rest live (not persisted).
+  The `scroll` module (smooth scrolling) is currently DISABLED in the same
+  spec (`enabled = false`; it made the dashboard view jump back and forth).
+  Its timings are kept for re-enabling: 140ms outQuad per jump (<C-d>, n, G, ...), 50ms linear for held-key repeats.
 
 barbecue.nvim ~  (utilyre/barbecue.nvim)
   Winbar breadcrumbs of the code location, powered by nvim-navic.

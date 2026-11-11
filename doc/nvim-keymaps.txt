@@ -43,6 +43,13 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
                 (transparent mode)
   <leader>ut    Toggle treesitter sticky context header
   <leader>up    Toggle precognition motion hints
+  <leader>ua    Toggle the dashboard's animated background art (back to the
+                braille header when off; also `:HeaderArt toggle`)
+  <leader>uA    Pick the art piece (plasma, torus, orb, rings, flow, terrain,
+                galaxy, galaxies, descent, or off) in Telescope with a live animated
+                preview, like <leader>cs; <CR> keeps it across restarts, <Esc>
+                reverts
+                (also `:HeaderArt` / `:HeaderArt pick`)
   <leader>sn    Show notification history (Noice)
   <leader>sd    Dismiss visible notifications
   <leader>fml   Make it rain (cellular-automaton, just for fun)
