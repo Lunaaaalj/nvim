@@ -37,8 +37,10 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
   <leader>cs    Pick colorscheme with live preview (persisted)
   <leader>ub    Toggle transparent / solid background (persisted;
                 also `:ToggleTransparency`)
-  <leader>uB    Toggle dark / light 'background' (persisted; also
-                `:ToggleBackground`). Light forces solid until you go dark.
+  <leader>uB    Toggle dark / light, loading the scheme remembered for that
+                mode (persisted; also `:ToggleBackground`). Turns auto off.
+  <leader>uT    Toggle auto mode: dark / light follow the macOS appearance
+                (persisted; also `:ToggleAutoTheme`)
   <leader>uc    Cycle cursorline style: number / underline / band
                 (transparent mode)
   <leader>ut    Toggle treesitter sticky context header

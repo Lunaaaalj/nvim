@@ -80,7 +80,7 @@ if vim.fn.filereadable(cs_file) == 0 and vim.fn.filereadable(legacy_cs_file) == 
   vim.fn.writefile(vim.fn.readfile(legacy_cs_file), cs_file)
 end
 local ok, cs = pcall(vim.fn.readfile, cs_file)
-local name = ok and cs[1] or "kanso"
+local name = require("defaults.ui_toggle").startup_scheme() or (ok and cs[1]) or "kanso"
 if not pcall(vim.cmd.colorscheme, name) then
   vim.cmd.colorscheme("kanso")
 end

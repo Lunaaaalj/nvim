@@ -196,15 +196,30 @@ In solid mode (|nvim-config-ui-toggle|) the scheme's own `CursorLine` band and
 Toggles ~                                             *nvim-config-ui-toggle*
   `<leader>ub`  `:ToggleTransparency`  transparent <-> solid background
   `<leader>uB`  `:ToggleBackground`    'background' dark <-> light
-Both live in `lua/defaults/ui_toggle.lua` and persist to
+  `<leader>uT`  `:ToggleAutoTheme`     'background' follows the macOS appearance
+All live in `lua/defaults/ui_toggle.lua` and persist to
 `stdpath("state")/ui.json`, restored before lazy.nvim loads the themes. A
 toggle re-runs the active theme's lazy `init`/`config` (nightfox and
 catppuccin recompile automatically when their options change) and reloads it.
 
-Light colorschemes only look right over a light background, so switching to
-light while transparent forces solid mode, and switching back to dark restores
-transparency. A scheme with no variant for the target is left as is, with a
-warning: either it pins 'background' back (nightfox; use dayfox) or it just
+Transparency is independent of dark/light: kitty swaps its own background with
+the macOS appearance (its `*-theme.auto.conf` files), so a transparent light
+scheme sits on a light terminal.
+
+Auto mode (`<leader>uT`) reads `defaults read -g AppleInterfaceStyle` at
+startup (before the themes load), on `FocusGained` and every 5 s while Neovim
+has focus, off the main loop. It only acts when the system appearance changes,
+so nothing reloads when it already matches. A manual `<leader>uB` turns auto
+mode off and applies the flip.
+
+Like VS Code's preferred light / dark theme, the scheme you last loaded while
+dark is your dark scheme and the one you last loaded while light is your light
+scheme (`schemes` in `ui.json`; `<leader>cs` in each mode sets them). Flipping
+`'background'`, by hand or in auto mode, loads the remembered scheme for the
+target, e.g. nightfox <-> dayfox. With none remembered it keeps the current
+scheme and asks for its other variant (kanso, rose-pine, ...), remembering the
+result. If that scheme has no such variant it is left as is, with a
+warning (once per system change in auto mode): either it pins 'background' back (nightfox; use dayfox) or it just
 keeps drawing dark (vesper). The toggle checks the colors the scheme actually
 drew, not just 'background'. In Alacritty, solid mode also
 sets `window.opacity=1` live via `alacritty msg config`; transparent mode and

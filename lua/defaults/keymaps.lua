@@ -280,11 +280,15 @@ vim.keymap.set("n", "<leader>qq", "<cmd>qall<cr>", { desc = "Quit Neovim" })
 -- plugin lazy-loads on first use.
 
 -- Background: transparent <-> solid, and dark <-> light (persisted; see
--- lua/defaults/ui_toggle.lua). Light mode forces solid until you go dark again.
+-- lua/defaults/ui_toggle.lua). The two are independent (kitty swaps its own
+-- background with the macOS appearance). <leader>uT follows the macOS
+-- appearance; a manual <leader>uB turns that off.
 vim.keymap.set("n", "<leader>ub", function() require("defaults.ui_toggle").toggle_transparency() end,
   { desc = "Toggle transparent / solid background" })
 vim.keymap.set("n", "<leader>uB", function() require("defaults.ui_toggle").toggle_background() end,
   { desc = "Toggle dark / light background" })
+vim.keymap.set("n", "<leader>uT", function() require("defaults.ui_toggle").toggle_auto() end,
+  { desc = "Toggle auto dark / light (follow macOS)" })
 
 vim.keymap.set("n", "<leader>uc", function() require("defaults.cursorline").cycle() end,
   { desc = "Cycle cursorline style (number / underline / band)" })
