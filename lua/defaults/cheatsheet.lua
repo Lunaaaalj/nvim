@@ -21,6 +21,8 @@ local sections = {
     { "<leader>n", "Toggle Neo-tree" },
     { "w (neo-tree)", "Open file in a picked window (letter hints)" },
     { "s / S / t (neo-tree)", "Open in vsplit / split / new tab" },
+    { "Y / gO (neo-tree)", "Copy path (pick form) / reveal in Finder" },
+    { "F / g/ (neo-tree)", "Find files / live grep inside the node's directory" },
     { "<C-\\> / <leader>tt", "Terminal: toggle last used (2<C-\\> = shell #2)" },
     { "<leader>tn / t. / tg", "New shell: cwd / file's dir / project root" },
     { "<leader>ts / te", "Terminal picker (preview) / neo-tree tab" },

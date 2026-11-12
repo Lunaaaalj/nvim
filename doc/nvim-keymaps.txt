@@ -181,6 +181,16 @@ Built-in window keys worth knowing:
                       auto-opens if only one other window exists)
                   s   open in a vertical split    S  horizontal split
                   t   open in a new tab
+                Files tab, any node:
+                  Y   copy the path: pick filename / relative to cwd /
+                      relative to ~ / absolute / parent directory
+                  gO  reveal in Finder (O opens with the default app)
+                  F   find files inside this node's directory (Telescope);
+                      on a file, its parent directory
+                  g/  live grep inside the same directory
+                Folders holding a single child collapse into one row
+                (lua/foo/bar); git state is the name's colour (the Git tab
+                keeps the letters) and a collapsed folder shows one dot.
                                                        *nvim-keymaps-terminal*
   <C-\>         Terminal: toggle the last used one (also in terminal mode);
                 closes the terminal you're in. 2<C-\> toggles shell #2.

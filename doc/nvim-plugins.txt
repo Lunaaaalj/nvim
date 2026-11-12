@@ -117,6 +117,14 @@ neo-tree.nvim ~  (nvim-neo-tree/neo-tree.nvim)
   `lua/neotree_tabs.lua` (BMP Nerd Font glyphs written as \u{} escapes).
   Depends on nvim-window-picker (s1n7ax/nvim-window-picker) so `w` in the tree
   opens the file in a window you choose by letter.
+  Every tree colour is derived from the active scheme in the spec's
+  `highlights()` (re-run on ColorScheme): directories bold, files plain, the
+  file open in an editor in the accent, guides and dotfiles faint, git names
+  in the scheme's gitsigns colours. The selected row gets its own faint band
+  (`NeoTreeCursorLine`) because transparent mode blanks CursorLine.
+  Sorting is directories first, then natural, case-insensitive order
+  (file2 before file10); the `o` order-by keys still override it.
+  `brew install fd` speeds up the `/` fuzzy finder (optional).
 
 oil.nvim ~  (stevearc/oil.nvim)
   Edit the filesystem as a buffer; shown in a float, hidden files visible.
