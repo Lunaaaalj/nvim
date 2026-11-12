@@ -508,6 +508,12 @@ Buffer-local to Markdown buffers.
                 visual mode, the selection. It re-renders as you type.
   <leader>pF    Toggle live follow: the preview tracks the cursor on
                 CursorHold
+  <leader>ps    Pick the page style (github, book, article, swiss,
+                editorial, terminal). Moving the selection re-renders the
+                open preview; <CR> keeps it for this file, <C-d> makes it
+                the default for all Markdown files, <Esc> reverts.
+                :MarkdownStyle {name} does the same without the picker
+                (`!` = default, `-` = drop this file's pick).
 
 Typst ~                                                 *nvim-keymaps-typst*
 

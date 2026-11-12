@@ -202,6 +202,7 @@ local sections = {
     { "<leader>lv / lV", "Preview PDF in a kitty split / system viewer" },
     { "<leader>lF", "Toggle live follow (preview tracks the cursor)" },
     { "<leader>pv / pF", "Markdown: preview in a split / live follow" },
+    { "<leader>ps", "Markdown: preview style picker (per file / <C-d> default)" },
     { "<leader>lv / lF / lk", "Typst: live preview / follow / close" },
     { "<leader>lo / lV / le", "Typst: compile to PDF / open externally / errors" },
     { "<leader>ln", "Typst: new document from a template (:TypstNew)" },

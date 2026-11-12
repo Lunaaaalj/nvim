@@ -510,9 +510,15 @@ pdfview ~  (lua/pdfview, local)                       *nvim-plugins-pdfview*
       (lua/plugins/persistence.lua).
     - Markdown preview (`<leader>pv`, `lua/pdfview/markdown.lua`): the
       buffer goes through pandoc into typst and opens in the same split as
-      the LaTeX preview, styled like GitHub: system font, rules under h1/h2,
-      code panels, gridded tables, centred `<div align="center">` headers,
-      HTML tables and images, and remote badges. Pages are shaped to the
+      the LaTeX preview, styled like GitHub by default: system font, rules
+      under h1/h2, code panels, gridded tables, centred `<div align="center">`
+      headers, HTML tables and images, and remote badges. Other page styles
+      (`lua/pdfview/md_styles/*.typ`): book (Iowan Old Style, justified,
+      indented), article (LaTeX look, numbered sections), swiss (Avenir Next,
+      heavy section rules), editorial (New York headings over SF), terminal
+      (Iosevka, Markdown marks kept). `<leader>ps` picks one per file or as
+      the default; both persist in `pdfview.json`, and
+      `config.markdown.style` is the fallback. Pages are shaped to the
       split, so a page always fills the window. The text keeps its size and
       reflows when you resize the split.
       It re-renders a moment after each edit (~0.2 s for typst, plus the

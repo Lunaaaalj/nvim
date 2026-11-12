@@ -1,6 +1,8 @@
 -- Per-PDF view state (page, zoom, fit, spread, colours) remembered across
 -- sessions in stdpath("state")/pdfview.json, keyed by the PDF path or the
 -- viewer's `store_key` (a Markdown preview's source file). Writes are debounced.
+-- Entries can carry fields of their own besides the view (a Markdown file's
+-- `style`); keys starting with "_" hold settings and are never pruned.
 
 local M = {}
 
@@ -24,7 +26,9 @@ function M.flush()
   timer:stop()
   if not data then return end
   local list = {}
-  for pdf, e in pairs(data) do list[#list + 1] = { pdf, e.t or 0 } end
+  for pdf, e in pairs(data) do
+    if pdf:sub(1, 1) ~= "_" then list[#list + 1] = { pdf, e.t or 0 } end
+  end
   table.sort(list, function(a, b) return a[2] > b[2] end)
   for i = MAX_ENTRIES + 1, #list do data[list[i][1]] = nil end
   pcall(vim.fn.writefile, { vim.json.encode(data) }, file)
@@ -38,11 +42,31 @@ function M.restore(v)
   end
 end
 
+local function schedule() timer:start(1000, 0, vim.schedule_wrap(M.flush)) end
+
 function M.save(v)
-  local e = { t = os.time() }
+  local key = v.store_key or v.pdf
+  local e = load()[key] or {} -- keep fields that aren't the view's
+  e.t = os.time()
   for _, f in ipairs(FIELDS) do e[f] = v[f] end
-  load()[v.store_key or v.pdf] = e
-  timer:start(1000, 0, vim.schedule_wrap(M.flush))
+  load()[key] = e
+  schedule()
+end
+
+-- One field of an entry (`key` = a PDF path, a store_key, or "_name").
+function M.get(key, field)
+  local e = load()[key]
+  local val = e and e[field]
+  if val == vim.NIL then return nil end
+  return val
+end
+
+function M.set(key, field, value)
+  local e = load()[key] or {}
+  e[field] = value
+  if key:sub(1, 1) ~= "_" then e.t = os.time() end
+  load()[key] = e
+  schedule()
 end
 
 return M

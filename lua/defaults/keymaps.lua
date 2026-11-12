@@ -224,6 +224,24 @@ vim.api.nvim_create_autocmd("FileType", {
       { buffer = ev.buf, silent = true, desc = "Markdown: preview in a split (sync to cursor)" })
     vim.keymap.set("n", "<leader>pF", function() md().toggle_live() end,
       { buffer = ev.buf, silent = true, desc = "Markdown: toggle live follow in the preview" })
+    vim.keymap.set("n", "<leader>ps", function() require("pdfview.md_picker").pick() end,
+      { buffer = ev.buf, silent = true, desc = "Markdown: preview style (live, per file)" })
+    -- :MarkdownStyle         picker
+    -- :MarkdownStyle book    use for this file      (:MarkdownStyle! book = default for all)
+    -- :MarkdownStyle -       drop this file's pick, follow the default
+    vim.api.nvim_buf_create_user_command(ev.buf, "MarkdownStyle", function(o)
+      if o.args == "" then return require("pdfview.md_picker").pick() end
+      local name = o.args ~= "-" and o.args or nil
+      md().set_style(ev.buf, name, o.bang and "default" or "file")
+      vim.notify("Markdown style: " .. md().style(ev.buf))
+    end, {
+      nargs = "?",
+      bang = true,
+      desc = "Markdown preview style (! = default for all files)",
+      complete = function()
+        return vim.list_extend(vim.tbl_map(function(s) return s.name end, md().styles), { "-" })
+      end,
+    })
   end,
 })
 

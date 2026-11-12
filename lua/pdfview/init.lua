@@ -31,6 +31,9 @@ M.config = {
     -- resizes, like a browser; 100 columns -> 560pt (~50 ems a line, GitHub's
     -- measure). The height follows the split's aspect, so a page fills it.
     column_pt = 5.6,
+    -- Page style (lua/pdfview/md_styles/<name>.typ) when neither the file nor
+    -- the saved default has one: github | book | article | swiss | editorial | terminal
+    style = "github",
     args = {}, -- extra pandoc arguments
   },
   typst = {

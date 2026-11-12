@@ -1,4 +1,4 @@
-// pandoc typst template for lua/pdfview/markdown.lua -- GitHub's README look
+// pandoc typst template for lua/pdfview/markdown.lua (style "github", the default) -- GitHub's README look
 // (github-markdown-css, light theme) on pages shaped like the preview window:
 // $$pagewidth$$ x $$pageheight$$, so "fit page" fills the split exactly and j/k
 // flow screen to screen. The width follows the split's columns, so text keeps
