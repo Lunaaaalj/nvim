@@ -26,7 +26,7 @@ local ns = vim.api.nvim_create_namespace("header_art")
 
 ---@class header_art.opts
 ---@field enabled boolean   draw the art; false shows the static braille header instead
----@field piece string      plasma | torus | orb | rings | flow | terrain | galaxy | galaxies | descent
+---@field piece string      plasma | torus | orb | rings | flow | terrain | galaxy | galaxies | descent | spiral | hilbert | rain | aurora | turing | attention | kmeans | matrix | warp | life
 ---@field charset string    classic | blocks | dots | binary
 ---@field fps integer       frames per second
 ---@field speed number      animation speed multiplier (1 = the pieces' natural pace)

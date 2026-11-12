@@ -48,7 +48,8 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
   <leader>ua    Toggle the dashboard's animated background art (back to the
                 braille header when off; also `:HeaderArt toggle`)
   <leader>uA    Pick the art piece (plasma, torus, orb, rings, flow, terrain,
-                galaxy, galaxies, descent, or off) in Telescope with a live animated
+                galaxy, galaxies, descent, spiral, hilbert, rain, aurora, turing,
+                attention, kmeans, matrix, warp, life, or off) in Telescope with a live animated
                 preview, like <leader>cs; <CR> keeps it across restarts, <Esc>
                 reverts
                 (also `:HeaderArt` / `:HeaderArt pick`)

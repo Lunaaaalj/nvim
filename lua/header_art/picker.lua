@@ -22,6 +22,16 @@ local labels = {
   galaxy = "galaxy   · an Sc spiral around the content",
   galaxies = "galaxies · four small spirals in the free corners",
   descent = "descent  · gradient probes on a loss surface, ripples in the wells",
+  spiral = "spiral   · four logarithmic arms, rotating outward",
+  hilbert = "hilbert  · an order-4 Hilbert curve drawing itself",
+  rain = "rain     · drops and ring waves that add up where they cross",
+  aurora = "aurora   · three swaying curtains with shimmering rays",
+  turing = "turing   · reaction-diffusion spots that grow and divide",
+  attention = "attention · a causal softmax map with an attention sink",
+  kmeans = "kmeans   · clusters settling, Voronoi borders as hairlines",
+  matrix = "matrix   · falling glyph streams",
+  warp = "warp     · a starfield flying at you",
+  life = "life     · Conway's Game of Life, dead cells fading out",
   [OFF] = "off      · static braille header",
 }
 

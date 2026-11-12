@@ -228,11 +228,19 @@ snacks.nvim dashboard ~  (folke/snacks.nvim)
   (`HeaderArt1..N`). `descent` is the portfolio's loss surface: level sets
   as one-cell hairlines drawn with their direction (- / | \), short gradient
   probes from random points every half second, and two ripples from each
-  probe that settles in a well. The timer runs only while the dashboard is visible and
-  Neovim is focused. Options live in `header_art_opts` in
+  probe that settles in a well. `spiral` is four soft logarithmic arms
+  (pitch 0.26) rotating while a wave runs outward along them. `hilbert` is an
+  order-4 Hilbert curve drawn with box-drawing glyphs, `rain` a drop every
+  two seconds with ring waves that add up where they cross, `aurora` three
+  swaying curtains, `turing` Gray-Scott "mitosis" spots, `attention` a causal
+  softmax map of 14 x 14 tokens, `kmeans` three clusters settling with
+  Voronoi hairlines, `matrix` falling ASCII streams, `warp` a starfield and
+  `life` Conway's Game of Life on the window's grid. The timer runs only
+  while the dashboard is visible and Neovim is focused. Options live in `header_art_opts` in
   `lua/plugins/snacks.lua`: `enabled` (false shows the static braille
   header instead), `piece` (plasma | torus | orb | rings | flow | terrain |
-  galaxy | galaxies | descent), `charset` (classic | blocks | dots | binary), `fps`,
+  galaxy | galaxies | descent | spiral | hilbert | rain | aurora | turing |
+  attention | kmeans | matrix | warp | life), `charset` (classic | blocks | dots | binary), `fps`,
   `speed`,
   `brightness`, `halo`, `steps`, `animate` (false = one still frame).
   `<leader>uA` (`:HeaderArt pick`) is a Telescope picker over the pieces
