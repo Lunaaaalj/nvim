@@ -87,6 +87,7 @@ vim.diagnostic.config({
   },
 })
 
+vim.opt.autoread = true
 vim.api.nvim_create_autocmd(
   { "FocusGained", "BufEnter", "CursorHold" },
   {
@@ -94,6 +95,22 @@ vim.api.nvim_create_autocmd(
     command = "checktime",
   }
 )
+
+-- CursorHold never fires in Terminal mode, so while you sit in the Claude
+-- terminal an edit to an open file stayed stale until you moved. Poll instead:
+-- `checktime` only stats loaded buffers, so a 400 ms tick is negligible. Runs
+-- only while Neovim has focus; skipped in cmdline mode, where it is unsafe.
+local reload_timer = assert(vim.uv.new_timer())
+local function start_reload_timer()
+  reload_timer:start(400, 400, vim.schedule_wrap(function()
+    if vim.fn.mode():match("^[cr!]") or vim.fn.getcmdwintype() ~= "" then return end
+    vim.cmd("silent! checktime")
+  end))
+end
+local reload_group = vim.api.nvim_create_augroup("auto_reload_files", { clear = true })
+vim.api.nvim_create_autocmd("FocusLost", { group = reload_group, callback = function() reload_timer:stop() end })
+vim.api.nvim_create_autocmd("FocusGained", { group = reload_group, callback = start_reload_timer })
+start_reload_timer()
 
 -- Prose/markup buffers: enable spell-check. The language comes from the nearest
 -- .spelllang file above the buffer (one line, e.g. "es,en"), else English.
