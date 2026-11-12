@@ -6,7 +6,7 @@
   "bufferline.nvim": { "branch": "main", "commit": "655133c3b4c3e5e05ec549b9f8cc2894ac6f51b3" },
   "catppuccin": { "branch": "main", "commit": "edefef779ab08ce1a4a404713e3012b0d202bd35" },
   "cellular-automaton.nvim": { "branch": "main", "commit": "1606e9d5d04ff254023c3f3c62842d065708d6d3" },
-  "claudecode.nvim": { "branch": "main", "commit": "0a29998c79251bb6a021f8f536c377a0cf4ea49f" },
+  "claudecode.nvim": { "branch": "main", "commit": "26d4c3c38c12c5dc5fa8b4ce3f2a344db0b97bee" },
   "cmp-buffer": { "branch": "main", "commit": "b74fab3656eea9de20a9b8116afa3cfc4ec09657" },
   "cmp-nvim-lsp": { "branch": "main", "commit": "cd4ee08a988deb47ac3726f418fb27fe1a95729d" },
   "cmp-path": { "branch": "main", "commit": "c642487086dbd9a93160e1679a1327be111cbc25" },
