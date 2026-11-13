@@ -146,12 +146,56 @@ local function patch_bridge()
   bridge.image_api._nvim_flatten = true
 end
 
+local view_win ---@type integer?
+
+-- Show `path` in the plot window, reusing it (the previous image buffer is
+-- wiped), else in a new split beside the first file window. Keeps the focus.
+local function show_in_split(path)
+  local cur = vim.api.nvim_get_current_win()
+  local function load(win)
+    vim.api.nvim_win_call(win, function()
+      local old = vim.api.nvim_get_current_buf()
+      vim.cmd("edit " .. vim.fn.fnameescape(path))
+      vim.bo.bufhidden = "wipe"
+      if old ~= vim.api.nvim_get_current_buf() and vim.api.nvim_buf_is_valid(old) and vim.bo[old].filetype == "image" then
+        pcall(vim.api.nvim_buf_delete, old, { force = true })
+      end
+    end)
+  end
+  if view_win and vim.api.nvim_win_is_valid(view_win) then return load(view_win) end
+  local host = cur
+  if vim.bo[vim.api.nvim_win_get_buf(cur)].buftype ~= "" or vim.api.nvim_win_get_config(cur).relative ~= "" then
+    for _, w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+      if vim.bo[vim.api.nvim_win_get_buf(w)].buftype == "" and vim.api.nvim_win_get_config(w).relative == "" then
+        host = w
+        break
+      end
+    end
+  end
+  vim.api.nvim_win_call(host, function()
+    vim.cmd("rightbelow vsplit")
+    view_win = vim.api.nvim_get_current_win()
+  end)
+  load(view_win)
+  if vim.api.nvim_win_is_valid(cur) then vim.api.nvim_set_current_win(cur) end
+end
+
 --- Open the last plot full size in a split (snacks image buffer).
 function M.view()
   if not M.last or not vim.uv.fs_stat(M.last) then
     return vim.notify("No plot shown yet in this session", vim.log.levels.WARN)
   end
-  vim.cmd("vsplit " .. vim.fn.fnameescape(M.last))
+  show_in_split(M.last)
+end
+
+--- Called by the REPLs (nvim --remote-expr) with a PNG they just saved.
+function M.show_file(path)
+  vim.schedule(function()
+    if not vim.uv.fs_stat(path) then return end
+    M.last = (vim.fn.executable("magick") == 1 and M.flatten(path)) or path
+    show_in_split(M.last)
+  end)
+  return 1
 end
 
 function M.toggle()

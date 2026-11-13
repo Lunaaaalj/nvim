@@ -16,6 +16,22 @@ function M.is_notebook(buf)
   return M.filetypes[vim.bo[buf].filetype] or require("notebook.cells").is_percent(buf)
 end
 
+--- Where this buffer's cells run: "repl" (IPython / R terminal; the
+--- default for `# %%` scripts) or "molten" (notebooks). <leader>mE switches.
+function M.engine(buf)
+  buf = buf or vim.api.nvim_get_current_buf()
+  local e = vim.b[buf].notebook_engine
+  if e then return e end
+  return require("notebook.cells").is_percent(buf) and "repl" or "molten"
+end
+
+function M.toggle_engine()
+  local e = M.engine() == "repl" and "molten" or "repl"
+  vim.b.notebook_engine = e
+  vim.notify("Cells run in: " .. (e == "repl" and "the REPL terminal" or "a Molten kernel"))
+  vim.cmd("redrawstatus")
+end
+
 local function keys(buf)
   local cells = require("notebook.cells")
   local function cmd(c) return function() pcall(vim.cmd, c) end end
@@ -26,6 +42,7 @@ local function keys(buf)
     { "n", "<leader>mI", cmd("MoltenInit"), "pick a kernel" },
     { "n", "<leader>mx", cmd("MoltenInterrupt"), "interrupt the kernel" },
     { "n", "<leader>mX", cmd("MoltenRestart"), "restart the kernel" },
+    { "n", "<leader>mE", M.toggle_engine, "run cells in REPL / Molten" },
     -- run
     { "n", "<leader>mr", cells.run_cell, "run cell" },
     { "x", "<leader>mr", cells.run_visual, "run selection" },
@@ -57,6 +74,12 @@ local function keys(buf)
     -- live-reload document preview in a browser (quarto-nvim)
     maps[#maps + 1] = { "n", "<leader>op", cmd("QuartoPreview"), "Quarto preview (browser)" }
     maps[#maps + 1] = { "n", "<leader>oP", cmd("QuartoClosePreview"), "stop the Quarto preview" }
+    -- the document as a PDF in the kitty split (lua/pdfview/quarto.lua), like
+    -- <leader>pv in Markdown; code is shown, not run
+    local q = function() return require("pdfview.quarto") end
+    maps[#maps + 1] = { { "n", "x" }, "<leader>pv", function() q().view() end, "PDF preview in a split (quarto → typst)" }
+    maps[#maps + 1] = { "n", "<leader>pF", function() q().toggle_live() end, "PDF preview: toggle live follow" }
+    maps[#maps + 1] = { "n", "<leader>pk", function() q().stop() end, "PDF preview: close" }
   end
   for _, m in ipairs(maps) do
     vim.keymap.set(m[1], m[2], m[3], { buffer = buf, desc = "Notebook: " .. m[4] })
@@ -108,6 +131,11 @@ end
 function M.status()
   local buf = vim.api.nvim_get_current_buf()
   if not vim.b[buf].notebook then return "" end
+  if M.engine(buf) == "repl" then
+    local lang = vim.bo[buf].filetype
+    if lang ~= "python" and lang ~= "r" then lang = (require("notebook.cells").parse(buf)[1] or {}).lang or lang end
+    return "▷ " .. (lang == "r" and "R" or lang == "python" and "IPython" or lang) .. " REPL"
+  end
   local kernel = vim.b[buf].notebook_kernel
   if not kernel then return "○ no kernel" end
   local now, c = vim.uv.now(), status_cache[buf]

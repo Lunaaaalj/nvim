@@ -210,7 +210,8 @@ Built-in window keys worth knowing:
   <leader>tq    Terminal: last command's output -> quickfix (Trouble)
   <leader>tk    Terminal: kill the current one (asks if a command runs)
   <leader>tm    Terminal: rename the current one (empty = automatic)
-  <leader>tp    Terminal: Python REPL    <leader>tN  Node REPL
+  <leader>tp    Terminal: Python REPL (IPython on the project's venv; plots
+                open in a split, |nvim-notebooks-repl|)    <leader>tN  Node REPL
                 <leader>tR  R REPL
                 Each terminal's winbar shows a tab-strip of all terminals
                 ("<id> <state> <name>"). In terminal mode, <C-h/j/k/l>
@@ -479,6 +480,8 @@ Kernel ~
   <leader>mi    Start the project's kernel and say which it is
   <leader>mI    Pick a kernel (:MoltenInit)
   <leader>mx    Interrupt               <leader>mX    Restart
+  <leader>mE    Run cells in the REPL terminal <-> a Molten kernel
+                (|nvim-notebooks-repl|)
 Output ~
   <leader>ms    Show / enter the output float     <leader>mh    Hide it
   <leader>mf    The cell's whole output in a scratch split
@@ -487,6 +490,8 @@ Output ~
   <leader>mg    Image in the system viewer        <leader>mb    HTML in the browser
   <leader>mp    Plot paper: theme colours <-> white (|nvim-notebooks-images|)
 Quarto (.qmd and notebooks) ~
+  <leader>pv    PDF preview in the kitty split (quarto -> typst; visual: the
+                selection), <leader>pF live follow, <leader>pk close
   <leader>op    Live-reload preview in a browser  <leader>oP    Stop it
 
 See |nvim-notebooks| for the full workflow.

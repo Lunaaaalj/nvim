@@ -145,7 +145,8 @@ return {
               function() return require("notebook").status() end,
               cond = function() return vim.b.notebook == true end,
               color = function()
-                return vim.b.notebook_kernel and "NotebookKernel" or "NotebookCellFence"
+                local nb = require("notebook")
+                return (vim.b.notebook_kernel or nb.engine() == "repl") and "NotebookKernel" or "NotebookCellFence"
               end,
             },
             { "diagnostics", sources = { "nvim_lsp" }, symbols = { error = " ", warn = " ", info = " ", hint = " " } },

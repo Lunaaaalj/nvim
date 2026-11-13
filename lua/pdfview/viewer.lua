@@ -108,7 +108,7 @@ end
 
 -- A preview whose document sets its own page shape (LaTeX, Typst): its split
 -- is sized to the page. Markdown pages are shaped to the split instead.
-function V:fixed_pages() return self.kind == "tex" or self.kind == "typst" end
+function V:fixed_pages() return self.kind == "tex" or self.kind == "typst" or self.kind == "quarto" end
 
 -- The LaTeX preview's home: a full-height split at the far right, sized to
 -- the page on its first render.

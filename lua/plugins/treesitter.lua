@@ -22,6 +22,7 @@ return {
           "markdown", "markdown_inline",
           "html", "css", "latex", "typst",
           "json", "yaml", "toml",
+          "csv", "tsv", -- data files (columns coloured; csvview.lua aligns them)
         },
         -- Install into the canonical site dir: nvim-treesitter appends "/parser",
         -- yielding ~/.local/share/nvim/site/parser, which is ALWAYS on the

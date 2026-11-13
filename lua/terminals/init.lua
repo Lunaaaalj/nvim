@@ -23,20 +23,18 @@ local SHELL_MAX = 99
 -- Pinned REPLs: fixed ids above the shell range. `paste` picks how multi-line
 -- text is sent: "python" checks the version (3.13+ has bracketed paste and
 -- auto-indents; older REPLs need line-by-line), node and R take plain lines.
--- `cmd` may be a function returning { cmd, env }, resolved when it spawns.
+-- `cmd` may be a function returning cmd, env, info ({ interp, bracketed }),
+-- resolved when it spawns.
 M.repls = {
   {
     key = "python", id = 100, paste = "python",
-    -- the current buffer's project interpreter (lua/pyenv.lua), activated so
-    -- subprocesses (`!pip`, `subprocess.run(["python", ...])`) match it
-    cmd = function()
-      local pyenv = require("pyenv")
-      local env = pyenv.find()
-      return env.python, pyenv.activate_env(env)
-    end,
+    -- IPython on the current buffer's project interpreter (lua/pyenv.lua),
+    -- venv activated, plots shown in Neovim (lua/notebook/repl.lua)
+    cmd = function() return require("notebook.repl").python() end,
   },
   { key = "node", cmd = "node", id = 101 },
-  { key = "R", cmd = "R", id = 102 },
+  -- radian or R, plots shown in Neovim (lua/notebook/repl.lua)
+  { key = "R", cmd = function() return require("notebook.repl").r() end, id = 102 },
 }
 
 local meta = {} ---@type table<integer, table>
@@ -175,9 +173,13 @@ local function make(id, opts)
   local existing = tt().get(id, true)
   if existing then return existing end
   local r = repl_by("id", id)
-  local cmd, env = r and r.cmd, nil
-  if type(cmd) == "function" then cmd, env = cmd() end
-  meta[id] = { kind = r and "repl" or "shell", name = opts.name, cwd = opts.dir, interp = r and cmd or nil }
+  local cmd, env, info = r and r.cmd, nil, nil
+  if type(cmd) == "function" then cmd, env, info = cmd() end
+  meta[id] = {
+    kind = r and "repl" or "shell", name = opts.name, cwd = opts.dir,
+    interp = r and (info and info.interp or cmd) or nil,
+    bracketed = info and info.bracketed or nil, -- IPython: always bracketed paste
+  }
   return tt().Terminal:new({
     id = id,
     cmd = cmd,
@@ -239,12 +241,29 @@ function M.repl(key)
   local running = M.get(r.id)
   if running and type(r.cmd) == "function" and not running:is_open() then
     -- One pinned REPL: say so when this buffer's project wants another one.
-    local want, have = r.cmd(), M.info(r.id).interp
+    local cmd, _, info = r.cmd()
+    local want, have = info and info.interp or cmd, M.info(r.id).interp
     if have and want ~= have then
       vim.notify(("%s REPL runs %s; <leader>tk then reopen for %s"):format(key, have, want), vim.log.levels.WARN)
     end
   end
   make(r.id):toggle()
+end
+
+--- Start (or show) a pinned REPL beside the code without moving the focus.
+---@return integer id, boolean fresh  fresh = just spawned
+function M.ensure_repl(key)
+  local r = repl_by("key", key)
+  local t = make(r.id)
+  local fresh = not (t.job_id and vim.fn.jobwait({ t.job_id }, 0)[1] == -1)
+  if not t:is_open() then
+    local win = vim.api.nvim_get_current_win()
+    t:open()
+    vim.cmd("stopinsert")
+    if vim.api.nvim_win_is_valid(win) then vim.api.nvim_set_current_win(win) end
+  end
+  last_id = r.id
+  return r.id, fresh
 end
 
 function M.rename(id, name)
@@ -281,6 +300,7 @@ end
 -- Does the REPL's interpreter have the 3.13+ REPL? (cached per interpreter)
 local modern_python = {}
 local function python_pastes(id)
+  if M.info(id).bracketed then return true end
   local py = M.info(id).interp or "python3"
   if modern_python[py] == nil then
     local v = vim.system({ py, "-c", "import sys; print(sys.version_info >= (3, 13))" }):wait()

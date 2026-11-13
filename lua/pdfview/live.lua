@@ -77,7 +77,7 @@ local function flatten(pages)
 end
 
 -- A preview for one kind of source. `spec`:
---   kind     viewer kind ("md" | "typst")
+--   kind     viewer kind ("md" | "typst" | "quarto")
 --   name     shown in messages ("Markdown")
 --   config   fun(): the backend's config table ({ delay, width, ... })
 --   words    fun(line): the visible, normalized words of a source line

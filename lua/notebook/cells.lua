@@ -119,6 +119,10 @@ end
 local function eval(cells)
   cells = vim.tbl_filter(function(c) return c.to >= c.from end, cells)
   if #cells == 0 then return end
+  local repl = require("notebook.repl")
+  if require("notebook").engine() == "repl" and repl.supports(cells[1].lang) then
+    return repl.run(cells)
+  end
   require("notebook.kernel").ensure(function()
     for _, c in ipairs(cells) do
       vim.fn.MoltenEvaluateRange(c.from, c.to)
@@ -163,6 +167,12 @@ end
 
 function M.run_line()
   local l = vim.api.nvim_win_get_cursor(0)[1]
+  if require("notebook").engine() == "repl" then
+    local c = M.at(l) or { lang = vim.bo.filetype }
+    if require("notebook.repl").supports(c.lang) then
+      return require("notebook.repl").run({ { from = l, to = l, lang = c.lang } })
+    end
+  end
   require("notebook.kernel").ensure(function() vim.fn.MoltenEvaluateRange(l, l) end)
 end
 

@@ -408,6 +408,11 @@ otter.nvim ~  (jmbuhr/otter.nvim)
   Per-chunk LSP backend used by quarto-nvim; activated automatically when
   quarto-nvim's lspFeatures are enabled, no separate setup() call.
 
+csvview.nvim ~  (hat0uma/csvview.nvim)
+  CSV/TSV files open as a table: columns aligned with virtual text (the file
+  is unchanged), borders, a sticky header row. <leader>uv toggles it in
+  csv/tsv buffers. The csv/tsv treesitter parsers colour the columns.
+
 render-markdown.nvim ~  (MeanderingProgrammer/render-markdown.nvim)
   In-buffer rendering of markdown (headings, code blocks, tables, etc.).
 

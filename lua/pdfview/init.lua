@@ -41,6 +41,11 @@ M.config = {
     width = 0.45, -- initial split width; it then fits the page, as for LaTeX
     args = {}, -- extra `typst compile` arguments (e.g. { "--font-path", "fonts" })
   },
+  quarto = {
+    delay = 700, -- ms from an edit to its re-render (a render takes ~2 s)
+    width = 0.45, -- initial split width; it then fits the page, as for LaTeX
+    args = {}, -- extra `quarto render` arguments (e.g. { "-M", "papersize:a4" })
+  },
 }
 
 local root = vim.fn.stdpath("cache") .. "/pdfview"
@@ -88,7 +93,7 @@ end
 -- restored by :mksession, so it is closed before the save and re-launched from
 -- the remembered source file afterwards. PDF files restore on their own: they
 -- have a name and come back through BufReadCmd.
-local previews = { tex = "pdfview.tex", md = "pdfview.markdown", typst = "pdfview.typst" }
+local previews = { tex = "pdfview.tex", md = "pdfview.markdown", typst = "pdfview.typst", quarto = "pdfview.quarto" }
 local reopen ---@type fun()[]
 
 -- Re-run `view()` of `mod` from window `win` without moving the focus.

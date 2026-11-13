@@ -12,6 +12,7 @@
   "cmp-path": { "branch": "main", "commit": "c642487086dbd9a93160e1679a1327be111cbc25" },
   "cmp_luasnip": { "branch": "master", "commit": "98d9cb5c2c38532bd9bdb481067b20fea8f32e90" },
   "conform.nvim": { "branch": "master", "commit": "016802de402556da54c36bd7359b441266b01cdd" },
+  "csvview.nvim": { "branch": "main", "commit": "f190de76d2eca0380ddcb2425cd582d740699b55" },
   "diffview.nvim": { "branch": "main", "commit": "4516612fe98ff56ae0415a259ff6361a89419b0a" },
   "everforest-nvim": { "branch": "main", "commit": "a0e9edc57379e8feafc6ba207c26dbb12fc1b6d8" },
   "evergarden": { "branch": "main", "commit": "c8e5e7e67a36694e5d917b7065b26b59b8cb489f" },

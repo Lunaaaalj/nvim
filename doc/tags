@@ -54,6 +54,7 @@ nvim-notebooks-jkernel	nvim-notebooks.txt	/*nvim-notebooks-jkernel*
 nvim-notebooks-keys	nvim-notebooks.txt	/*nvim-notebooks-keys*
 nvim-notebooks-quarto	nvim-notebooks.txt	/*nvim-notebooks-quarto*
 nvim-notebooks-register	nvim-notebooks.txt	/*nvim-notebooks-register*
+nvim-notebooks-repl	nvim-notebooks.txt	/*nvim-notebooks-repl*
 nvim-notebooks-trouble	nvim-notebooks.txt	/*nvim-notebooks-trouble*
 nvim-notebooks.txt	nvim-notebooks.txt	/*nvim-notebooks.txt*
 nvim-plugins	nvim-plugins.txt	/*nvim-plugins*
