@@ -142,19 +142,59 @@ function M.python_spec(env)
   else
     return nil, ("%s has no ipykernel and `uv` isn't installed: install one of them"):format(env.prefix or env.python)
   end
-  vim.list_extend(argv, { "-m", "ipykernel_launcher", "-f", "{connection_file}" })
+  local plots = require("notebook.plots")
+  vim.list_extend(argv, {
+    "-m", "ipykernel_launcher", "-f", "{connection_file}",
+    "--IPKernelApp.exec_files=" .. plots.startup_py, -- plot paper hook
+  })
+  local kenv = plots.kernel_env()
+  if env.prefix then
+    -- `!pip`, `!python` and subprocesses inside the kernel see the venv
+    kenv.VIRTUAL_ENV = env.prefix
+    kenv.PATH = env.prefix .. "/bin:${PATH}"
+  end
   local spec = {
     argv = argv,
     display_name = ("Python (%s)"):format(label),
     language = "python",
-    -- `!pip`, `!python` and subprocesses inside the kernel see the venv
-    env = env.prefix and { VIRTUAL_ENV = env.prefix, PATH = env.prefix .. "/bin:${PATH}" } or nil,
+    env = kenv,
     metadata = { nvim = { python = env.python, prefix = env.prefix } },
   }
   sweep()
   vim.fn.mkdir(KDIR .. "/" .. name, "p")
   vim.fn.writefile({ vim.json.encode(spec) }, ("%s/%s/kernel.json"):format(KDIR, name))
   return name, how
+end
+
+--- An installed IRkernel spec, wrapped to source kernel_startup.R (plot
+--- paper) before IRkernel::main(). Returns the wrapper's name, or `name`
+--- unchanged when the spec doesn't look like IRkernel's.
+local function wrap_r(name, info)
+  local spec = read_json(("%s/kernels/%s/kernel.json"):format(info.dir, name))
+  if not spec or type(spec.argv) ~= "table" then return name end
+  local plots = require("notebook.plots")
+  local argv, found = {}, false
+  for _, a in ipairs(spec.argv) do
+    if a:find("IRkernel::main()", 1, true) then
+      a = ("source(%q); %s"):format(plots.startup_r, a)
+      found = true
+    end
+    argv[#argv + 1] = a
+  end
+  if not found then return name end
+  local wrapped = name .. "-nvim"
+  spec.argv = argv
+  spec.display_name = (spec.display_name or name) .. " (nvim)"
+  spec.env = vim.tbl_extend("force", spec.env or {}, plots.kernel_env())
+  spec.metadata = vim.tbl_extend("force", spec.metadata or {}, { nvim = { wraps = name } })
+  vim.fn.mkdir(KDIR .. "/" .. wrapped, "p")
+  vim.fn.writefile({ vim.json.encode(spec) }, ("%s/%s/kernel.json"):format(KDIR, wrapped))
+  return wrapped
+end
+
+local function use(name, info, desc)
+  if info.language == "r" and not name:match("%-nvim$") then name = wrap_r(name, info) end
+  return name, desc
 end
 
 --- The kernel a buffer should use.
@@ -174,11 +214,14 @@ function M.pick(buf)
     if not k then return nil, how end
     return k, ("%s (%s, %s)"):format(env.python, env.source, how)
   end
-  if name and installed[name] then return name, "from the notebook's metadata" end
+  if name and installed[name] then return use(name, installed[name], "from the notebook's metadata") end
   local names = vim.tbl_keys(installed)
   table.sort(names)
   for _, n in ipairs(names) do
-    if installed[n].language == lang then return n, installed[n].display_name end
+    -- skip our own wrappers here: the original is found and re-wrapped fresh
+    if installed[n].language == lang and not n:match("%-nvim$") then
+      return use(n, installed[n], installed[n].display_name)
+    end
   end
   local hint = lang == "r" and ' (install.packages("IRkernel"); IRkernel::installspec())' or ""
   return nil, ("no Jupyter kernel installed for %s%s"):format(lang, hint)
@@ -203,9 +246,25 @@ function M.ensure(fn)
   if #ks == 0 then
     local name, desc = M.pick()
     if not name then return vim.notify("Kernel: " .. desc, vim.log.levels.ERROR) end
+    -- Evaluate only once the kernel is ready, as Molten's own init-and-run
+    -- does: output sent while it is still starting goes out before Molten is
+    -- listening, and the cell stays "On Hold" although the code ran.
+    local win, buf = vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
+    if fn then
+      vim.api.nvim_create_autocmd("User", {
+        pattern = "MoltenKernelReady",
+        once = true,
+        callback = function()
+          if vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_buf(win) == buf then
+            vim.api.nvim_win_call(win, fn)
+          end
+        end,
+      })
+    end
     vim.cmd("MoltenInit " .. name)
     if #(running() or {}) == 0 then return end -- Molten has reported why
     vim.notify(("Kernel %s: %s"):format(name, desc))
+    return
   end
   if fn then fn() end
 end

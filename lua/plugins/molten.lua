@@ -27,8 +27,13 @@ return {
                 -- Alacritty (and other non-graphics terminals): no inline images.
                 vim.g.molten_image_provider = "none"
             end
-            vim.g.molten_output_win_max_height = 20
-            vim.g.molten_auto_open_output = false -- needed when image_provider = none
+            vim.g.molten_output_win_max_height = 40
+            -- Output (text and, with image.nvim, plots: molten_image_location
+            -- "both") is shown as virtual lines under the cell, so the float
+            -- stays closed until <leader>os; <leader>of = everything in a split.
+            vim.g.molten_auto_open_output = false
+            -- success/failure border colours (themed in lua/notebook/ui.lua)
+            vim.g.molten_use_border_highlights = true
             vim.g.molten_wrap_output = true
             vim.g.molten_virt_text_output = true -- show text output as virtual text
             vim.g.molten_virt_lines_off_by_1 = true
@@ -40,8 +45,10 @@ return {
         cond = image_capable,
         opts = {
             backend = "kitty", -- kitty graphics protocol (Kitty/WezTerm/Ghostty)
-            max_width = 100,
-            max_height = 12,
+            -- cells; plots are rendered at a dpi matched to the cell size
+            -- (lua/notebook/plots.lua), so these only stop huge figures
+            max_width = 160,
+            max_height = 30,
             max_height_window_percentage = math.huge,
             max_width_window_percentage = math.huge,
             window_overlap_clear_enabled = true, -- toggles images when windows are overlapped

@@ -95,7 +95,13 @@ kernelspec list` is harmless: the host venv has no kernel of its own.
 4. Manage output:
      <leader>os   Open the output window
      <leader>oh   Hide output
+     <leader>of   The cell's whole output in a scratch split (the float and
+                  the virtual text are capped in height)
      <leader>md   Delete the cell
+
+   Output is shown as virtual lines under the cell; the float stays closed
+   until <leader>os. Output windows are solid (a slightly tinted background,
+   green/red border for success/failure) in transparent and solid mode.
 
 Cells without inline images show their results as virtual text (e.g. in
 Alacritty).
@@ -108,11 +114,27 @@ Inline images only work in terminals speaking the Kitty graphics protocol
 startup:
 
   - Capable terminal (kitty, the usual setup) -> uses image.nvim, plots
-    render inline.
+    render inline, sized to the cell height (retina screens get a higher
+    figure dpi, so plots aren't half size).
+      <leader>ov       The last plot full size in a split
   - Alacritty and others -> molten_image_provider = "none", output is
     virtual text. View plots externally:
       <leader>oi       :MoltenImagePopup     (external image viewer)
       <localleader>mx  :MoltenOpenInBrowser
+
+Plot paper ~
+  <leader>mp toggles how plots are drawn (persisted, applies to the next plot,
+  no kernel restart):
+    theme   (default) the colorscheme's background, its foreground for text,
+            axes and labels, a faint grid
+    paper   black on white, like an exported notebook
+  Kernels started by this config pick it up: Python through $MATPLOTLIBRC
+  (matplotlib's defaults; a style you set yourself, `plt.style.use(...)`,
+  seaborn themes, wins), R through `repr.plot.bg`, `par()` and the ggplot2
+  theme. Every image is also flattened onto the paper before it's drawn, so
+  a transparent figure (`savefig(transparent=True)`) never shows the terminal
+  through it. Kernels you pick by hand from <leader>mI that weren't generated
+  here only get the flattening.
 
 ==============================================================================
 6. TROUBLESHOOTING                                   *nvim-notebooks-trouble*

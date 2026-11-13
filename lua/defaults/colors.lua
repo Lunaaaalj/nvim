@@ -28,6 +28,18 @@ end
 -- change the terminal background, change this too.
 M.terminal_bg = "#181818"
 
+-- The scheme's own background, even in transparent mode (where Normal's bg
+-- has been stripped): recorded by the strip autocmd in defaults/init.lua.
+-- Falls back to a neutral dark/light when the scheme sets none.
+function M.bg()
+  local hl = vim.api.nvim_get_hl(0, { name = "Normal", link = false })
+  return vim.g.scheme_bg or hl.bg or (vim.o.background == "light" and 0xf5f5f5 or 0x181818)
+end
+
+function M.hex(c)
+  return ("#%06x"):format(c)
+end
+
 -- The scheme's accent: what functions are drawn in, falling back to Special.
 function M.accent()
   return M.fg("Function", "Special", "Normal")

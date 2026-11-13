@@ -187,6 +187,11 @@ vim.keymap.set("n", "<leader>md", ":MoltenDelete<CR>", { desc = "delete Molten c
 vim.keymap.set("n", "<localleader>mx", ":MoltenOpenInBrowser<CR>", { desc = "open output in browser", silent = true })
 -- open the current cell's image output in an external viewer (use in Alacritty)
 vim.keymap.set("n", "<leader>oi", ":MoltenImagePopup<CR>", { desc = "open image output externally", silent = true })
+-- lua/notebook/: the last plot full size in a split, the cell's whole output in
+-- a scratch buffer, and the plot paper (theme colours <-> white, persisted).
+vim.keymap.set("n", "<leader>ov", function() require("notebook.plots").view() end, { desc = "Molten: last plot in a split" })
+vim.keymap.set("n", "<leader>of", function() require("notebook.ui").full_output() end, { desc = "Molten: full output in a split" })
+vim.keymap.set("n", "<leader>mp", function() require("notebook.plots").toggle() end, { desc = "Molten: plot paper theme / white" })
 
 -- Quarto: live-reload preview (runs `quarto preview` in an integrated
 -- terminal tab and opens/refreshes a browser); QuartoClosePreview stops it.

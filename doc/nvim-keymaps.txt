@@ -473,6 +473,10 @@ for the path to the compiled executable to launch.
   <leader>oh    Hide the output
   <leader>md    Delete the cell
   <leader>oi    Open image output externally (:MoltenImagePopup)
+  <leader>ov    The last plot full size in a split
+  <leader>of    The cell's whole output in a scratch split
+  <leader>mp    Plot paper: theme colours <-> white (persisted;
+                |nvim-notebooks-images|)
   <localleader>mx  Open output in the browser (:MoltenOpenInBrowser)
   <leader>op    Quarto: start live-reload preview (:QuartoPreview)
   <leader>oP    Quarto: stop preview (:QuartoClosePreview)
