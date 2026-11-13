@@ -23,7 +23,12 @@ return {
             local dapui = require("dapui")
 
             require("nvim-dap-virtual-text").setup()
-            require("dap-python").setup(vim.fn.expand("~/.virtualenvs/neovim/bin/python"))
+            -- The adapter runs on Mason's debugpy venv (mason-tool-installer);
+            -- the program being debugged runs on the project's interpreter
+            -- (lua/pyenv.lua), so its packages import.
+            local dap_python = require("dap-python")
+            dap_python.setup(vim.fn.stdpath("data") .. "/mason/packages/debugpy/venv/bin/python")
+            dap_python.resolve_python = function() return require("pyenv").python() end
 
             -- C/C++ via codelldb (installed by mason-tool-installer).
             dap.adapters.codelldb = {

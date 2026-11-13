@@ -105,8 +105,8 @@ Inline images only work in terminals that speak the Kitty graphics protocol
 (Kitty / WezTerm / Ghostty). `lua/plugins/molten.lua` detects the terminal at
 startup:
 
-- **Capable terminal** → uses `image.nvim`, plots render inline.
-- **Alacritty** (the usual setup here) → `molten_image_provider = "none"`,
+- **Capable terminal** (kitty, the usual setup here) → uses `image.nvim`, plots render inline.
+- **Alacritty** and others → `molten_image_provider = "none"`,
   output is virtual text. View plots externally:
   - `<leader>oi` — `:MoltenImagePopup` (external image viewer)
   - `<localleader>mx` — `:MoltenOpenInBrowser`
@@ -158,9 +158,10 @@ it applies to R plots exactly like Python ones, no separate mechanism.
   project, or check `jkernel list`.
 - **`:MoltenInit` errors about remote plugins** — run `:UpdateRemotePlugins` and
   restart Neovim (required after installing/updating molten-nvim).
-- **`jupytext` / `pynvim` not found** — the Neovim Python host venv
-  `~/.virtualenvs/neovim` is missing deps; it needs `pynvim`, `jupyter_client`,
-  `jupytext`. See the Molten section of `CLAUDE.md`.
+- **`jupytext` / `pynvim` not found** — `jupytext` is a uv tool
+  (`uv tool install jupytext`); `pynvim` and `jupyter_client` belong in the
+  Neovim Python host venv `~/.virtualenvs/neovim` (deliberately not on `PATH`).
+  See the Molten section of `CLAUDE.md`.
 - **Wrong packages at runtime** — the kernel points at a specific venv. If you
   `pip install`ed into a different environment, install into the venv the kernel
   was registered from (or re-register).

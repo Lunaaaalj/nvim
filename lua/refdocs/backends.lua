@@ -112,30 +112,10 @@ M.cpp = {
 
 -- Python: pydoc, run with the file's project interpreter so third-party
 -- packages resolve to the versions that project actually has.
-local host_bin = vim.g.python3_host_prog and vim.fs.dirname(vim.g.python3_host_prog)
-
-local function system_python()
-  for dir in vim.gsplit(vim.env.PATH or "", ":", { plain = true }) do
-    local p = dir .. "/python3"
-    if dir ~= host_bin and vim.fn.executable(p) == 1 then return p end
-  end
-  return "python3"
-end
-
+-- (lua/pyenv.lua: project venv, then $VIRTUAL_ENV/$CONDA_PREFIX, never the
+-- Neovim host venv).
 function M.python_for(buf)
-  local name = vim.api.nvim_buf_get_name(buf or 0)
-  local start = name ~= "" and vim.fs.dirname(name) or vim.fn.getcwd()
-  for dir in vim.fs.parents(start .. "/x") do
-    for _, v in ipairs({ ".venv", "venv", "env", ".env" }) do
-      local p = ("%s/%s/bin/python"):format(dir, v)
-      if vim.fn.executable(p) == 1 then return p end
-    end
-    if dir == vim.env.HOME then break end
-  end
-  for _, v in ipairs({ vim.env.VIRTUAL_ENV, vim.env.CONDA_PREFIX }) do
-    if v and v .. "/bin" ~= host_bin and vim.fn.executable(v .. "/bin/python") == 1 then return v .. "/bin/python" end
-  end
-  return system_python()
+  return require("pyenv").python(buf)
 end
 
 -- `import numpy as np` / `from os import path as p` / `from x import y`

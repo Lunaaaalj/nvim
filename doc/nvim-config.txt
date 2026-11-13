@@ -25,7 +25,7 @@ This config also ships these companion help files:
 1. INTRODUCTION                                          *nvim-config-intro*
 
 An opinionated Neovim configuration written in Lua, using `lazy.nvim` as the
-plugin manager. It targets macOS and is primarily run in Alacritty.
+plugin manager. It targets macOS and is primarily run in kitty.
 
 Design goals:
   - A clean, minimal UI with universal background transparency so the
@@ -47,26 +47,30 @@ Core:
   - Neovim (recent version with Lua support)
   - git                  Plugin management and version control features
   - macOS                Recommended / tested platform
-  - Alacritty            Terminal the transparency is tuned for (any terminal
-                         works; light schemes need a light terminal background)
+  - kitty                Terminal the transparency and inline images are tuned
+                         for (Alacritty works without images; light schemes
+                         need a light terminal background)
 
 External binaries:
   - make                 Builds `telescope-fzf-native`
   - lazygit              Required by `lazygit.nvim`
   - sioyek               PDF viewer used by `vimtex` (view method)
-  - clang-format, black, isort, stylua    Formatters used by `conform.nvim`
+  - clang-format, ruff, stylua    Formatters used by `conform.nvim` (mason)
+  - R package `styler`   R formatter (`install.packages("styler")`)
   - cppman, groff        C++ references (`pipx install cppman`,
                          `brew install groff`); see |nvim-config-refdocs|
 
 Notebooks / Molten (optional, only if you use notebooks):
   - A Python venv at `~/.virtualenvs/neovim` providing the Neovim Python host.
-    It must contain `pynvim`, `jupyter_client`, and `jupytext`. Homebrew's
-    python3 is PEP-668 externally-managed, so deps are NOT installed there.
+    It must contain `pynvim` and `jupyter_client`. Homebrew's python3 is
+    PEP-668 externally-managed, so deps are NOT installed there.
+  - `jupytext` as a uv tool: `uv tool install jupytext` (lands in
+    `~/.local/bin`, which jupytext.nvim finds on `$PATH`).
   - `~/.local/bin/jkernel`   Helper to register per-project venvs as Jupyter
                              kernels (not part of this repo). See |nvim-notebooks|.
   - A Kitty-graphics terminal (Kitty / WezTerm / Ghostty) is needed ONLY for
-    inline notebook images; Alacritty works for everything else via virtual
-    text. See |nvim-notebooks|.
+    inline notebook images (kitty is the usual one); Alacritty works for
+    everything else via virtual text. See |nvim-notebooks|.
 
 LSP servers `clangd` and `pyright` are installed automatically by mason; you
 do not need to install them yourself.
@@ -148,8 +152,21 @@ An autocmd runs `:checktime` on FocusGained / BufEnter / CursorHold so files
 changed on disk are auto-reloaded.
 
 Python host (`lua/defaults/init.lua`): `g:python3_host_prog` points at
-`~/.virtualenvs/neovim/bin/python`, and that venv's `bin` is prepended to
-`$PATH` so a bare `jupytext` resolves. See |nvim-notebooks|.
+`~/.virtualenvs/neovim/bin/python`. That venv is never put on `$PATH` (it is
+stripped if inherited), so it can't shadow a project's venv.
+
+                                                        *nvim-config-pyenv*
+Project Python (`lua/pyenv.lua`): pyright, the debugger (the program being
+debugged), the <leader>tp REPL and |nvim-config-refdocs| all use the same
+interpreter: a `.venv`, `venv`, `env` or `.env` in the file's directory or a
+parent (up to $HOME), else an activated $VIRTUAL_ENV / $CONDA_PREFIX, else
+the first `python3` on $PATH. Activating a venv before starting Neovim is not
+needed. A venv whose Python is gone (e.g. after `brew upgrade`) is skipped
+with a warning; repair it with `python3 -m venv --upgrade <venv>`.
+
+  :PyEnv        Show the interpreter the current buffer resolves to.
+
+See |nvim-notebooks|.
 
 ==============================================================================
 6. COLORSCHEMES & TRANSPARENCY                     *nvim-config-colorscheme*
@@ -299,8 +316,8 @@ from the tools that already know your installed versions:
             printf(3), not the shell command
   C++       cppreference.com through `cppman`; `v.push_back` is resolved to
             std::vector::push_back using clangd's type of `v`
-  Python    `python -m pydoc`, run with the file's project venv (`.venv`,
-            `venv`, `env` upward, then $VIRTUAL_ENV), so `np.linspace` is the
+  Python    `python -m pydoc`, run with the file's project interpreter
+            (|nvim-config-pyenv|), so `np.linspace` is the
             numpy that project has; `import x as y` aliases are resolved
   R         the installed help pages (Rd2txt), any installed package,
             `pkg::fn` honoured; runs in the file's dir so renv applies

@@ -26,6 +26,13 @@ return {
             pyright = { disableOrganizeImports = true },
             python = { analysis = { typeCheckingMode = "basic" } },
           },
+          -- Point pyright at the project's interpreter (lua/pyenv.lua) instead
+          -- of whatever `python` is first on PATH. The settings are sent with
+          -- workspace/didChangeConfiguration after initialize, so setting them
+          -- here applies to this client (one per root) only.
+          before_init = function(_, config)
+            config.settings.python.pythonPath = require("pyenv").python(config.root_dir)
+          end,
         },
         ruff = {
           -- ruff exposes a hover handler that duplicates pyright; quiet it.
@@ -80,7 +87,7 @@ return {
     config = function()
       require("mason-tool-installer").setup({
         ensure_installed = {
-          "black", "isort",      -- Python format
+          "ruff",                -- Python format + import sorting (conform)
           "stylua",              -- Lua format
           "clang-format",        -- C/C++ format
           "latexindent",         -- LaTeX format

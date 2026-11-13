@@ -105,8 +105,9 @@ Inline images only work in terminals speaking the Kitty graphics protocol
 (Kitty / WezTerm / Ghostty). `lua/plugins/molten.lua` detects the terminal at
 startup:
 
-  - Capable terminal -> uses image.nvim, plots render inline.
-  - Alacritty (the usual setup) -> molten_image_provider = "none", output is
+  - Capable terminal (kitty, the usual setup) -> uses image.nvim, plots
+    render inline.
+  - Alacritty and others -> molten_image_provider = "none", output is
     virtual text. View plots externally:
       <leader>oi       :MoltenImagePopup     (external image viewer)
       <localleader>mx  :MoltenOpenInBrowser
@@ -123,8 +124,9 @@ Kernel not in `:MoltenInit` ~
   updating molten-nvim).
 
 `jupytext` / `pynvim` not found ~
-  The Neovim Python host venv `~/.virtualenvs/neovim` is missing deps; it needs
-  `pynvim`, `jupyter_client`, `jupytext`. See the Molten section of CLAUDE.md.
+  `jupytext` is a uv tool: `uv tool install jupytext`. `pynvim` and
+  `jupyter_client` belong in the Neovim Python host venv `~/.virtualenvs/neovim`
+  (which is deliberately not on $PATH, see |nvim-config-pyenv|).
 
 Wrong packages at runtime ~
   The kernel points at a specific venv. If you `pip install`ed into a different

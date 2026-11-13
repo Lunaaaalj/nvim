@@ -100,9 +100,23 @@ vim.api.nvim_create_autocmd("ColorScheme", {
 -- Dedicated venv for Neovim's Python host (has pynvim + jupyter_client for Molten).
 -- Homebrew's python3 is PEP-668 externally-managed, so we don't install into it.
 vim.g.python3_host_prog = vim.fn.expand('~/.virtualenvs/neovim/bin/python')
--- Prepend the neovim venv bin so jupytext.nvim (which calls a bare `jupytext`)
--- and the python host resolve, then homebrew bin.
-vim.env.PATH = vim.fn.expand('~/.virtualenvs/neovim/bin')
-  .. ':/opt/homebrew/bin:' .. vim.env.PATH
+-- The host venv is deliberately NOT put on PATH: anything first on PATH wins
+-- over the project's venv for pyright, :terminal and the REPL. The project's
+-- interpreter comes from lua/pyenv.lua. jupytext.nvim calls a bare `jupytext`,
+-- which is a uv tool (`uv tool install jupytext`) in ~/.local/bin. Both dirs
+-- are only *appended* if missing (e.g. Neovim started from a GUI). The host
+-- venv is also stripped in case it was inherited (started from a shell inside
+-- a Neovim that still prepended it).
+local host_bin = vim.fn.expand("~/.virtualenvs/neovim/bin")
+vim.env.PATH = table.concat(vim.tbl_filter(function(d)
+  return d ~= host_bin
+end, vim.split(vim.env.PATH or "", ":", { plain = true })), ":")
+for _, dir in ipairs({ vim.fn.expand("~/.local/bin"), "/opt/homebrew/bin" }) do
+  if not (":" .. vim.env.PATH .. ":"):find(":" .. dir .. ":", 1, true) then
+    vim.env.PATH = vim.env.PATH .. ":" .. dir
+  end
+end
+-- :PyEnv shows the interpreter the current buffer resolves to.
+require("pyenv")
 
 

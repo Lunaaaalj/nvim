@@ -442,8 +442,9 @@ git-conflict (active on files with conflict markers):
   <leader>dx    Terminate the session
 
 The DAP UI auto-opens when a session starts and auto-closes when it ends.
-Adapters: Python (debugpy via the neovim venv) and C/C++ (codelldb). For C/C++,
-<leader>dc prompts for the path to the compiled executable to launch.
+Adapters: Python (Mason's debugpy, running the project interpreter, see
+|nvim-config-pyenv|) and C/C++ (codelldb). For C/C++, <leader>dc prompts
+for the path to the compiled executable to launch.
 
 ==============================================================================
 12. SESSION (PERSISTENCE)                               *nvim-keymaps-session*

@@ -23,8 +23,18 @@ local SHELL_MAX = 99
 -- Pinned REPLs: fixed ids above the shell range. `paste` picks how multi-line
 -- text is sent: "python" checks the version (3.13+ has bracketed paste and
 -- auto-indents; older REPLs need line-by-line), node and R take plain lines.
+-- `cmd` may be a function returning { cmd, env }, resolved when it spawns.
 M.repls = {
-  { key = "python", cmd = "python3", id = 100, paste = "python" },
+  {
+    key = "python", id = 100, paste = "python",
+    -- the current buffer's project interpreter (lua/pyenv.lua), activated so
+    -- subprocesses (`!pip`, `subprocess.run(["python", ...])`) match it
+    cmd = function()
+      local pyenv = require("pyenv")
+      local env = pyenv.find()
+      return env.python, pyenv.activate_env(env)
+    end,
+  },
   { key = "node", cmd = "node", id = 101 },
   { key = "R", cmd = "R", id = 102 },
 }
@@ -165,13 +175,15 @@ local function make(id, opts)
   local existing = tt().get(id, true)
   if existing then return existing end
   local r = repl_by("id", id)
-  meta[id] = { kind = r and "repl" or "shell", name = opts.name, cwd = opts.dir }
+  local cmd, env = r and r.cmd, nil
+  if type(cmd) == "function" then cmd, env = cmd() end
+  meta[id] = { kind = r and "repl" or "shell", name = opts.name, cwd = opts.dir, interp = r and cmd or nil }
   return tt().Terminal:new({
     id = id,
-    cmd = r and r.cmd or nil,
+    cmd = cmd,
     dir = opts.dir,
     direction = opts.direction,
-    env = not r and shell_env() or nil,
+    env = r and env or shell_env(),
   })
 end
 
@@ -224,6 +236,14 @@ end
 
 function M.repl(key)
   local r = repl_by("key", key)
+  local running = M.get(r.id)
+  if running and type(r.cmd) == "function" and not running:is_open() then
+    -- One pinned REPL: say so when this buffer's project wants another one.
+    local want, have = r.cmd(), M.info(r.id).interp
+    if have and want ~= have then
+      vim.notify(("%s REPL runs %s; <leader>tk then reopen for %s"):format(key, have, want), vim.log.levels.WARN)
+    end
+  end
   make(r.id):toggle()
 end
 
@@ -258,14 +278,15 @@ local function ensure_job(t)
   if not (t.job_id and vim.fn.jobwait({ t.job_id }, 0)[1] == -1) then t:spawn() end
 end
 
--- Does `python3` (as the REPL will resolve it) have the 3.13+ REPL?
-local modern_python
-local function python_pastes()
-  if modern_python == nil then
-    local v = vim.system({ "python3", "-c", "import sys; print(sys.version_info >= (3, 13))" }):wait()
-    modern_python = vim.trim(v.stdout or "") == "True"
+-- Does the REPL's interpreter have the 3.13+ REPL? (cached per interpreter)
+local modern_python = {}
+local function python_pastes(id)
+  local py = M.info(id).interp or "python3"
+  if modern_python[py] == nil then
+    local v = vim.system({ py, "-c", "import sys; print(sys.version_info >= (3, 13))" }):wait()
+    modern_python[py] = vim.trim(v.stdout or "") == "True"
   end
-  return modern_python
+  return modern_python[py]
 end
 
 local function dedent(lines)
@@ -298,7 +319,7 @@ function M.send(lines, id)
   local text
   if #lines == 1 then
     text = lines[1] .. "\r"
-  elseif r and r.paste == "python" and python_pastes() then
+  elseif r and r.paste == "python" and python_pastes(t.id) then
     -- One paste, then the blank line that closes a multi-statement input.
     -- That second Enter must arrive separately: pyrepl reads a fast burst of
     -- keys as more paste and would just add another `...` line.
