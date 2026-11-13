@@ -118,5 +118,8 @@ for _, dir in ipairs({ vim.fn.expand("~/.local/bin"), "/opt/homebrew/bin" }) do
 end
 -- :PyEnv shows the interpreter the current buffer resolves to.
 require("pyenv")
+-- Generated per-project kernelspecs: $JUPYTER_PATH must be set before the
+-- Python host (Molten) starts, so this can't wait for a notebook buffer.
+require("notebook.kernel").setup()
 
 

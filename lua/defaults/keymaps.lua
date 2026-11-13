@@ -73,11 +73,25 @@ vim.keymap.set("t", "<C-j>", [[<C-\><C-n><C-w>j]], { desc = "Terminal: window do
 vim.keymap.set("t", "<C-k>", [[<C-\><C-n><C-w>k]], { desc = "Terminal: window up" })
 vim.keymap.set("t", "<C-l>", [[<C-\><C-n><C-w>l]], { desc = "Terminal: window right" })
 
-vim.keymap.set("n", "<leader>mi", ":MoltenInit<CR>", { desc = "init Molten kernel", silent = true })
-vim.keymap.set("n", "<leader>e", ":MoltenEvaluateOperator<CR>", { desc = "evaluate operator", silent = true })
+-- Every evaluation goes through notebook.kernel.ensure(): with no kernel in the
+-- buffer it starts the project's one (generated kernelspec for the project's
+-- venv, or the notebook's R/Julia kernel) instead of prompting.
+local function with_kernel(fn)
+    return function() require("notebook.kernel").ensure(fn) end
+end
+vim.keymap.set("n", "<leader>mi", with_kernel(), { desc = "Molten: start the project's kernel" })
+vim.keymap.set("n", "<leader>mI", ":MoltenInit<CR>", { desc = "Molten: pick a kernel", silent = true })
+vim.keymap.set("n", "<leader>e", with_kernel(function() vim.cmd("MoltenEvaluateOperator") end), { desc = "evaluate operator" })
 vim.keymap.set("n", "<leader>os", ":noautocmd MoltenEnterOutput<CR>", { desc = "open output window", silent = true })
-vim.keymap.set("n", "<leader>rr", ":MoltenReevaluateCell<CR>", { desc = "re-eval cell", silent = true })
-vim.keymap.set("v", "<leader>r", ":<C-u>MoltenEvaluateVisual<CR>gv", { desc = "execute visual selection", silent = true })
+vim.keymap.set("n", "<leader>rr", with_kernel(function() vim.cmd("MoltenReevaluateCell") end), { desc = "re-eval cell" })
+vim.keymap.set("v", "<leader>r", function()
+    vim.cmd("normal! \27") -- leave visual mode so '< and '> are set
+    require("notebook.kernel").ensure(function()
+        -- separate calls: MoltenEvaluateVisual takes args, so `|` would be one
+        vim.cmd("MoltenEvaluateVisual")
+        vim.cmd("normal! gv")
+    end)
+end, { desc = "execute visual selection" })
 
 -- Run whole notebook cells with a single keystroke. Notebooks open as jupytext
 -- markdown, so a "cell" is a fenced code block: opening fence carries a language
@@ -104,13 +118,16 @@ end
 
 -- Evaluate a list of {open, close} cells, skipping empties.
 local function molten_run(cells)
+    if #cells == 0 then return 0 end
     local ran = 0
-    for _, c in ipairs(cells) do
-        if c.close - 1 >= c.open + 1 then
-            vim.fn.MoltenEvaluateRange(c.open + 1, c.close - 1)
-            ran = ran + 1
+    require("notebook.kernel").ensure(function()
+        for _, c in ipairs(cells) do
+            if c.close - 1 >= c.open + 1 then
+                vim.fn.MoltenEvaluateRange(c.open + 1, c.close - 1)
+                ran = ran + 1
+            end
         end
-    end
+    end)
     return ran
 end
 

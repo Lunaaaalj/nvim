@@ -3,78 +3,80 @@
 ==============================================================================
 CONTENTS                                                     *nvim-notebooks*
 
-Run code in Jupyter kernels from Neovim with molten-nvim. This covers the one
-concept that trips people up — kernels vs. venvs — plus the day-to-day flow
-and the `jkernel` helper. A longer prose version lives in `docs/molten.md`.
+Run code in Jupyter kernels from Neovim with molten-nvim: which kernel a
+buffer gets (no registration needed), the day-to-day flow, plots, and R /
+Quarto. This is the only copy of the guide (`docs/molten.md` points here).
 
-  1. Kernels, not venvs ........................ |nvim-notebooks-concept|
-  2. Registering a kernel ...................... |nvim-notebooks-register|
-  3. Managing kernels (jkernel) ................ |nvim-notebooks-jkernel|
+  1. Kernels: automatic ........................ |nvim-notebooks-concept|
+  2. Choosing another kernel ................... |nvim-notebooks-register|
+  3. Registered kernels (jkernel, optional) .... |nvim-notebooks-jkernel|
   4. Daily flow ................................ |nvim-notebooks-flow|
   5. Plots / images ............................ |nvim-notebooks-images|
   6. Troubleshooting ........................... |nvim-notebooks-trouble|
   7. R / Quarto ................................ |nvim-notebooks-quarto|
 
 ==============================================================================
-1. KERNELS, NOT VENVS                                *nvim-notebooks-concept*
+1. KERNELS: AUTOMATIC                                *nvim-notebooks-concept*
 
-`:MoltenInit` does NOT browse for virtual environments. It lists the Jupyter
-kernels registered on your machine. A venv is not automatically a kernel — you
-register it once, and from then on it appears in the `:MoltenInit` picker.
+You don't register anything. The first run key in a buffer without a kernel
+(<leader>rc, <leader>ra, <leader>e, ..., or <leader>mi on its own) picks one
+and starts it (`lua/notebook/kernel.lua`):
 
-  project venv  --(register once)-->  Jupyter kernel  --(:MoltenInit)-->  Molten
+  Python    A kernelspec generated for the project's interpreter, the same
+            one pyright, the debugger and <leader>tp use (|nvim-config-pyenv|:
+            `.venv`/`venv`/`env` upward, then $VIRTUAL_ENV / $CONDA_PREFIX).
+            - venv has `ipykernel` -> its Python runs the kernel directly.
+            - otherwise -> `uv run --with ipykernel` layers an ephemeral
+              ipykernel over the venv: the venv's packages import, nothing is
+              installed into it (needs `uv`).
+            Without a project venv, a Python kernel named in the notebook's
+            metadata is used if it's registered, else the system Python.
+  R, Julia  The kernel named in the notebook's metadata (`kernelspec:` in the
+            front matter, or a .qmd's `jupyter: ir`), else the first
+            installed kernel for the language (R = IRkernel's `ir`).
 
-Molten reads the kernel list through `jupyter_client` in the Neovim host venv
-`~/.virtualenvs/neovim`, so anything `jupyter kernelspec list` shows, Molten
-sees too.
+The language is the metadata's, else the first code fence's (```python,
+```{r}). Generated specs live in `stdpath("data")/jupyter/kernels`
+(`py-<project>-<hash>`), reach Molten through $JUPYTER_PATH (set at startup,
+so also visible to `jupyter kernelspec list` in :terminal), are refreshed on
+every start and removed once their venv is gone. They never touch
+`~/Library/Jupyter`.
+
+Installing packages: with the uv layer, `%pip install` inside the kernel goes
+to the ephemeral layer and is lost. Install into the venv from a shell
+(`uv pip install --python .venv/bin/python pkg`, or the venv's pip) and
+restart the kernel. With `ipykernel` in the venv, `%pip` installs there.
 
 ==============================================================================
-2. REGISTERING A KERNEL                             *nvim-notebooks-register*
+2. CHOOSING ANOTHER KERNEL                          *nvim-notebooks-register*
 
-Use the `jkernel` helper (`~/.local/bin/jkernel`, already on `$PATH`): >
-     cd /path/to/project
-     source .venv/bin/activate     # or have .venv/ , venv/ , or env/ present
-     jkernel add
-<
-`jkernel add`:
-  1. Finds the venv — an activated $VIRTUAL_ENV first, else .venv/, venv/ or
-     env/ in the current directory.
-  2. Prompts for a kernel name (defaults to the folder name) and display name.
-  3. Installs `ipykernel` into the venv if missing.
-  4. Registers the kernel under `~/Library/Jupyter/kernels/`.
+  <leader>mi    Start the automatic kernel (see above) and say which it is.
+  <leader>mI    :MoltenInit picker: every kernel Jupyter knows, generated
+                ones included, plus running kernels to share.
 
-This is a one-time step per project: the kernelspec stores the absolute path
-to that venv's Python, so everything you `pip install` in the venv is
-available when you run cells.
-
-Doing it manually (no helper): >
-     source .venv/bin/activate
-     pip install ipykernel
-     python -m ipykernel install --user --name my-project \
-       --display-name "My Project"
-<
 ==============================================================================
-3. MANAGING KERNELS (JKERNEL)                        *nvim-notebooks-jkernel*
+3. REGISTERED KERNELS (JKERNEL, OPTIONAL)            *nvim-notebooks-jkernel*
+
+Not needed for Python projects any more. A registered kernel still appears in
+<leader>mI, and is used automatically when a notebook without a project venv
+names it. The `jkernel` helper (`~/.local/bin/jkernel`, not in this repo)
+manages them in `~/Library/Jupyter/kernels`:
 
   jkernel add          Register the current directory's venv (prompts for name)
-  jkernel rm           Remove a kernel — interactive numbered picker
-  jkernel rm <name>    Remove a kernel by name directly
+  jkernel rm [name]    Remove a kernel (picker without a name)
   jkernel list         List registered kernels
 
-Notes:
-  - `jkernel` uses the Neovim host's `jupyter`
-    (`~/.virtualenvs/neovim/bin/jupyter`) so its list matches what Molten sees.
-    Override with `NVIM_JUPYTER=/path/to/jupyter jkernel ...`.
-  - The "Native kernel (python3) is not available" warning from
-    `jupyter kernelspec list` is harmless — the host venv has no kernel of its
-    own.
+It uses the Neovim host's `jupyter` (`~/.virtualenvs/neovim/bin/jupyter`).
+The "Native kernel (python3) is not available" warning from `jupyter
+kernelspec list` is harmless: the host venv has no kernel of its own.
 
 ==============================================================================
 4. DAILY FLOW                                           *nvim-notebooks-flow*
 
 1. Open your `.ipynb` or `.py` in Neovim. `.ipynb` is converted to markdown on
    the fly by jupytext.nvim, so a "cell" is a fenced ```python code block.
-2. `<leader>mi` (:MoltenInit), then pick the kernel for this project.
+2. Run a cell. The first run starts the project's kernel
+   (|nvim-notebooks-concept|); there is no kernel picker.
 3. Evaluate code:
      <leader>rc   Run the whole cell the cursor is in (auto-selects the
                   enclosing ```python fence — the fast path)
@@ -115,9 +117,11 @@ startup:
 ==============================================================================
 6. TROUBLESHOOTING                                   *nvim-notebooks-trouble*
 
-Kernel not in `:MoltenInit` ~
-  It isn't registered. Run `jkernel add` in the project, or check
-  `jkernel list`.
+Wrong or no kernel picked ~
+  `:PyEnv` shows the interpreter the buffer resolves to. "has no ipykernel
+  and `uv` isn't installed": install uv, or `ipykernel` into the venv. A venv
+  broken by a Homebrew upgrade is skipped with a warning; repair it with
+  `python3 -m venv --upgrade <venv>`. <leader>mI picks any kernel by hand.
 
 `:MoltenInit` errors about remote plugins ~
   Run `:UpdateRemotePlugins` and restart Neovim (required after installing or
@@ -129,9 +133,8 @@ Kernel not in `:MoltenInit` ~
   (which is deliberately not on $PATH, see |nvim-config-pyenv|).
 
 Wrong packages at runtime ~
-  The kernel points at a specific venv. If you `pip install`ed into a different
-  environment, install into the venv the kernel was registered from (or
-  re-register it).
+  Check `:PyEnv`; install into that venv and restart the kernel (see the
+  `%pip` note in |nvim-notebooks-concept|).
 
 ==============================================================================
 7. R / QUARTO                                         *nvim-notebooks-quarto*
@@ -154,8 +157,8 @@ Registering R as a kernel ~
      install.packages("IRkernel")
      IRkernel::installspec()
 <
-  After that the R kernel shows up in <leader>mi (:MoltenInit) alongside any
-  Python kernels — pick it the same way. <leader>tR opens a plain, persistent
+  After that, R cells (```{r}, or an R notebook's metadata) start the `ir`
+  kernel on the first run, no picker. <leader>tR opens a plain, persistent
   R REPL terminal (same pattern as <leader>tp/<leader>tN) for work outside
   Molten cells.
 

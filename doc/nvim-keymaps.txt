@@ -458,7 +458,9 @@ for the path to the compiled executable to launch.
 ==============================================================================
 13. NOTEBOOKS (MOLTEN / QUARTO)                       *nvim-keymaps-notebooks*
 
-  <leader>mi    Initialize a Molten kernel (:MoltenInit, kernel picker)
+  <leader>mi    Start the project's kernel (any run key does it too; see
+                |nvim-notebooks-concept|)
+  <leader>mI    Pick a kernel (:MoltenInit)
   <leader>e     Evaluate operator (then a motion)
   <leader>r     (visual) Evaluate the visual selection
   <leader>rc    Run the current cell (auto-selects the ```python or ```{r}

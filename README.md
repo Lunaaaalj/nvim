@@ -93,7 +93,7 @@ Terminals are saved with the session and come back in the same directories.
   <img src=".github/readme/frames/notebook.webp" width="100%" alt="A Jupyter notebook open as Markdown, with Python cells and prose between them.">
 </p>
 
-<kbd>␣ m i</kbd> picks a kernel. <kbd>␣ r c</kbd> runs the cell under the cursor, <kbd>␣ r a</kbd> runs them all, and <kbd>␣ r k</kbd> / <kbd>␣ r j</kbd> run everything above or below. A small `jkernel` helper registers a project's venv as a kernel in one command. The full workflow is in [`docs/molten.md`](docs/molten.md).
+<kbd>␣ r c</kbd> runs the cell under the cursor, <kbd>␣ r a</kbd> runs them all, and <kbd>␣ r k</kbd> / <kbd>␣ r j</kbd> run everything above or below. There's no kernel to register or pick: the first run starts one for the project's own `.venv` (the same interpreter pyright and the debugger use), or the notebook's R kernel. The full workflow is in `:help nvim-notebooks`.
 
 <br>
 
