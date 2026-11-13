@@ -62,7 +62,8 @@ External binaries:
 
 Notebooks / Molten (optional, only if you use notebooks):
   - A Python venv at `~/.virtualenvs/neovim` providing the Neovim Python host.
-    It must contain `pynvim` and `jupyter_client`. Homebrew's python3 is
+    It must contain `pynvim`, `jupyter_client` and `nbformat` (outputs are
+    saved into the .ipynb). Homebrew's python3 is
     PEP-668 externally-managed, so deps are NOT installed there.
   - `jupytext` as a uv tool: `uv tool install jupytext` (lands in
     `~/.local/bin`, which jupytext.nvim finds on `$PATH`).

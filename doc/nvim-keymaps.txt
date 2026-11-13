@@ -458,33 +458,38 @@ for the path to the compiled executable to launch.
 ==============================================================================
 13. NOTEBOOKS (MOLTEN / QUARTO)                       *nvim-keymaps-notebooks*
 
-  <leader>mi    Start the project's kernel (any run key does it too; see
-                |nvim-notebooks-concept|)
-  <leader>mI    Pick a kernel (:MoltenInit)
-  <leader>e     Evaluate operator (then a motion)
-  <leader>r     (visual) Evaluate the visual selection
-  <leader>rc    Run the current cell (auto-selects the ```python or ```{r}
-                fence)
-  <leader>ra    Run all cells, top to bottom
-  <leader>rk    Run every cell above the cursor
-  <leader>rj    Run the current cell and everything below
-  <leader>rr    Re-evaluate the current cell
-  <leader>os    Open the output window
-  <leader>oh    Hide the output
-  <leader>md    Delete the cell
-  <leader>oi    Open image output externally (:MoltenImagePopup)
-  <leader>ov    The last plot full size in a split
-  <leader>of    The cell's whole output in a scratch split
-  <leader>mp    Plot paper: theme colours <-> white (persisted;
-                |nvim-notebooks-images|)
-  <localleader>mx  Open output in the browser (:MoltenOpenInBrowser)
-  <leader>op    Quarto: start live-reload preview (:QuartoPreview)
-  <leader>oP    Quarto: stop preview (:QuartoClosePreview)
+Every key here is BUFFER-LOCAL: it exists only in notebook buffers (.ipynb,
+.qmd, .Rmd, and .py/.R/.jl scripts with `# %%` cells; |nvim-notebooks-cells|).
+The first run in a buffer starts its kernel (|nvim-notebooks-concept|).
 
-Cell keymaps work identically in `.qmd` files (Quarto's ```{r}/```{python}
-chunk headers are recognized the same as plain jupytext fences); .qmd files
-also get per-language LSP inside chunks via quarto-nvim + otter.nvim.
-See |nvim-notebooks| and |nvim-notebooks-quarto| for the full workflow.
+Run ~
+  <leader>mr    Run the cell under the cursor (visual: the selection)
+  <leader>mn    Run the cell and move to the next (adds one at the end)
+  <leader>ma    Run all cells
+  <leader>mk    Run every cell above
+  <leader>mj    Run this cell and everything below
+  <leader>ml    Run the current line
+  <leader>me    Run an operator (then a motion)
+  <leader>mR    Re-run the cell Molten knows under the cursor
+Cells ~
+  ]c  [c        Next / previous cell ([c from inside a cell: its top)
+  ij  aj        Text objects: the cell's code / with its fences (`yij`, `vaj`)
+  <leader>mo    New cell below          <leader>mO    New cell above
+Kernel ~
+  <leader>mi    Start the project's kernel and say which it is
+  <leader>mI    Pick a kernel (:MoltenInit)
+  <leader>mx    Interrupt               <leader>mX    Restart
+Output ~
+  <leader>ms    Show / enter the output float     <leader>mh    Hide it
+  <leader>mf    The cell's whole output in a scratch split
+  <leader>md    Delete the cell's output
+  <leader>mv    The last plot full size in a split
+  <leader>mg    Image in the system viewer        <leader>mb    HTML in the browser
+  <leader>mp    Plot paper: theme colours <-> white (|nvim-notebooks-images|)
+Quarto (.qmd and notebooks) ~
+  <leader>op    Live-reload preview in a browser  <leader>oP    Stop it
+
+See |nvim-notebooks| for the full workflow.
 
 ==============================================================================
 14. LATEX (VIMTEX), TYPST                                 *nvim-keymaps-latex*

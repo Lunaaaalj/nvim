@@ -94,10 +94,9 @@ function M.wanted(buf)
     end
   end
   if not lang then
-    for _, l in ipairs(lines) do
-      local f = l:match("^```{?([%a]+)")
-      if f then lang = f break end
-    end
+    -- the first real code cell (not a ```bash fence in prose)
+    local first = require("notebook.cells").parse(buf)[1]
+    lang = first and first.lang
   end
   lang = norm_lang(lang) or (vim.bo[buf].filetype == "r" and "r") or "python"
   return name, lang
@@ -250,17 +249,19 @@ function M.ensure(fn)
     -- does: output sent while it is still starting goes out before Molten is
     -- listening, and the cell stays "On Hold" although the code ran.
     local win, buf = vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
-    if fn then
-      vim.api.nvim_create_autocmd("User", {
-        pattern = "MoltenKernelReady",
-        once = true,
-        callback = function()
-          if vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_buf(win) == buf then
-            vim.api.nvim_win_call(win, fn)
-          end
-        end,
-      })
-    end
+    local ipynb = vim.api.nvim_buf_get_name(buf):match("%.ipynb$") ~= nil
+    vim.api.nvim_create_autocmd("User", {
+      pattern = "MoltenKernelReady",
+      once = true,
+      callback = function()
+        if not (vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_buf(win) == buf) then return end
+        vim.api.nvim_win_call(win, function()
+          -- outputs saved in the notebook come back with its kernel
+          if ipynb then pcall(vim.cmd, "MoltenImportOutput") end
+          if fn then fn() end
+        end)
+      end,
+    })
     vim.cmd("MoltenInit " .. name)
     if #(running() or {}) == 0 then return end -- Molten has reported why
     vim.notify(("Kernel %s: %s"):format(name, desc))

@@ -140,6 +140,14 @@ return {
               cond = function() return package.loaded["writing.issues"] ~= nil end,
               color = "DiagnosticWarn",
             },
+            -- notebook kernel (lua/notebook): name, busy while cells run
+            {
+              function() return require("notebook").status() end,
+              cond = function() return vim.b.notebook == true end,
+              color = function()
+                return vim.b.notebook_kernel and "NotebookKernel" or "NotebookCellFence"
+              end,
+            },
             { "diagnostics", sources = { "nvim_lsp" }, symbols = { error = " ", warn = " ", info = " ", hint = " " } },
             { lsp_clients, color = { gui = "italic" } },
             { "filetype", colored = true, icon_only = false },

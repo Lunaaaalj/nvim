@@ -6,9 +6,12 @@ return {
             -- ruff, same binary and config (pyproject/ruff.toml) as the ruff LSP:
             -- sort imports, then format.
             python = { "ruff_organize_imports", "ruff_format" },
-            -- R's styler package (Rscript); quarto chunks use the injected
-            -- formatter later (issue #40, phase 4).
+            -- R's styler package (Rscript)
             r = { "styler" },
+            -- code cells, each with its language's formatter above (ruff,
+            -- styler); prose is left alone
+            quarto = { "injected" },
+            rmd = { "injected" },
             lua = { "stylua" },
             cpp = { "clang_format" },
             c = { "clang_format" },

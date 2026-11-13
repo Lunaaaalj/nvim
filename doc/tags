@@ -45,10 +45,13 @@ nvim-keymaps-writing	nvim-keymaps.txt	/*nvim-keymaps-writing*
 nvim-keymaps-zotero	nvim-keymaps.txt	/*nvim-keymaps-zotero*
 nvim-keymaps.txt	nvim-keymaps.txt	/*nvim-keymaps.txt*
 nvim-notebooks	nvim-notebooks.txt	/*nvim-notebooks*
+nvim-notebooks-cells	nvim-notebooks.txt	/*nvim-notebooks-cells*
 nvim-notebooks-concept	nvim-notebooks.txt	/*nvim-notebooks-concept*
 nvim-notebooks-flow	nvim-notebooks.txt	/*nvim-notebooks-flow*
 nvim-notebooks-images	nvim-notebooks.txt	/*nvim-notebooks-images*
+nvim-notebooks-ipynb	nvim-notebooks.txt	/*nvim-notebooks-ipynb*
 nvim-notebooks-jkernel	nvim-notebooks.txt	/*nvim-notebooks-jkernel*
+nvim-notebooks-keys	nvim-notebooks.txt	/*nvim-notebooks-keys*
 nvim-notebooks-quarto	nvim-notebooks.txt	/*nvim-notebooks-quarto*
 nvim-notebooks-register	nvim-notebooks.txt	/*nvim-notebooks-register*
 nvim-notebooks-trouble	nvim-notebooks.txt	/*nvim-notebooks-trouble*

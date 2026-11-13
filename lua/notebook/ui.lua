@@ -25,6 +25,9 @@ function M.highlights()
   -- output, not a comment: nearly full foreground, no italics
   set("MoltenVirtualText", { fg = colors.blend(fg, bg, 0.85) })
   set("MoltenCell", { bg = colors.blend(colors.accent() or fg, bg, 0.10) })
+  -- cell fences / `# %%` markers, and the lualine kernel indicator
+  set("NotebookCellFence", { fg = colors.blend(fg, bg, 0.35) })
+  set("NotebookKernel", { fg = colors.accent() or fg })
 end
 
 local function unblend(buf)

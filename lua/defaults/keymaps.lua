@@ -53,7 +53,7 @@ vim.keymap.set("n", "<leader>tp", terms("repl", "python"), { desc = "Terminal: P
 vim.keymap.set("n", "<leader>tN", terms("repl", "node"), { desc = "Terminal: Node REPL" })
 vim.keymap.set("n", "<leader>tR", terms("repl", "R"), { desc = "Terminal: R REPL" })
 
--- Music (lua/music/): drives the Apple Music app. <leader>m is Molten's.
+-- Music (lua/music/): drives the Apple Music app. <leader>m is notebooks'.
 local function music(fn, ...)
     local args = { ... }
     return function() require("music")[fn](unpack(args)) end
@@ -73,130 +73,8 @@ vim.keymap.set("t", "<C-j>", [[<C-\><C-n><C-w>j]], { desc = "Terminal: window do
 vim.keymap.set("t", "<C-k>", [[<C-\><C-n><C-w>k]], { desc = "Terminal: window up" })
 vim.keymap.set("t", "<C-l>", [[<C-\><C-n><C-w>l]], { desc = "Terminal: window right" })
 
--- Every evaluation goes through notebook.kernel.ensure(): with no kernel in the
--- buffer it starts the project's one (generated kernelspec for the project's
--- venv, or the notebook's R/Julia kernel) instead of prompting.
-local function with_kernel(fn)
-    return function() require("notebook.kernel").ensure(fn) end
-end
-vim.keymap.set("n", "<leader>mi", with_kernel(), { desc = "Molten: start the project's kernel" })
-vim.keymap.set("n", "<leader>mI", ":MoltenInit<CR>", { desc = "Molten: pick a kernel", silent = true })
-vim.keymap.set("n", "<leader>e", with_kernel(function() vim.cmd("MoltenEvaluateOperator") end), { desc = "evaluate operator" })
-vim.keymap.set("n", "<leader>os", ":noautocmd MoltenEnterOutput<CR>", { desc = "open output window", silent = true })
-vim.keymap.set("n", "<leader>rr", with_kernel(function() vim.cmd("MoltenReevaluateCell") end), { desc = "re-eval cell" })
-vim.keymap.set("v", "<leader>r", function()
-    vim.cmd("normal! \27") -- leave visual mode so '< and '> are set
-    require("notebook.kernel").ensure(function()
-        -- separate calls: MoltenEvaluateVisual takes args, so `|` would be one
-        vim.cmd("MoltenEvaluateVisual")
-        vim.cmd("normal! gv")
-    end)
-end, { desc = "execute visual selection" })
-
--- Run whole notebook cells with a single keystroke. Notebooks open as jupytext
--- markdown, so a "cell" is a fenced code block: opening fence carries a language
--- (```python), closing fence is bare (```). Quarto/R-Markdown documents (.qmd)
--- use curly-brace chunk headers instead (```{r}, ```{python}), so both forms
--- are matched. We collect those spans and hand line ranges to Molten
--- (MoltenEvaluateRange auto-resolves a single attached kernel, and the kernel
--- runs queued evaluations in order).
-local function molten_cells()
-    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-    local cells, open = {}, nil
-    for i, l in ipairs(lines) do
-        if not open then
-            if l:match("^```%a") or l:match("^```{%a") then
-                open = i
-            end
-        elseif l:match("^```") then
-            cells[#cells + 1] = { open = open, close = i }
-            open = nil
-        end
-    end
-    return cells
-end
-
--- Evaluate a list of {open, close} cells, skipping empties.
-local function molten_run(cells)
-    if #cells == 0 then return 0 end
-    local ran = 0
-    require("notebook.kernel").ensure(function()
-        for _, c in ipairs(cells) do
-            if c.close - 1 >= c.open + 1 then
-                vim.fn.MoltenEvaluateRange(c.open + 1, c.close - 1)
-                ran = ran + 1
-            end
-        end
-    end)
-    return ran
-end
-
--- Split all cells into those above the cursor and those at/below it. If the
--- cursor is inside a cell, that cell counts as "below" (current + below);
--- otherwise the split falls on the cursor line.
-local function molten_split()
-    local cells = molten_cells()
-    local cur = vim.api.nvim_win_get_cursor(0)[1]
-    local idx
-    for i, c in ipairs(cells) do
-        if cur >= c.open and cur <= c.close then
-            idx = i
-            break
-        end
-    end
-    local above, below = {}, {}
-    for i, c in ipairs(cells) do
-        local is_above = idx and i < idx or (not idx and c.close < cur)
-        if is_above then
-            above[#above + 1] = c
-        else
-            below[#below + 1] = c
-        end
-    end
-    return above, below
-end
-
-local function molten_eval_cell()
-    local cur = vim.api.nvim_win_get_cursor(0)[1]
-    local _, below = molten_split()
-    local c = below[1]
-    -- Only fire when the cursor is actually inside the cell, not in prose above it.
-    if c and cur >= c.open and cur <= c.close then
-        molten_run({ c })
-    else
-        vim.notify("Not inside a code cell", vim.log.levels.WARN)
-    end
-end
-
-vim.keymap.set("n", "<leader>rc", molten_eval_cell, { desc = "Molten run current cell", silent = true })
-vim.keymap.set("n", "<leader>ra", function()
-    molten_run(molten_cells())
-end, { desc = "Molten run all cells", silent = true })
-vim.keymap.set("n", "<leader>rk", function()
-    local above = molten_split()
-    molten_run(above)
-end, { desc = "Molten run cells above", silent = true })
-vim.keymap.set("n", "<leader>rj", function()
-    local _, below = molten_split()
-    molten_run(below)
-end, { desc = "Molten run current cell and below", silent = true })
-vim.keymap.set("n", "<leader>oh", ":MoltenHideOutput<CR>", { desc = "close output window", silent = true })
-vim.keymap.set("n", "<leader>md", ":MoltenDelete<CR>", { desc = "delete Molten cell", silent = true })
-
--- if you work with html outputs:
-vim.keymap.set("n", "<localleader>mx", ":MoltenOpenInBrowser<CR>", { desc = "open output in browser", silent = true })
--- open the current cell's image output in an external viewer (use in Alacritty)
-vim.keymap.set("n", "<leader>oi", ":MoltenImagePopup<CR>", { desc = "open image output externally", silent = true })
--- lua/notebook/: the last plot full size in a split, the cell's whole output in
--- a scratch buffer, and the plot paper (theme colours <-> white, persisted).
-vim.keymap.set("n", "<leader>ov", function() require("notebook.plots").view() end, { desc = "Molten: last plot in a split" })
-vim.keymap.set("n", "<leader>of", function() require("notebook.ui").full_output() end, { desc = "Molten: full output in a split" })
-vim.keymap.set("n", "<leader>mp", function() require("notebook.plots").toggle() end, { desc = "Molten: plot paper theme / white" })
-
--- Quarto: live-reload preview (runs `quarto preview` in an integrated
--- terminal tab and opens/refreshes a browser); QuartoClosePreview stops it.
-vim.keymap.set("n", "<leader>op", ":QuartoPreview<CR>", { desc = "Quarto: start preview" })
-vim.keymap.set("n", "<leader>oP", ":QuartoClosePreview<CR>", { desc = "Quarto: stop preview" })
+-- Notebooks (Molten): every key is buffer-local under <leader>m, attached to
+-- .ipynb/.qmd/.Rmd buffers and `# %%` scripts by lua/notebook/init.lua.
 
 -- LaTeX (VimTeX). VimTeX already ships its own `\l*` maps on localleader; these
 -- mirror the ones worth memorising under <leader>l so LaTeX reads like every

@@ -12,14 +12,15 @@ return {
         -- delegated to otter.nvim. Execution stays on Molten (see molten.lua /
         -- keymaps.lua), not quarto-nvim's own runner below.
         languages = { "r", "python", "julia", "bash" },
-        chunks = "curly", -- ```{r}, ```{python} chunk headers
+        -- ```{r} chunks and plain ```python fences: notebooks (.ipynb) open
+        -- as quarto with jupytext's plain fences (jupytext.lua)
+        chunks = "all",
         diagnostics = { enabled = true, triggers = { "BufWritePost" } },
         completion = { enabled = true },
       },
       codeRunner = {
-        -- Cell execution goes through Molten's existing flow (<leader>rc/ra/
-        -- rk/rj), which molten_cells() in keymaps.lua now also recognizes for
-        -- curly-brace Quarto chunks. Don't stand up a second execution path.
+        -- Cells run through Molten (lua/notebook/, <leader>m...), which
+        -- reads curly and plain fences. Don't stand up a second execution path.
         enabled = false,
       },
     },

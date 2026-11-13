@@ -93,7 +93,7 @@ Terminals are saved with the session and come back in the same directories.
   <img src=".github/readme/frames/notebook.webp" width="100%" alt="A Jupyter notebook open as Markdown, with Python cells and prose between them.">
 </p>
 
-<kbd>␣ r c</kbd> runs the cell under the cursor, <kbd>␣ r a</kbd> runs them all, and <kbd>␣ r k</kbd> / <kbd>␣ r j</kbd> run everything above or below. There's no kernel to register or pick: the first run starts one for the project's own `.venv` (the same interpreter pyright and the debugger use), or the notebook's R kernel. The full workflow is in `:help nvim-notebooks`.
+In notebooks (`.ipynb`, `.qmd`, and `# %%` scripts) <kbd>␣ m r</kbd> runs the cell under the cursor, <kbd>␣ m n</kbd> runs it and moves on, <kbd>␣ m a</kbd> runs them all, and <kbd>]c</kbd> / <kbd>[c</kbd> jump between cells; the keys exist only in those buffers. Outputs are written back into the `.ipynb` on save. There's no kernel to register or pick: the first run starts one for the project's own `.venv` (the same interpreter pyright and the debugger use), or the notebook's R kernel. The full workflow is in `:help nvim-notebooks`.
 
 <br>
 
@@ -152,7 +152,7 @@ Leader is <kbd>Space</kbd> (written <kbd>␣</kbd> here) and localleader is <kbd
 | <kbd>C-\\</kbd> &ensp; <kbd>␣ t n</kbd> &ensp; <kbd>␣ t s</kbd> | Last terminal &ensp;·&ensp; new shell &ensp;·&ensp; terminal picker |
 | <kbd>␣ a n</kbd> &ensp; <kbd>␣ a l</kbd> &ensp; <kbd>␣ a c</kbd> | New Claude chat &ensp;·&ensp; chat list &ensp;·&ensp; claudecode split |
 | <kbd>␣ l l</kbd> &ensp; <kbd>␣ l v</kbd> &ensp; <kbd>␣ p v</kbd> | Compile LaTeX &ensp;·&ensp; PDF preview &ensp;·&ensp; Markdown preview |
-| <kbd>␣ m i</kbd> &ensp; <kbd>␣ r c</kbd> &ensp; <kbd>␣ r a</kbd> | Start kernel &ensp;·&ensp; run cell &ensp;·&ensp; run all |
+| <kbd>␣ m r</kbd> &ensp; <kbd>␣ m n</kbd> &ensp; <kbd>␣ m a</kbd> | Run cell &ensp;·&ensp; run and advance &ensp;·&ensp; run all (notebooks) |
 | <kbd>␣ c s</kbd> &ensp; <kbd>␣ u b</kbd> &ensp; <kbd>␣ u B</kbd> | Colour scheme &ensp;·&ensp; transparent ↔ solid &ensp;·&ensp; dark ↔ light |
 | <kbd>␣ z</kbd> &ensp; <kbd>␣ u h</kbd> &ensp; <kbd>␣ u f</kbd> | Zen mode &ensp;·&ensp; inlay hints &ensp;·&ensp; format on save |
 | <kbd>␣ d b</kbd> &ensp; <kbd>␣ d c</kbd> &ensp; <kbd>␣ d u</kbd> | Breakpoint &ensp;·&ensp; continue &ensp;·&ensp; debugger UI |

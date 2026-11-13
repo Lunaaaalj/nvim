@@ -19,7 +19,7 @@ Quarto. This is the only copy of the guide (`docs/molten.md` points here).
 1. KERNELS: AUTOMATIC                                *nvim-notebooks-concept*
 
 You don't register anything. The first run key in a buffer without a kernel
-(<leader>rc, <leader>ra, <leader>e, ..., or <leader>mi on its own) picks one
+(<leader>mr, <leader>ma, <leader>me, ..., or <leader>mi on its own) picks one
 and starts it (`lua/notebook/kernel.lua`):
 
   Python    A kernelspec generated for the project's interpreter, the same
@@ -73,35 +73,80 @@ kernelspec list` is harmless: the host venv has no kernel of its own.
 ==============================================================================
 4. DAILY FLOW                                           *nvim-notebooks-flow*
 
-1. Open your `.ipynb` or `.py` in Neovim. `.ipynb` is converted to markdown on
-   the fly by jupytext.nvim, so a "cell" is a fenced ```python code block.
-2. Run a cell. The first run starts the project's kernel
-   (|nvim-notebooks-concept|); there is no kernel picker.
-3. Evaluate code:
-     <leader>rc   Run the whole cell the cursor is in (auto-selects the
-                  enclosing ```python fence — the fast path)
-     <leader>rr   Re-evaluate the current cell
-     <leader>r    (visual) Evaluate an arbitrary visual selection
-     <leader>e    Evaluate operator (e.g. <leader>e then a motion)
-
-   Bulk execution (like VSCode run-all / above / below):
-     <leader>ra   Run all cells, top to bottom
-     <leader>rk   Run every cell above the current one (k = up)
-     <leader>rj   Run the current cell and everything below (j = down)
-
-   Cells run in order: the kernel queues evaluations, so outputs land in the
-   right cells even though the requests fire at once. If the cursor is in prose
-   between cells, the split falls on the cursor line.
-4. Manage output:
-     <leader>os   Open the output window
-     <leader>oh   Hide output
-     <leader>of   The cell's whole output in a scratch split (the float and
-                  the virtual text are capped in height)
-     <leader>md   Delete the cell
-
-   Output is shown as virtual lines under the cell; the float stays closed
-   until <leader>os. Output windows are solid (a slightly tinted background,
+1. Open a `.ipynb`, `.qmd`, `.Rmd`, or a `.py`/`.R` script with `# %%` cells.
+   A `.ipynb` is converted on the fly by jupytext.nvim and opens as a Quarto
+   buffer (|nvim-notebooks-ipynb|).
+2. Run a cell with <leader>mr (or <leader>mn to run and advance). The first
+   run starts the project's kernel (|nvim-notebooks-concept|); there is no
+   kernel picker. The statusline shows the kernel, and "busy" while cells run.
+3. Output is shown as virtual lines under the cell; the float stays closed
+   until <leader>ms. Output windows are solid (a slightly tinted background,
    green/red border for success/failure) in transparent and solid mode.
+   Cells run in order: Molten queues them, so outputs land in the right cells
+   even though the requests fire at once.
+
+                                                        *nvim-notebooks-keys*
+Every key here is BUFFER-LOCAL: it exists only in notebook buffers (.ipynb,
+.qmd, .Rmd, and .py/.R/.jl scripts with `# %%` cells; |nvim-notebooks-cells|).
+The first run in a buffer starts its kernel (|nvim-notebooks-concept|).
+
+Run ~
+  <leader>mr    Run the cell under the cursor (visual: the selection)
+  <leader>mn    Run the cell and move to the next (adds one at the end)
+  <leader>ma    Run all cells
+  <leader>mk    Run every cell above
+  <leader>mj    Run this cell and everything below
+  <leader>ml    Run the current line
+  <leader>me    Run an operator (then a motion)
+  <leader>mR    Re-run the cell Molten knows under the cursor
+Cells ~
+  ]c  [c        Next / previous cell ([c from inside a cell: its top)
+  ij  aj        Text objects: the cell's code / with its fences (`yij`, `vaj`)
+  <leader>mo    New cell below          <leader>mO    New cell above
+Kernel ~
+  <leader>mi    Start the project's kernel and say which it is
+  <leader>mI    Pick a kernel (:MoltenInit)
+  <leader>mx    Interrupt               <leader>mX    Restart
+Output ~
+  <leader>ms    Show / enter the output float     <leader>mh    Hide it
+  <leader>mf    The cell's whole output in a scratch split
+  <leader>md    Delete the cell's output
+  <leader>mv    The last plot full size in a split
+  <leader>mg    Image in the system viewer        <leader>mb    HTML in the browser
+  <leader>mp    Plot paper: theme colours <-> white (|nvim-notebooks-images|)
+Quarto (.qmd and notebooks) ~
+  <leader>op    Live-reload preview in a browser  <leader>oP    Stop it
+
+                                                       *nvim-notebooks-cells*
+What counts as a cell ~
+  ```{r}, ```{python echo=false}   Quarto / R Markdown chunks, any language
+  ```python, ```r, ```julia        plain fences, only these languages: a
+                                   ```bash or ```text block in prose is never
+                                   sent to the kernel (nor anything inside
+                                   jupytext's `<!-- #region -->` markers)
+  # %%                             percent scripts; `# %% [markdown]` cells
+                                   are skipped, code above the first marker
+                                   is a cell of its own
+  Fence lines and `# %%` markers are dimmed. Formatting (format on save,
+  <leader>cf) formats each cell with its language's formatter (conform's
+  `injected`: ruff for Python, styler for R) and leaves prose alone.
+
+                                                       *nvim-notebooks-ipynb*
+Notebooks (.ipynb) ~
+  The buffer holds jupytext's Markdown text (```python fences) with filetype
+  `quarto`: otter.nvim gives each cell its language's LSP (pyright, ruff,
+  R), and the Markdown-only tools (render-markdown, prettier, <leader>pv)
+  stay out. jupytext's own "quarto" text format is not used: it turned the
+  first `# Heading` into front matter and wrote it back into the notebook as
+  a raw YAML cell.
+  Outputs: when the notebook's kernel starts, the outputs saved in the file
+  are loaded back (:MoltenImportOutput); every `:w` writes the outputs
+  computed here into the `.ipynb` (:MoltenExportOutput), so they are there in
+  Jupyter, on GitHub, and next time. Molten matches outputs to cells by their
+  code, so a cell edited since it ran can't be matched and the export stops
+  with a message (re-run it). Molten stores printed text as `text/plain`
+  display data rather than a `stream`; it renders the same. Needs `nbformat`
+  in the Neovim host venv.
 
 Cells without inline images show their results as virtual text (e.g. in
 Alacritty).
@@ -116,11 +161,11 @@ startup:
   - Capable terminal (kitty, the usual setup) -> uses image.nvim, plots
     render inline, sized to the cell height (retina screens get a higher
     figure dpi, so plots aren't half size).
-      <leader>ov       The last plot full size in a split
+      <leader>mv       The last plot full size in a split
   - Alacritty and others -> molten_image_provider = "none", output is
     virtual text. View plots externally:
-      <leader>oi       :MoltenImagePopup     (external image viewer)
-      <localleader>mx  :MoltenOpenInBrowser
+      <leader>mg       :MoltenImagePopup     (external image viewer)
+      <leader>mb       :MoltenOpenInBrowser
 
 Plot paper ~
   <leader>mp toggles how plots are drawn (persisted, applies to the next plot,
@@ -167,10 +212,9 @@ Wrong packages at runtime ~
     diagnostics/completion/hover PER LANGUAGE inside each chunk (an {r} chunk
     gets R's LSP, a {python} chunk gets Python's). Editing support only, does
     not run anything.
-  - Execution — still goes through Molten, exactly like .ipynb/.py.
-    molten_cells() in lua/defaults/keymaps.lua recognizes both plain jupytext
-    fences (```python) and Quarto's curly-brace chunk headers (```{r},
-    ```{python}), so <leader>rc/ra/rk/rj work unchanged in .qmd files.
+  - Execution — goes through Molten, exactly like .ipynb and scripts, with
+    the same keys (|nvim-notebooks-keys|): curly chunk headers (```{r},
+    ```{python}) are cells like plain fences (|nvim-notebooks-cells|).
 
 Registering R as a kernel ~
   Unlike Python, R has no per-project venv concept here — IRkernel

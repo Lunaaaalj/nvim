@@ -30,7 +30,7 @@ return {
             vim.g.molten_output_win_max_height = 40
             -- Output (text and, with image.nvim, plots: molten_image_location
             -- "both") is shown as virtual lines under the cell, so the float
-            -- stays closed until <leader>os; <leader>of = everything in a split.
+            -- stays closed until <leader>ms; <leader>mf = everything in a split.
             vim.g.molten_auto_open_output = false
             -- success/failure border colours (themed in lua/notebook/ui.lua)
             vim.g.molten_use_border_highlights = true
