@@ -94,9 +94,13 @@ function M.wanted(buf)
     end
   end
   if not lang then
-    -- the first real code cell (not a ```bash fence in prose)
-    local first = require("notebook.cells").parse(buf)[1]
-    lang = first and first.lang
+    -- the code cell being run (an R chunk in a .qmd that starts with Python
+    -- wants R), else the first real one (not a ```bash fence in prose)
+    local cells = require("notebook.cells")
+    local line = vim.api.nvim_get_current_buf() == buf and vim.api.nvim_win_get_cursor(0)[1] or 0
+    local c, _, all = cells.at(line, buf)
+    c = c or all[1]
+    lang = c and c.lang
   end
   lang = norm_lang(lang) or (vim.bo[buf].filetype == "r" and "r") or "python"
   return name, lang
@@ -127,10 +131,27 @@ local function sweep()
   end
 end
 
---- Write (or refresh) the kernelspec for a Python environment.
+-- Working directory. Molten can't pass one, so jupyter_client would start
+-- every kernel in the Python host's cwd (Neovim's cwd when the host spawned).
+-- Chunks are written for the document's folder instead (`source("../R/x.R")`,
+-- `pd.read_csv("data.csv")`), as Quarto/knitr and Jupyter run them, so the
+-- spec (rewritten on every start) carries it: `sh` cds and execs the kernel,
+-- whose pid stays the one jupyter_client signals.
+local function doc_dir(buf)
+  local name = vim.api.nvim_buf_get_name(buf)
+  return name ~= "" and vim.fs.dirname(name) or vim.fn.getcwd()
+end
+
+local function in_dir(dir, argv)
+  return vim.list_extend({ "/bin/sh", "-c", 'cd "$0" && exec "$@"', dir }, argv)
+end
+
+--- Write (or refresh) the kernelspec for a Python environment, started in
+--- `dir` (the document's folder).
 ---@param env PyEnv
+---@param dir? string
 ---@return string? name, string? how_or_error
-function M.python_spec(env)
+function M.python_spec(env, dir)
   local name, label = spec_name(env)
   local argv, how
   if has_ipykernel(env.prefix) then
@@ -146,6 +167,7 @@ function M.python_spec(env)
     "-m", "ipykernel_launcher", "-f", "{connection_file}",
     "--IPKernelApp.exec_files=" .. plots.startup_py, -- plot paper hook
   })
+  if dir then argv = in_dir(dir, argv) end
   local kenv = plots.kernel_env()
   if env.prefix then
     -- `!pip`, `!python` and subprocesses inside the kernel see the venv
@@ -165,24 +187,51 @@ function M.python_spec(env)
   return name, how
 end
 
+-- R's own libraries (system + user), as R sees them without any profile.
+-- renv projects replace .libPaths() with the project library (and a sandbox
+-- standing in for the system one), so IRkernel, installed machine-wide, is
+-- gone and the kernel dies on startup. Queried once per session.
+local global_libs
+local function r_global_libs(r)
+  if global_libs == nil then
+    local res = vim.system({ r, "--vanilla", "--slave", "-e", 'cat(.libPaths(), sep = "\\n")' }, { text = true }):wait(5000)
+    global_libs = res.code == 0 and vim.split(vim.trim(res.stdout or ""), "\n", { trimempty = true }) or {}
+  end
+  return global_libs
+end
+
+--- R code that makes IRkernel loadable inside a renv (or packrat) project:
+--- the global libraries go *after* the project's, so the project's packages
+--- still win and only what it lacks (IRkernel and its deps) comes from them.
+local function r_libfix(r)
+  local libs = vim.tbl_map(function(p) return ("%q"):format(p) end, r_global_libs(r))
+  local fallback = 'file.path(R.home(), "library")'
+  return ('if (!requireNamespace("IRkernel", quietly = TRUE)) .libPaths(c(.libPaths(), %s))'):format(
+    #libs > 0 and table.concat(libs, ", ") or fallback)
+end
+
 --- An installed IRkernel spec, wrapped to source kernel_startup.R (plot
---- paper) before IRkernel::main(). Returns the wrapper's name, or `name`
---- unchanged when the spec doesn't look like IRkernel's.
-local function wrap_r(name, info)
+--- paper) before IRkernel::main(), and to find IRkernel inside renv projects.
+--- R starts in the project root (the nearest renv.lock/.Rprofile, so the
+--- project's profile and renv run as in an R session there) and then works
+--- in the document's folder, as knitr does.
+--- Returns the wrapper's name, or `name` unchanged when the spec doesn't look
+--- like IRkernel's.
+local function wrap_r(name, info, dir)
   local spec = read_json(("%s/kernels/%s/kernel.json"):format(info.dir, name))
   if not spec or type(spec.argv) ~= "table" then return name end
   local plots = require("notebook.plots")
   local argv, found = {}, false
   for _, a in ipairs(spec.argv) do
     if a:find("IRkernel::main()", 1, true) then
-      a = ("source(%q); %s"):format(plots.startup_r, a)
+      a = ("%s; setwd(%q); source(%q); %s"):format(r_libfix(spec.argv[1]), dir, plots.startup_r, a)
       found = true
     end
     argv[#argv + 1] = a
   end
   if not found then return name end
   local wrapped = name .. "-nvim"
-  spec.argv = argv
+  spec.argv = in_dir(vim.fs.root(dir, { "renv.lock", ".Rprofile" }) or dir, argv)
   spec.display_name = (spec.display_name or name) .. " (nvim)"
   spec.env = vim.tbl_extend("force", spec.env or {}, plots.kernel_env())
   spec.metadata = vim.tbl_extend("force", spec.metadata or {}, { nvim = { wraps = name } })
@@ -191,8 +240,8 @@ local function wrap_r(name, info)
   return wrapped
 end
 
-local function use(name, info, desc)
-  if info.language == "r" and not name:match("%-nvim$") then name = wrap_r(name, info) end
+local function use(name, info, desc, dir)
+  if info.language == "r" and not name:match("%-nvim$") then name = wrap_r(name, info, dir) end
   return name, desc
 end
 
@@ -202,6 +251,7 @@ function M.pick(buf)
   buf = buf or vim.api.nvim_get_current_buf()
   local name, lang = M.wanted(buf)
   local installed = M.installed()
+  local dir = doc_dir(buf)
   if lang == "python" then
     local env = require("pyenv").find(buf)
     -- a project environment always wins; without one, honour the notebook's
@@ -209,17 +259,17 @@ function M.pick(buf)
     if env.source == "system" and name and installed[name] and installed[name].language == "python" then
       return name, "from the notebook's metadata"
     end
-    local k, how = M.python_spec(env)
+    local k, how = M.python_spec(env, dir)
     if not k then return nil, how end
     return k, ("%s (%s, %s)"):format(env.python, env.source, how)
   end
-  if name and installed[name] then return use(name, installed[name], "from the notebook's metadata") end
+  if name and installed[name] then return use(name, installed[name], "from the notebook's metadata", dir) end
   local names = vim.tbl_keys(installed)
   table.sort(names)
   for _, n in ipairs(names) do
     -- skip our own wrappers here: the original is found and re-wrapped fresh
     if installed[n].language == lang and not n:match("%-nvim$") then
-      return use(n, installed[n], installed[n].display_name)
+      return use(n, installed[n], installed[n].display_name, dir)
     end
   end
   local hint = lang == "r" and ' (install.packages("IRkernel"); IRkernel::installspec())' or ""
@@ -235,6 +285,79 @@ local function running()
   return ks
 end
 
+-- Why the checks below exist: until a kernel answers kernel_info, every
+-- Molten tick (a *synchronous* call, every 500 ms) runs jupyter_client's
+-- wait_for_ready(timeout=0), which still blocks up to ~1.2 s on the shell
+-- channel. Neovim freezes while a kernel boots, and for good if it dies on
+-- startup (Molten never gives up on it). So a kernel is only handed to Molten
+-- once its command is known to work, and one that doesn't come up in time is
+-- shut down.
+M.ready_timeout = 30000
+
+-- Where Molten's kernels start: the Python host's cwd (jupyter_client's
+-- default), which is Neovim's cwd when the host spawned, not today's :cd.
+local function host_cwd()
+  local ok, cwd = pcall(vim.fn.py3eval, "__import__('os').getcwd()")
+  return ok and cwd or vim.fn.getcwd()
+end
+
+local function spec_file(name)
+  for _, d in ipairs(data_dirs()) do
+    local f = ("%s/kernels/%s/kernel.json"):format(d, name)
+    if vim.uv.fs_stat(f) then return read_json(f) end
+  end
+end
+
+--- A quick command that fails the way the kernel would: the same interpreter,
+--- env and cwd, importing ipykernel (which also fills uv's cache, the slow
+--- part of a first `uv run --with ipykernel`) or loading IRkernel after the
+--- same profile/renv/libPaths steps. nil for kernels we don't know.
+local function preflight_cmd(spec)
+  local argv = spec.argv or {}
+  for i, a in ipairs(argv) do
+    if a == "-m" and argv[i + 1] == "ipykernel_launcher" then
+      local cmd = vim.list_slice(argv, 1, i - 1)
+      vim.list_extend(cmd, { "-c", "import ipykernel" })
+      return cmd
+    end
+    if (a == "-e" or a == "--eval") and (argv[i + 1] or ""):find("IRkernel::main()", 1, true) then
+      local cmd = vim.list_slice(argv, 1, i)
+      cmd[#cmd + 1] = argv[i + 1]:gsub("IRkernel::main%(%)",
+        'quit(status = if (requireNamespace("IRkernel", quietly = TRUE)) 0 else 3)')
+      return cmd
+    end
+  end
+end
+
+local function preflight(name, cwd, done)
+  local spec = spec_file(name)
+  if not spec then return done(true) end
+  local cmd = preflight_cmd(spec)
+  if not cmd then return done(true) end
+  local env = {}
+  for k, v in pairs(spec.env or {}) do
+    env[k] = tostring(v):gsub("%${PATH}", vim.env.PATH or "")
+  end
+  local ok, err = pcall(vim.system, cmd, { cwd = cwd, env = env, text = true, timeout = 300000 }, function(res)
+    vim.schedule(function()
+      if res.code == 0 then return done(true) end
+      local out = vim.trim((res.stderr or "") .. "\n" .. (res.stdout or ""))
+      local tail = vim.list_slice(vim.split(out, "\n"), math.max(1, #vim.split(out, "\n") - 8))
+      if res.code == 3 then
+        tail = { ("IRkernel isn't loadable from %s"):format(cwd), unpack(tail) }
+      elseif res.signal == 15 or res.signal == 9 then
+        tail = { "timed out", unpack(tail) }
+      elseif out == "" then
+        tail = { ("%s exited with code %d"):format(cmd[1], res.code) }
+      end
+      done(false, table.concat(tail, "\n"))
+    end)
+  end)
+  if not ok then done(false, tostring(err)) end
+end
+
+local starting = {} -- buf -> callbacks waiting for its kernel
+
 --- Make sure the current buffer has a kernel, then call `fn`.
 ---@param fn? fun()
 function M.ensure(fn)
@@ -242,32 +365,71 @@ function M.ensure(fn)
   if not ks then
     return vim.notify("Molten isn't available (run :UpdateRemotePlugins and restart)", vim.log.levels.ERROR)
   end
-  if #ks == 0 then
-    local name, desc = M.pick()
-    if not name then return vim.notify("Kernel: " .. desc, vim.log.levels.ERROR) end
+  if #ks > 0 then
+    if fn then fn() end
+    return
+  end
+  local win, buf = vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
+  if starting[buf] then
+    -- a second run while the kernel starts: queue it behind the first
+    if fn then table.insert(starting[buf], fn) end
+    return
+  end
+  local name, desc = M.pick()
+  if not name then return vim.notify("Kernel: " .. desc, vim.log.levels.ERROR) end
+  starting[buf] = { fn }
+  local cwd = host_cwd()
+  vim.notify(("Starting kernel %s…"):format(name))
+
+  local function finish(run)
+    local fns = starting[buf] or {}
+    starting[buf] = nil
+    if not run or not (vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_buf(win) == buf) then return end
+    vim.api.nvim_win_call(win, function()
+      -- outputs saved in the notebook come back with its kernel
+      if vim.api.nvim_buf_get_name(buf):match("%.ipynb$") then pcall(vim.cmd, "MoltenImportOutput") end
+      for _, f in pairs(fns) do f() end
+    end)
+  end
+
+  preflight(name, cwd, function(ok, err)
+    if not ok then
+      starting[buf] = nil
+      return vim.notify(("Kernel %s can't start (nothing was handed to Molten):\n%s"):format(name, err),
+        vim.log.levels.ERROR)
+    end
+    if not vim.api.nvim_buf_is_valid(buf) then starting[buf] = nil return end
     -- Evaluate only once the kernel is ready, as Molten's own init-and-run
     -- does: output sent while it is still starting goes out before Molten is
     -- listening, and the cell stays "On Hold" although the code ran.
-    local win, buf = vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
-    local ipynb = vim.api.nvim_buf_get_name(buf):match("%.ipynb$") ~= nil
-    vim.api.nvim_create_autocmd("User", {
+    local ready = false
+    local au = vim.api.nvim_create_autocmd("User", {
       pattern = "MoltenKernelReady",
       once = true,
       callback = function()
-        if not (vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_buf(win) == buf) then return end
-        vim.api.nvim_win_call(win, function()
-          -- outputs saved in the notebook come back with its kernel
-          if ipynb then pcall(vim.cmd, "MoltenImportOutput") end
-          if fn then fn() end
-        end)
+        ready = true
+        finish(true)
       end,
     })
-    vim.cmd("MoltenInit " .. name)
-    if #(running() or {}) == 0 then return end -- Molten has reported why
+    vim.api.nvim_buf_call(buf, function() vim.cmd("MoltenInit " .. name) end)
+    if #(running() or {}) == 0 then -- Molten has reported why
+      pcall(vim.api.nvim_del_autocmd, au)
+      starting[buf] = nil
+      return
+    end
     vim.notify(("Kernel %s: %s"):format(name, desc))
-    return
-  end
-  if fn then fn() end
+    -- a kernel that never answers would keep Molten's tick blocking forever
+    vim.defer_fn(function()
+      if ready then return end
+      pcall(vim.api.nvim_del_autocmd, au)
+      finish(false)
+      if vim.api.nvim_buf_is_valid(buf) then
+        vim.api.nvim_buf_call(buf, function() pcall(vim.cmd, "MoltenDeinit") end)
+      end
+      vim.notify(("Kernel %s didn't answer within %d s; shut it down"):format(name, M.ready_timeout / 1000),
+        vim.log.levels.ERROR)
+    end, M.ready_timeout)
+  end)
 end
 
 return M

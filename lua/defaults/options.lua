@@ -113,13 +113,13 @@ vim.api.nvim_create_autocmd("FocusGained", { group = reload_group, callback = st
 start_reload_timer()
 
 -- Prose/markup buffers: enable spell-check. The language comes from the nearest
--- .spelllang file above the buffer (one line, e.g. "es,en"), else English.
+-- .spelllang (or .nvim/.spelllang) above the buffer (one line, e.g. "es,en"), else English.
 -- z= suggests corrections, ]s/[s jump between misspellings. Toggle per-buffer with <leader>us.
 vim.api.nvim_create_autocmd("FileType", {
   pattern = { "tex", "plaintex", "markdown", "gitcommit", "text", "typst" },
   callback = function(args)
     vim.opt_local.spell = true
-    local marker = vim.fs.find(".spelllang", {
+    local marker = vim.fs.find({ ".spelllang", ".nvim/.spelllang" }, {
       upward = true,
       path = vim.fs.dirname(vim.api.nvim_buf_get_name(args.buf)),
     })[1]

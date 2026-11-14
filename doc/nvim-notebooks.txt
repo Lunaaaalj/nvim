@@ -35,8 +35,22 @@ and starts it (`lua/notebook/kernel.lua`):
             front matter, or a .qmd's `jupyter: ir`), else the first
             installed kernel for the language (R = IRkernel's `ir`).
 
-The language is the metadata's, else the first code fence's (```python,
-```{r}). Generated specs live in `stdpath("data")/jupyter/kernels`
+The language is the metadata's, else the cell being run's (an R chunk in a
+.qmd that starts with Python starts R), else the first code fence's.
+
+Working directory: the document's folder, as Quarto/knitr and Jupyter run
+code, so `source("../R/x.R")` or `read_csv("data.csv")` work. R starts in the
+project root (nearest `renv.lock`/`.Rprofile`, so renv activates) and then
+`setwd()`s there. In a renv project IRkernel (installed machine-wide) isn't in
+the project library: the kernel adds R's own libraries after the project's,
+so project packages still win and only IRkernel and its deps come from them.
+
+Starting never freezes Neovim for long: the kernel's command is checked first
+in the background (`import ipykernel`, which also fills uv's cache; IRkernel
+loads), and a failing one is reported without reaching Molten. A kernel that
+still doesn't answer within 30 s is shut down (`:MoltenDeinit`). Why: until a
+kernel answers, each Molten tick blocks Neovim for ~1 s, forever if the kernel
+died. The usual 1-2 s boot after the check still stutters a little. Generated specs live in `stdpath("data")/jupyter/kernels`
 (`py-<project>-<hash>`), reach Molten through $JUPYTER_PATH (set at startup,
 so also visible to `jupyter kernelspec list` in :terminal), are refreshed on
 every start and removed once their venv is gone. They never touch
