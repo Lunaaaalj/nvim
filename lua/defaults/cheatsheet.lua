@@ -34,6 +34,7 @@ local sections = {
     { "<leader>ub / uB", "Toggle transparent bg / dark-light scheme" },
     { "<leader>uT", "Auto dark-light (follow macOS); uB turns it off" },
     { "<leader>uc", "Cycle cursorline style" },
+    { "<leader>uS", "Toggle sound cues (off every session; :Sounds demo)" },
     { "<leader>ut", "Toggle treesitter context" },
     { "<leader>up", "Toggle precognition motion hints" },
     { "<leader>sn", "Show notification history (Noice)" },

@@ -66,6 +66,9 @@ require("refdocs").setup()
 -- Git worktrees: <leader>gw / :Worktree [name] cd into another checkout.
 require("worktrees").setup()
 
+-- Sound cues (opt-in per session: <leader>uS / :Sounds); WAVs in sounds/.
+require("sounds").setup()
+
 -- Build help tags for this config's own docs so `:help nvim-config` resolves.
 -- Cheap and idempotent: only runs when doc/tags is missing (e.g. fresh clone).
 local doc_dir = vim.fn.stdpath("config") .. "/doc"

@@ -466,6 +466,10 @@ local function on_request(ev)
     local cmd, dur = m.cmd, vim.uv.now() - m.started
     m.cmd, m.exit, m.out_end = nil, tonumber(status) or 0, row
     changed()
+    if dur >= M.config.notify_after then
+      -- audible even when you're watching the terminal (a long build)
+      pcall(function() require("sounds").play(m.exit == 0 and "ok" or "fail") end)
+    end
     if dur >= M.config.notify_after and vim.fn.bufwinid(ev.buf) == -1 then
       vim.notify(
         ("%s  %s  (%s)"):format(m.exit == 0 and "done" or ("exit " .. m.exit), cmd, fmt_ms(dur)),
