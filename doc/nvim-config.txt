@@ -13,7 +13,8 @@ CONTENTS                                                       *nvim-config*
   8. Writing companion ............................ |nvim-config-writing|
   9. Language references .......................... |nvim-config-refdocs|
  10. Window layout ................................ |nvim-config-layout|
- 11. Other help files ............................. |nvim-config-help|
+ 11. Sound cues .................................. |nvim-config-sounds|
+ 12. Other help files ............................. |nvim-config-help|
 
 This config also ships these companion help files:
 
@@ -379,7 +380,48 @@ or <leader>\ (along the window's longer side; repeating it tiles: vertical,
 then horizontal, then vertical...). |nvim-keymaps-windows| lists the keys.
 
 ==============================================================================
-11. OTHER HELP FILES                                      *nvim-config-help*
+11. SOUND CUES                                          *nvim-config-sounds*
+
+Short, dry cues for editor events in the voice of a sci-fi computer terminal:
+gated square and triangle beeps, low pulses, a little noise. Neovim has no
+audio, so they play through macOS `afplay`; the WAVs live in `sounds/` and are
+synthesized by `lua/sounds/gen.py` (stdlib Python). The generator keeps three
+candidates (A, B, C) per event and `PICKS` chooses the active one; to change
+an event, edit its letter and run `python3 -I lua/sounds/gen.py sounds`. Add
+`--candidates {dir}` to also write every candidate for auditioning with
+`afplay`.
+
+Opt-in: sounds are OFF at the start of every session and the choice is never
+persisted. <leader>uS or `:Sounds` turns them on (with a confirming cue).
+
+  :Sounds [on|off|toggle]   switch (no argument toggles)
+  :Sounds test {cue}        play one cue, even when sounds are off
+  :Sounds demo              every cue in turn, to tune by ear
+
+  Cue            When
+  save           a file is written (very quiet, at most every 1.5 s)
+  commit         a commit lands (any git client: lazygit, a terminal, Claude)
+  pull           a pull / merge / rebase finishes
+  push           a push updates a remote ref
+  claude_done    Claude Code finished its turn
+  claude_input   Claude Code is waiting for you
+  ok / fail      a LaTeX compile ended; a terminal command that ran at
+                 least `notify_after` (5 s) exited 0 / non-zero
+
+Git cues come from the reflog: a watcher on `<gitdir>/logs` runs only while
+sounds are on and follows `:cd` (`lua/sounds/git.lua`). The first commit of a
+brand-new repository is silent, because `logs/` doesn't exist yet.
+
+The Claude cues need hooks in `~/.claude/settings.json`: `Stop` and
+`Notification` run `nvim --server $NVIM --remote-expr
+"v:lua.require'sounds'.remote('claude_done')"`. `$NVIM` is only set inside
+Neovim terminals, so Claude sessions elsewhere stay silent.
+
+Silent in headless runs, over SSH, and without `afplay`. Tune volume, per-cue
+switches and minimum gaps in `require("sounds").config`.
+
+==============================================================================
+12. OTHER HELP FILES                                      *nvim-config-help*
 
   |nvim-keymaps|      Every keymap in the config, grouped by area.
   |nvim-plugins|      Catalog of all plugins with their options and maps.

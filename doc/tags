@@ -14,6 +14,7 @@ nvim-config-project	nvim-config.txt	/*nvim-config-project*
 nvim-config-pyenv	nvim-config.txt	/*nvim-config-pyenv*
 nvim-config-refdocs	nvim-config.txt	/*nvim-config-refdocs*
 nvim-config-requirements	nvim-config.txt	/*nvim-config-requirements*
+nvim-config-sounds	nvim-config.txt	/*nvim-config-sounds*
 nvim-config-ui-toggle	nvim-config.txt	/*nvim-config-ui-toggle*
 nvim-config-writing	nvim-config.txt	/*nvim-config-writing*
 nvim-config.txt	nvim-config.txt	/*nvim-config.txt*

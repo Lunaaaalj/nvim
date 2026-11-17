@@ -43,6 +43,8 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
                 (persisted; also `:ToggleAutoTheme`)
   <leader>uc    Cycle cursorline style: number / underline / band
                 (transparent mode)
+  <leader>uS    Toggle sound cues (off at every start; also `:Sounds`,
+                see |nvim-config-sounds|)
   <leader>ut    Toggle treesitter sticky context header
   <leader>up    Toggle precognition motion hints
   <leader>ua    Toggle the dashboard's animated background art (back to the
