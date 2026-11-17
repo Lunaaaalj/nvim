@@ -246,7 +246,8 @@ quitting Neovim reset it to the value in `alacritty.toml`.
 Installed schemes (one file each under `lua/plugins/`): catppuccin, kanagawa,
 kanso, lackluster, nightfox, everforest, melange, gruvbox-material, zenbones
 with its variants (forestbones, neobones, kanagawabones, seoulbones), and a
-warm set: rose-pine, kanagawa-paper, bamboo, flexoki, evergarden, vesper. See
+warm set: rose-pine, kanagawa-paper, bamboo, flexoki, evergarden, vesper, plus
+cobalt-kinetic (mohseenrm/brutus; dark only). See
 |nvim-plugins-colorschemes|.
 
 ==============================================================================

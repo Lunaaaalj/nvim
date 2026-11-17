@@ -571,6 +571,10 @@ Warm set (all but vesper follow 'background', so <leader>uB switches them):
                     spec picks fall (dark) / summer (light) from 'background'
   vesper            (datsfilipe/vesper.nvim)     transparent; dark only
 
+Cool set:
+  cobalt-kinetic    (mohseenrm/brutus)           via global autocmd only;
+                    dark only (pins 'background'), deep navy + cobalt/cyan
+
 ==============================================================================
 10. AI                                                      *nvim-plugins-ai*
 

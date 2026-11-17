@@ -102,7 +102,7 @@ In notebooks (`.ipynb`, `.qmd`, and `# %%` scripts) <kbd>␣ m r</kbd> runs the 
 Every colour scheme draws without an editor background, so the terminal's translucent glass shows through. A single autocmd enforces it for schemes that have no transparency option of their own. Accents across the UI (the lualine blocks, the cursorline number, the dashboard clock) come from the active scheme's `Function` colour, so nothing is hard-coded and every theme looks deliberate.
 
 <p align="center">
-  <img src=".github/readme/themes.svg" width="100%" alt="Twenty swatches, each showing the same three lines of Lua in one installed colour scheme: kanso, evergarden, melange, everforest, gruvbox-material, kanagawa, kanagawa-paper, rose-pine, bamboo, flexoki, vesper, catppuccin, nightfox, lackluster, zenbones, forestbones, neobones, kanagawabones, seoulbones and kanso light.">
+  <img src=".github/readme/themes.svg" width="100%" alt="Twenty swatches, each showing the same three lines of Lua in one installed colour scheme: kanso, evergarden, melange, everforest, gruvbox-material, kanagawa, kanagawa-paper, rose-pine, bamboo, flexoki, vesper, cobalt-kinetic (brutus), catppuccin, nightfox, lackluster, zenbones, forestbones, neobones, kanagawabones, seoulbones and kanso light.">
 </p>
 <p align="center"><sub>Drawn from each scheme's real highlight groups, read out of a headless Neovim.</sub></p>
 

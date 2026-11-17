@@ -23,7 +23,7 @@ local transparent_groups = {
   "Normal", "NormalNC", "NormalFloat", "FloatBorder", "FloatTitle",
   "SignColumn", "LineNr", "CursorLineNr", "FoldColumn", "EndOfBuffer",
   "MsgArea", "TabLineFill", "WinBar", "WinBarNC",
-  "TelescopeNormal", "TelescopeBorder", "TelescopePromptNormal",
+  "TelescopeNormal", "TelescopeBorder", "TelescopePromptNormal", "TelescopePromptBorder",
   "NeoTreeNormal", "NeoTreeNormalNC", "NeoTreeEndOfBuffer", "NeoTreeWinSeparator",
   "SnacksDashboardNormal",
   "WhichKeyNormal", "WhichKeyFloat", "WhichKeyBorder", "WhichKeyTitle",
