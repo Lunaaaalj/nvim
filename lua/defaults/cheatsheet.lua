@@ -109,6 +109,7 @@ local sections = {
     { "<leader>uf", "Toggle format on save" },
     { "<leader>uh", "Toggle inlay hints" },
     { "<leader>ua / uA", "Dashboard background art: toggle / pick (live preview, persisted)" },
+    { "<leader>uP", "Dashboard clock panel (HUD instrument panel over any piece) on / off" },
     { "0 / 1 (HUD dashboard)", "Terminal panel = real shell / event log = Claude (C-q close, O pop out)" },
     { "2 / 3 / 4 (HUD dashboard)", "Buffer map (<CR> open, d delete) / peek last file / lazygit" },
     { "5 / 6 / 7 (HUD dashboard)", "Music player / LSP menu (info, log, restart) / diagnostics" },

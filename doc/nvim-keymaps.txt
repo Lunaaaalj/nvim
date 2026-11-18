@@ -58,6 +58,9 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
                 preview, like <leader>cs; <CR> keeps it across restarts, <Esc>
                 reverts
                 (also `:HeaderArt` / `:HeaderArt pick`)
+  <leader>uP    Toggle the dashboard's clock panel (the HUD's instrument
+                panel: seconds, UTC, epoch, keys, GitHub stats) over any art
+                piece ↔ the plain clock; persisted (also `:HeaderArt panel`)
   0 / 1         On the dashboard with the `hud` piece, when it is the only
                 window: `0` turns the terminal panel into a real shell in the
                 cwd, `1` turns the event log into a Claude chat (it grows over

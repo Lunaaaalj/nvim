@@ -259,7 +259,12 @@ snacks.nvim dashboard ~  (folke/snacks.nvim)
   redrawn by the HUD as an instrument panel: a seven-segment clock with
   seconds and centiseconds, UTC, Unix epoch and session time, day of year,
   ISO week, a seconds sweep, the keys as keycaps (still the same keys) and
-  the stats in the panel's frame. Other pieces keep the normal dashboard.
+  the stats in the panel's frame. The panel is not tied to `hud`: with
+  `content = "panel"` (the default; `<leader>uP` or `:HeaderArt panel
+  [on|off]` switches it, persisted) every piece draws it in place of the
+  plain clock, on a cleared box; `content = "plain"` brings back snacks'
+  text (`hud` always keeps the panel). The picker preview shows a one-line
+  clock for it.
   When the dashboard is the only window, the number keys make modules live:
   `0` shell, `1` Claude, `2` buffers, `3` peek, `4` lazygit, `5` music,
   `6` LSP, `7` diagnostics; each module shows its number (see
@@ -274,13 +279,14 @@ snacks.nvim dashboard ~  (folke/snacks.nvim)
   attention | kmeans | matrix | warp | life | horizon | megacity | phosphor |
   radar | circuit | glitch | tunnel | monolith | wireframe | hud), `charset` (classic | blocks | dots | binary), `fps`,
   `speed`,
-  `brightness`, `halo`, `steps`, `animate` (false = one still frame).
+  `brightness`, `halo`, `steps`, `animate` (false = one still frame),
+  `content` (panel | plain).
   `<leader>uA` (`:HeaderArt pick`) is a Telescope picker over the pieces
   (plus "off") with an animated preview; the dashboard behind it switches
   live, <CR> keeps the choice and <Esc> reverts. The piece and on/off are
   saved to `stdpath("state")/header_art.json` (by the picker, `<leader>ua`
   and `:HeaderArt next`) and win over `header_art_opts` on startup.
-  `:HeaderArt [pick|toggle|next|halo|animate|piece X|charset X|fps N|speed X|
+  `:HeaderArt [pick|toggle|next|panel|halo|animate|piece X|charset X|fps N|speed X|
   brightness X]` changes the rest live (not persisted).
   The `scroll` module (smooth scrolling) is currently DISABLED in the same
   spec (`enabled = false`; it made the dashboard view jump back and forth).

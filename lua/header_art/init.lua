@@ -34,6 +34,9 @@ local ns = vim.api.nvim_create_namespace("header_art")
 ---@field halo boolean      pad the clear content box and fade the art in at its edge
 ---@field steps integer     colour steps between the dim tone and the accent
 ---@field animate boolean   false draws a single still frame instead of animating
+---@field content string    panel | plain: the dashboard's clock, date, keys and stats as the HUD's
+---                         instrument panel (hud_core.lua, seconds and centiseconds) over any
+---                         piece, or snacks' plain text. The `hud` piece always draws the panel.
 local defaults = {
   enabled = true,
   piece = "plasma",
@@ -44,6 +47,7 @@ local defaults = {
   halo = true,
   steps = 8,
   animate = true,
+  content = "panel",
 }
 
 local charsets = {
@@ -63,7 +67,7 @@ local clamp = function(v) return v < 0 and 0 or (v > 1 and 1 or v) end
 -- colorscheme): written by the picker, toggle and `next`, read in setup().
 -- Other `:HeaderArt` options stay session-only.
 local state_file = vim.fn.stdpath("state") .. "/header_art.json"
-local persisted = { "piece", "enabled" }
+local persisted = { "piece", "enabled", "content" }
 
 local function save()
   local out = {}
@@ -76,6 +80,13 @@ local function load()
   if not ok or type(s) ~= "table" then return end
   if type(s.piece) == "string" and type(pieces[s.piece]) == "function" then cfg.piece = s.piece end
   if type(s.enabled) == "boolean" then cfg.enabled = s.enabled end
+  if s.content == "panel" or s.content == "plain" then cfg.content = s.content end
+end
+
+-- The content panel (hud_core.lua) over a piece that doesn't draw it itself
+-- (pieces.paints_box: the HUD places it among its own modules).
+local function core_over(piece)
+  return cfg.content == "panel" and not pieces.paints_box[piece]
 end
 
 -- Level `v` (0..1) at cell x of screen row sr -> character, colour step.
@@ -165,7 +176,7 @@ local function content_box(buf, w)
   local box
   if r0 then
     local pr, pc = cfg.halo and PAD_R or 0, cfg.halo and PAD_C or 0
-    box = { r0 = r0 - pr, r1 = r1 + pr, c0 = c0 - pc, c1 = c1 + pc, fade = cfg.halo and FADE or 0 }
+    box = { r0 = r0 - pr, r1 = r1 + pr, c0 = c0 - pc, c1 = c1 + pc, pr = pr, pc = pc, fade = cfg.halo and FADE or 0 }
   end
   S.box, S.box_key, S.box_buf = box, key, buf
   return box
@@ -192,6 +203,38 @@ local function clear(buf)
   if buf and vim.api.nvim_buf_is_valid(buf) then vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1) end
 end
 
+-- A painter over val/chr in screen cells, as hud_core.draw() expects
+-- (`set` of glyph.lua's canvas: paints over, out-of-window cells dropped).
+local function painter(val, chr, w, h)
+  return function(x, y, v, ch)
+    x, y = math.floor(x + 0.5), math.floor(y + 0.5)
+    if x < 0 or y < 0 or x >= w or y >= h then return end
+    local i = y * w + x + 1
+    val[i], chr[i] = v, ch or false
+  end
+end
+
+-- The content panel over a generic piece: the padded box is cleared (the
+-- piece's art never crosses it, as with the plain text) and the panel drawn
+-- where snacks centred its reserved block (`off` = the window's first
+-- document row). A box too small for it gets the one-line clock.
+local function paint_core(val, chr, w, h, box, off, age)
+  local K = require("header_art.hud_core")
+  local r0, r1 = box.r0 - off, box.r1 - off
+  for y = math.max(0, r0), math.min(h - 1, r1) do
+    for x = math.max(0, box.c0), math.min(w - 1, box.c1) do
+      val[y * w + x + 1], chr[y * w + x + 1] = 0, false
+    end
+  end
+  local set = painter(val, chr, w, h)
+  local iw, ih = box.c1 - box.c0 + 1 - 2 * box.pc, r1 - r0 + 1 - 2 * box.pr
+  if iw >= K.W and ih >= K.H then
+    K.draw(set, box.c0 + box.pc + math.floor((iw - K.W) / 2), r0 + box.pr, age, require("header_art.hud").config.content)
+  else
+    K.draw_compact(set, math.floor((box.c0 + box.c1) / 2), math.floor((r0 + r1) / 2))
+  end
+end
+
 local function draw()
   local win, buf = dashboard_win()
   if not win then return false end
@@ -216,6 +259,7 @@ local function draw()
     S.w, S.h, S.piece, S.bkey = w, h, cfg.piece, bkey
     S.frame = pieces[cfg.piece](w, h, sbox)
     S.val, S.chr = {}, {}
+    S.core_t0 = S.t -- the panel types in again after a rebuild, like the HUD's boot
   end
 
   local now = uv.hrtime()
@@ -226,6 +270,8 @@ local function draw()
   local chr = S.chr
   for i = 1, w * h do chr[i] = false end
   S.frame(S.t, S.val, chr)
+  local core = core_over(cfg.piece)
+  if core and box then paint_core(S.val, chr, w, h, box, top - 1, S.t - (S.core_t0 or S.t)) end
 
   local nlines = vim.api.nvim_buf_line_count(buf)
   local set = charsets[cfg.charset] or charsets.classic
@@ -234,7 +280,7 @@ local function draw()
   -- Screen row `sr` (document row `row`) as runs of chunks: { { start_col, chunks }, ... }.
   -- Cells inside the content box end a run (overlay rows must not cover the
   -- text), or, with `fill` (virt_lines, which can't skip cells), become blanks.
-  local paints = pieces.paints_box[cfg.piece]
+  local paints = pieces.paints_box[cfg.piece] or (core and box ~= nil)
   local function segments(sr, row, fill)
     local segs, chunks, run, cur, startx = {}, nil, nil, nil, 0
     local function flush()
@@ -356,7 +402,7 @@ function M.options() return vim.deepcopy(cfg) end
 
 --- True when the active piece draws the dashboard's own content (the HUD's
 --- clock panel): the snacks sections then only reserve its box.
-function M.owns_content() return cfg.enabled and pieces.paints_box[cfg.piece] == true end
+function M.owns_content() return cfg.enabled and (pieces.paints_box[cfg.piece] == true or cfg.content == "panel") end
 
 local function refresh_dashboard()
   if _G.Snacks and Snacks.dashboard and dashboard_win() then Snacks.dashboard.update() end
@@ -413,6 +459,14 @@ function M.render_frame(piece, w, h, t, cache)
   end
   for i = 1, w * h do cache.chr[i] = false end
   cache.frame(t, cache.val, cache.chr)
+  if core_over(piece) and w >= 24 then
+    -- the one-line clock (no box in the preview), on a cleared strip
+    local cy = math.floor(h / 2)
+    for x = math.floor(w / 2) - 13, math.floor(w / 2) + 12 do
+      cache.val[cy * w + x + 1], cache.chr[cy * w + x + 1] = 0, false
+    end
+    require("header_art.hud_core").draw_compact(painter(cache.val, cache.chr, w, h), math.floor(w / 2), cy)
+  end
   local set = charsets[cfg.charset] or charsets.classic
   local tick = math.floor(t * 0.7)
   local lines, marks = {}, {}
@@ -439,9 +493,16 @@ end
 function M.set(key, value)
   if defaults[key] == nil or key == "enabled" then return vim.notify("header_art: unknown option " .. key, vim.log.levels.WARN) end
   if key == "piece" and type(pieces[value]) ~= "function" then return vim.notify("header_art: unknown piece " .. tostring(value), vim.log.levels.WARN) end
+  if key == "content" and value ~= "panel" and value ~= "plain" then return vim.notify("header_art: content is panel or plain", vim.log.levels.WARN) end
   if key == "charset" and not charsets[value] then return vim.notify("header_art: unknown charset " .. tostring(value), vim.log.levels.WARN) end
   if type(defaults[key]) == "number" and type(value) ~= "number" then return vim.notify("header_art: " .. key .. " needs a number", vim.log.levels.WARN) end
+  local owned = M.owns_content()
   cfg[key] = value
+  if key == "content" then
+    S.core_t0 = S.t
+    save()
+    if M.owns_content() ~= owned then refresh_dashboard() end
+  end
   if key == "steps" then
     cfg.steps = math.max(1, math.floor(value))
     set_hl()
@@ -450,6 +511,14 @@ function M.set(key, value)
   if cfg.enabled then
     if cfg.animate then start() else vim.schedule(safe_draw) end
   end
+end
+
+--- The content panel on/off (`arg`: on | off | toggle | nil = toggle); persisted.
+---@param arg? string
+function M.toggle_content(arg)
+  local on = arg == "on" or (arg ~= "off" and cfg.content ~= "panel")
+  M.set("content", on and "panel" or "plain")
+  vim.notify("Dashboard clock panel " .. (on and "on" or "off"))
 end
 
 --- Next piece in the list (wraps).
@@ -514,23 +583,26 @@ function M.setup(opts)
     if sub == "halo" then return M.set("halo", not cfg.halo) end
     if sub == "animate" then return M.set("animate", not cfg.animate) end
     if sub == "next" then return M.cycle_piece() end
+    if sub == "panel" or sub == "content" then return M.toggle_content(arg) end
     local num = tonumber(arg)
     M.set(sub, (sub == "piece" or sub == "charset") and arg or num)
   end, {
     nargs = "*",
-    desc = "Dashboard background art: pick | toggle | next | halo | animate | piece X | charset X | fps N | speed X | brightness X",
+    desc = "Dashboard background art: pick | toggle | next | panel [on|off] | halo | animate | piece X | charset X | fps N | speed X | brightness X",
     complete = function(_, line)
       local parts = vim.split(line, "%s+")
       if #parts <= 2 then
-        return { "pick", "toggle", "next", "halo", "animate", "piece", "charset", "fps", "speed", "brightness", "steps" }
+        return { "pick", "toggle", "next", "panel", "halo", "animate", "piece", "charset", "fps", "speed", "brightness", "steps" }
       end
       if parts[2] == "piece" then return pieces.names end
       if parts[2] == "charset" then return charset_names end
+      if parts[2] == "panel" then return { "on", "off", "toggle" } end
       return {}
     end,
   })
 
   vim.keymap.set("n", "<leader>ua", function() M.toggle() end, { desc = "Toggle dashboard background art" })
+  vim.keymap.set("n", "<leader>uP", function() M.toggle_content() end, { desc = "Toggle dashboard clock panel (HUD style)" })
   vim.keymap.set("n", "<leader>uA", function() require("header_art.picker").open() end, { desc = "Pick dashboard art (live preview, persisted)" })
 
   visible_start()

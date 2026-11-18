@@ -228,7 +228,8 @@ return {
           if require("header_art").enabled() then return nil end
           return { text = table.concat(header_lines, "\n"), align = "center", padding = 2, hl = "SnacksDashboardHeader" }
         end,
-        -- With the HUD piece the art draws the clock, date, keys and stats itself
+        -- With the content panel (header_art `content = "panel"`, <leader>uP; always
+        -- with the hud piece) the art draws the clock, date, keys and stats itself
         -- (header_art/hud_core.lua, an instrument panel with seconds): this only
         -- reserves its box. No-break spaces are blank on screen but count as text
         -- for header_art's content_box(), which then measures exactly the panel.
