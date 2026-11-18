@@ -32,6 +32,16 @@ local labels = {
   matrix = "matrix   · falling glyph streams",
   warp = "warp     · a starfield flying at you",
   life = "life     · Conway's Game of Life, dead cells fading out",
+  horizon = "horizon  · synthwave floor, a sliced sun, a mountain ridge",
+  megacity = "megacity · towers with flickering windows, flying traffic",
+  phosphor = "phosphor · an oscilloscope Lissajous with a decaying beam",
+  radar = "radar    · a sweep orbiting the content, contacts flaring",
+  circuit = "circuit  · PCB traces into the content, packets flowing in",
+  glitch = "glitch   · a hex dump tearing, smears and a scan bar",
+  tunnel = "tunnel   · a vector corridor flying past",
+  monolith = "monolith · brutalist slabs under a circling light",
+  wireframe = "wireframe · a cube and an octahedron tumbling in the margins",
+  hud = "hud      · instruments round the content: terminal, live readouts, event log",
   [OFF] = "off      · static braille header",
 }
 

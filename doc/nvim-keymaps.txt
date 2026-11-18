@@ -58,7 +58,9 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
                 braille header when off; also `:HeaderArt toggle`)
   <leader>uA    Pick the art piece (plasma, torus, orb, rings, flow, terrain,
                 galaxy, galaxies, descent, spiral, hilbert, rain, aurora, turing,
-                attention, kmeans, matrix, warp, life, or off) in Telescope with a live animated
+                attention, kmeans, matrix, warp, life, horizon, megacity,
+                phosphor, radar, circuit, glitch, tunnel, monolith, wireframe,
+                hud, or off) in Telescope with a live animated
                 preview, like <leader>cs; <CR> keeps it across restarts, <Esc>
                 reverts
                 (also `:HeaderArt` / `:HeaderArt pick`)

@@ -1122,6 +1122,581 @@ function M.life(w, h)
   end
 end
 
-M.names = { "plasma", "torus", "orb", "rings", "flow", "terrain", "galaxy", "galaxies", "descent", "spiral", "hilbert", "rain", "aurora", "turing", "attention", "kmeans", "matrix", "warp", "life" }
+---------------------------------------------------------------------------
+-- Third set: cyberpunk / retrofuturist / techno-brutalist, from the
+-- `Concrete Signal Sketches` mockup (100 x 32 grid, speed 0.4 = the dashboard
+-- default, so no time scaling), each knob at its default there. Every one is a
+-- glyph piece: it writes `chr` with ASCII, box drawing or block elements only.
+-- Sizes that the mockup fixed in cells are scaled from 100 x 32 where the look
+-- depends on them (trace and contact counts, the horizon's depth constant).
+-- `circuit` and `hud` are drawn around the content: the builder gets the
+-- content box (screen rows, already padded) as a third argument, or nil in the
+-- picker preview, where they use a small centred box instead.
+---------------------------------------------------------------------------
+
+-- Shared helpers live in glyph.lua (hud.lua uses them too).
+local G = require("header_art.glyph")
+local hash, slope_char, canvas = G.hash, G.slope_char, G.canvas
+
+---------------------------------------------------------------------------
+-- horizon: a synthwave floor rolling toward you, a sun cut into slats and a
+-- mountain ridge that dips where the sun is. The radials converge behind the
+-- content, so the floor seems to pour out from under the clock.
+---------------------------------------------------------------------------
+
+function M.horizon(w, h)
+  local C = canvas(w, h)
+  local hy, cx = floor(h * 0.5 + 0.5), (w - 1) / 2
+  local R = min(w * 0.26, h * 0.95)
+  local r = rng(7)
+  local p1, p2 = r() * 6, r() * 6
+  local fx, fy = 100 / w, h / 32
+  local ridge = {}
+  for x = 0, w - 1 do
+    local m = 1.6 + 1.2 * sin(x * fx * 0.19 + p1) + 0.8 * sin(x * fx * 0.53 + p2)
+    ridge[x] = max(0, m * fy * smooth(R * 0.35, R * 1.1, math.abs(x - cx)) + 0.3)
+  end
+  local stars = {}
+  for y = 0, hy - 3 do
+    for x = 0, w - 1 do
+      if r() < 0.02 then stars[#stars + 1] = { x, y, r() * 6 } end
+    end
+  end
+  local A = 5 * h / 32 -- depth constant: keeps the line spacing at any height
+  local sx = max(6, 9 * w / 100) / (h - 1 - hy)
+  local sun0 = max(0, floor(hy - R / 2))
+  return function(t, val, chr)
+    C.begin(val, chr)
+    local s = t * 1.6
+    for _, st in ipairs(stars) do
+      local tw = 0.5 + 0.5 * sin(t * 3 + st[3])
+      C.put(st[1], st[2], 0.1 + 0.35 * tw, tw > 0.93 and "+" or ".")
+    end
+    for y = sun0, hy - 1 do
+      local dy = (y - hy + 0.5) * 2
+      local u = (hy - y) / (R / 2)
+      if (u * 5 + t * 0.35) % 1 >= 0.55 * (1 - u) then
+        for x = 0, w - 1 do
+          local d = hypot(x - cx, dy)
+          if d < R then C.put(x, y, 0.3 + 0.55 * clamp(u) * (1 - 0.35 * d / R)) end
+        end
+      end
+    end
+    for x = 0, w - 1 do
+      local top = ridge[x]
+      if top >= 0.5 then
+        local y = hy - 1
+        while y >= 0 and hy - y <= top do
+          C.set(x, y, 0)
+          y = y - 1
+        end
+        local dr = ridge[min(w - 1, x + 1)] - ridge[max(0, x - 1)]
+        C.set(x, hy - top, 0.4, dr > 0.5 and "/" or (dr < -0.5 and "\\" or "─"))
+      end
+    end
+    for x = 0, w - 1 do C.set(x, hy, 0.75, "═") end
+    for y = hy + 1, h - 1 do
+      local d = y - hy
+      local near = d / (h - 1 - hy)
+      local is_line = floor(A / (d - 0.5) + s) ~= floor(A / (d + 0.5) + s)
+      local v = 0.18 + 0.7 * near
+      if is_line then
+        for x = 0, w - 1 do C.set(x, y, v, "─") end
+      end
+      local n = math.ceil(w / 2 / (sx * d)) + 1
+      for kk = -n, n do
+        if d >= 3 or kk % 3 == 0 then C.set(cx + kk * sx * d, y, v, is_line and "┼" or slope_char(kk * sx, 1)) end
+      end
+    end
+  end
+end
+
+---------------------------------------------------------------------------
+-- megacity: towers whose windows switch on and off one at a time, antenna
+-- beacons, and three lanes of flying traffic in front with fading trails.
+---------------------------------------------------------------------------
+
+function M.megacity(w, h)
+  local C = canvas(w, h)
+  local LIT = 0.3
+  local r, towers, x = rng(11), {}, 0
+  while x < w do
+    local tw = 4 + floor(r() * 6)
+    towers[#towers + 1] = { x0 = x, x1 = min(w - 1, x + tw - 1), top = floor(h * 0.18 + r() * h * 0.5), ant = r() < 0.35 }
+    x = x + tw + (r() < 0.35 and 1 or 0)
+  end
+  local ncars = max(2, floor(4 * w / 100 + 0.5))
+  local lanes = {}
+  for i, f in ipairs({ 0.22, 0.42, 0.66 }) do
+    local L = { y = floor(h * f), dir = (i % 2 == 0) and -1 or 1, cars = {} }
+    for c = 1, ncars do L.cars[c] = { x0 = r() * (w + 14), v = 7 + r() * 9 } end
+    lanes[i] = L
+  end
+  return function(t, val, chr)
+    C.begin(val, chr)
+    for _, T in ipairs(towers) do
+      for y = T.top, h - 1 do
+        for xx = T.x0, T.x1 do
+          if y == T.top then
+            C.set(xx, y, 0.42, xx == T.x0 and "┌" or (xx == T.x1 and "┐" or "─"))
+          elseif xx == T.x0 or xx == T.x1 then
+            C.set(xx, y, 0.2, "│")
+          elseif (xx - T.x0) % 2 == 1 and (y - T.top) % 2 == 0 then
+            local lit = hash(xx, y, floor(t * 0.15 + hash(xx, y, 9) * 7)) < LIT
+            C.set(xx, y, lit and (0.45 + 0.45 * hash(xx, y, 3)) or 0.07, lit and "▀" or ".")
+          end
+        end
+      end
+      if T.ant then
+        local ax = floor((T.x0 + T.x1) / 2 + 0.5)
+        for y = T.top - 3, T.top - 1 do C.set(ax, y, 0.3, "│") end
+        C.set(ax, T.top - 4, sin(t * 6 + T.x0) > 0.55 and 1 or 0.15, "*")
+      end
+    end
+    local span = w + 14
+    for _, L in ipairs(lanes) do
+      for _, c in ipairs(L.cars) do
+        local p = (c.x0 + c.v * t) % span - 7
+        local hx = L.dir > 0 and p or (w - 1 - p)
+        for i = 0, 6 do
+          local xx = hx - L.dir * i
+          if i < 2 then C.set(xx, L.y, 0.95, "═") else C.set(xx, L.y, 0.62 - i * 0.08, "─") end
+        end
+      end
+    end
+  end
+end
+
+---------------------------------------------------------------------------
+-- phosphor: a 3:2 Lissajous trace on an oscilloscope graticule. The beam head
+-- is bright and its path decays behind it; the phase drifts, so the figure
+-- seems to turn in 3D.
+---------------------------------------------------------------------------
+
+function M.phosphor(w, h)
+  local C = canvas(w, h)
+  local cx, cy = floor(w / 2), floor(h / 2)
+  local Ax, Ay, a, b = w * 0.47, h * 0.44, 3, 2
+  local dX, dY = w / 10, h / 8
+  local grat = {}
+  for y = 0, h - 1 do
+    for x = 0, w - 1 do
+      local onV = math.abs((x - cx + dX / 2) % dX - dX / 2) < 0.5
+      local onH = math.abs((y - cy + dY / 2) % dY - dY / 2) < 0.5
+      local axis = x == cx or y == cy
+      if onV and onH then
+        grat[#grat + 1] = { x, y, axis and 0.22 or 0.14, "┼" }
+      elseif onV and y % 2 == 0 then
+        grat[#grat + 1] = { x, y, axis and 0.16 or 0.09, "┊" }
+      elseif onH and x % 2 == 0 then
+        grat[#grat + 1] = { x, y, axis and 0.16 or 0.09, "┈" }
+      end
+    end
+  end
+  local N = floor(1800 * (w + h) / 132)
+  return function(t, val, chr)
+    C.begin(val, chr)
+    for _, e in ipairs(grat) do C.put(e[1], e[2], e[3], e[4]) end
+    local phi, head = t * 0.25, t * 4
+    for i = 0, N - 1 do
+      local s = i / N * TAU
+      local x, y = cx + Ax * sin(a * s + phi), cy + Ay * sin(b * s)
+      local age = (head - s) % TAU
+      C.put(x, y, 0.14 + 0.86 * exp(-age * 0.9), slope_char(Ax * a * cos(a * s + phi), Ay * b * cos(b * s)))
+    end
+  end
+end
+
+---------------------------------------------------------------------------
+-- radar: a plan-position display centred on the dashboard. Rings, spokes and
+-- clutter glow only in the sweep's wake; contacts flare as the beam crosses
+-- them and fade until the next pass.
+---------------------------------------------------------------------------
+
+function M.radar(w, h)
+  local C = canvas(w, h)
+  local cx, cy, RING = (w - 1) / 2, (h - 1) / 2, 12
+  local scale = hypot(w / 2, h) / hypot(50, 32)
+  local PX, PY, PR, PT = {}, {}, {}, {}
+  for y = 0, h - 1 do
+    for x = 0, w - 1 do
+      local i = y * w + x + 1
+      local X, Y = x - cx, (y - cy) * 2
+      PX[i], PY[i], PR[i], PT[i] = X, Y, hypot(X, Y), math.atan2(Y, X)
+    end
+  end
+  local r = rng(5)
+  local contacts = {}
+  for k = 1, min(30, max(4, floor(10 * w * h / 3200 + 0.5))) do
+    contacts[k] = { r = (14 + r() * 44) * scale, th = r() * TAU, dr = (r() - 0.5) * 0.6, dth = (r() - 0.5) * 0.04 }
+  end
+  return function(t, val, chr)
+    C.begin(val, chr)
+    local sweep, tq = (t * 1.1) % TAU, floor(t * 2)
+    for y = 0, h - 1 do
+      for x = 0, w - 1 do
+        local i = y * w + x + 1
+        local X, Y, rr = PX[i], PY[i], PR[i]
+        local behind = (sweep - PT[i]) % TAU
+        local glow = exp(-behind * 2.4)
+        if behind * rr < 0.8 and rr > 1 then
+          C.put(x, y, 0.95, slope_char(X, Y / 2))
+        else
+          local q = rr / RING
+          local rq = floor(q + 0.5)
+          if rq > 0 and math.abs(q - rq) * RING < 0.55 then C.put(x, y, 0.1 + glow * 0.4, slope_char(-Y, X / 2)) end
+          local sp = (PT[i] + TAU / 24) % (TAU / 6) - TAU / 24
+          if math.abs(sp) * rr < 0.5 and (x + y) % 2 == 0 then C.put(x, y, 0.07 + glow * 0.25, slope_char(X, Y / 2)) end
+          if glow > 0.02 then C.put(x, y, glow * (hash(x, y, tq) < 0.3 and 0.3 or 0.12)) end
+        end
+      end
+    end
+    for _, c in ipairs(contacts) do
+      local cr, cth = c.r + c.dr * t, c.th + c.dth * t
+      local X, Y = cr * cos(cth), cr * sin(cth)
+      local behind = (sweep - math.atan2(Y, X)) % TAU
+      local v = 0.12 + 0.88 * exp(-behind * 0.8)
+      C.set(cx + X, cy + Y / 2, v, "+")
+      if v > 0.6 then
+        C.put(cx + X - 1, cy + Y / 2, v * 0.6, "[")
+        C.put(cx + X + 1, cy + Y / 2, v * 0.6, "]")
+      end
+    end
+  end
+end
+
+---------------------------------------------------------------------------
+-- circuit: PCB traces routed from the edges into the content box, as if the
+-- dashboard were a chip, with packets flowing inward. Routing runs once per
+-- build (window size or box change); afterwards only the pulses move.
+---------------------------------------------------------------------------
+
+function M.circuit(w, h, box)
+  local C = canvas(w, h)
+  local r = rng(23)
+  local T = box and { c0 = box.c0, c1 = box.c1, r0 = box.r0, r1 = box.r1 }
+    or { c0 = w / 2 - 6, c1 = w / 2 + 6, r0 = h / 2 - 2, r1 = h / 2 + 2 }
+  local function inT(x, y) return x >= T.c0 and x <= T.c1 and y >= T.r0 and y <= T.r1 end
+  local tx, ty = (T.c0 + T.c1) / 2, (T.r0 + T.r1) / 2
+  local function sgn(v) return v > 0 and 1 or (v < 0 and -1 or 1) end
+  local occ, traces = {}, {}
+  local K = min(140, max(8, floor(36 * w * h / 3200)))
+  local n, tries = 0, 0
+  while n < K and tries < K * 20 do
+    tries = tries + 1
+    local side, x, y, dx, dy = floor(r() * 4)
+    if side == 0 then x, y, dx, dy = floor(r() * w), 0, 0, 1
+    elseif side == 1 then x, y, dx, dy = floor(r() * w), h - 1, 0, -1
+    elseif side == 2 then x, y, dx, dy = 0, floor(r() * h), 1, 0
+    else x, y, dx, dy = w - 1, floor(r() * h), -1, 0 end
+    if not occ[y * w + x + 1] then
+      local path, since, reached = { { x, y } }, 0, false
+      for _ = 1, 260 do
+        if since > 2 and r() < 0.16 then
+          if dx ~= 0 then
+            dx, dy = 0, sgn(ty - y)
+          elseif math.abs(tx - x) > 3 then
+            dx, dy = sgn(tx - x), 0
+          end
+          since = 0
+        end
+        local nx, ny = x + dx, y + dy
+        if nx < 0 or ny < 0 or nx >= w or ny >= h then break end
+        if inT(nx, ny) then
+          reached = true
+          break
+        end
+        if occ[ny * w + nx + 1] then
+          local ax, ay
+          if dx ~= 0 then ax, ay = 0, sgn(ty - y) else ax, ay = sgn(tx - x), 0 end
+          nx, ny = x + ax, y + ay
+          if nx < 0 or ny < 0 or nx >= w or ny >= h or occ[ny * w + nx + 1] or inT(nx, ny) then break end
+          dx, dy, since = ax, ay, 0
+        end
+        x, y = nx, ny
+        path[#path + 1] = { x, y }
+        since = since + 1
+      end
+      if #path >= 6 then
+        for _, p in ipairs(path) do
+          for _, o in ipairs({ { 0, 0 }, { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }) do
+            local qx, qy = p[1] + o[1], p[2] + o[2]
+            if qx >= 0 and qy >= 0 and qx < w and qy < h then occ[qy * w + qx + 1] = true end
+          end
+        end
+        local glyphs, np = {}, #path
+        for i, p in ipairs(path) do
+          if i == 1 then
+            glyphs[i] = "o"
+          elseif i == np then
+            glyphs[i] = reached and "■" or "o"
+          else
+            local a, b = path[i - 1], path[i + 1]
+            local L = (a[1] - p[1] == -1) or (b[1] - p[1] == -1)
+            local Rt = (a[1] - p[1] == 1) or (b[1] - p[1] == 1)
+            local U = (a[2] - p[2] == -1) or (b[2] - p[2] == -1)
+            local D = (a[2] - p[2] == 1) or (b[2] - p[2] == 1)
+            glyphs[i] = (L and Rt) and "─" or (U and D) and "│" or (L and D) and "┐" or (L and U) and "┘"
+              or (Rt and D) and "┌" or (Rt and U) and "└" or "·"
+          end
+        end
+        traces[#traces + 1] = { path = path, glyphs = glyphs, P = 22 + floor(r() * 26), off = r() * 100, sp = 0.8 + r() * 0.5 }
+        n = n + 1
+      end
+    end
+  end
+  return function(t, val, chr)
+    C.begin(val, chr)
+    for _, tr in ipairs(traces) do
+      local head = t * 30 * tr.sp + tr.off
+      for i, p in ipairs(tr.path) do
+        local d = (head - (i - 1)) % tr.P
+        C.set(p[1], p[2], 0.16 + 0.84 * exp(-d * 0.38), tr.glyphs[i])
+      end
+    end
+  end
+end
+
+---------------------------------------------------------------------------
+-- glitch: a scrolling memory dump (address, bytes, ASCII column) with a few
+-- live bytes. Rows tear sideways in bursts, block glyphs smear across, and a
+-- scan bar rolls down the screen.
+---------------------------------------------------------------------------
+
+function M.glitch(w, h)
+  local C = canvas(w, h)
+  local K = 0.4
+  local BL = { "░", "▒", "▓", "█" }
+  local cs, vs = {}, {}
+  local function push(c, v)
+    cs[#cs + 1], vs[#vs + 1] = c, v
+  end
+  -- One dump row R into cs/vs (reused tables), at least w + 40 cells long.
+  local function row(R, t)
+    for k = #cs, 1, -1 do cs[k], vs[k] = nil, nil end
+    local live_epoch, seg = floor(t * 8), 0
+    while #cs < w + 40 do
+      local addr = string.format("%04X", (0x7f00 + R * 16 + seg * 0x4000) % 65536)
+      for k = 1, 4 do push(addr:sub(k, k), 0.3) end
+      push(" ", 0); push(" ", 0)
+      local ascii = {}
+      for j = 0, 15 do
+        local col = j + seg * 16
+        local live = hash(R, col, 1) < 0.08
+        local byte = floor((live and hash(R, col, live_epoch) or hash(R, col, 0)) * 256)
+        local hx = string.format("%02X", byte)
+        push(hx:sub(1, 1), live and 0.55 or 0.16)
+        push(hx:sub(2, 2), live and 0.55 or 0.16)
+        push(" ", 0)
+        ascii[#ascii + 1] = (byte > 32 and byte < 127) and string.char(byte) or "."
+      end
+      push("│", 0.2)
+      for _, c in ipairs(ascii) do push(c, 0.12) end
+      push("│", 0.2); push(" ", 0); push(" ", 0); push(" ", 0)
+      seg = seg + 1
+    end
+  end
+  return function(t, val, chr)
+    C.begin(val, chr)
+    local base, e, band = floor(t * 1.2), floor(t * 5), floor(t * 1.3)
+    local scan = (t * 6) % (h + 8) - 4
+    for y = 0, h - 1 do
+      row(y + base, t)
+      local len = #cs
+      local shift, boost = 0, 0
+      if hash(y, e, 77) < K * 0.14 then
+        shift, boost = floor((hash(y, e, 78) - 0.5) * 26 + 0.5), 0.35
+      end
+      local yb = floor(y / 3)
+      if hash(yb, band, 91) < K * 0.08 then
+        shift, boost = shift + floor((hash(yb, band, 92) - 0.5) * 12 + 0.5), max(boost, 0.2)
+      end
+      local ds = math.abs(y - scan)
+      local sb = ds < 1 and 0.35 or (ds < 2 and 0.15 or 0)
+      for x = 0, w - 1 do
+        local src = (x - shift) % len + 1
+        local c = cs[src]
+        if c ~= " " then C.set(x, y, clamp(vs[src] + boost + sb), c) end
+      end
+      if boost > 0 and hash(y, e, 79) < 0.5 then
+        local x0 = floor(hash(y, e, 80) * w)
+        for x = x0, min(w, x0 + 3 + floor(hash(y, e, 81) * 12)) - 1 do
+          C.set(x, y, 0.85, BL[floor(hash(x, y, e) * 4) + 1])
+        end
+      end
+    end
+  end
+end
+
+---------------------------------------------------------------------------
+-- tunnel: a wireframe corridor in the vector-arcade style. Frames emerge from
+-- behind the content and fly past; rails run to the corners with dashes moving
+-- outward; the vanishing point drifts.
+---------------------------------------------------------------------------
+
+function M.tunnel(w, h)
+  local C = canvas(w, h)
+  local cx, cy, N = (w - 1) / 2, (h - 1) / 2, 12
+  local corners = { { 0, 0 }, { w - 1, 0 }, { 0, h - 1 }, { w - 1, h - 1 } }
+  return function(t, val, chr)
+    C.begin(val, chr)
+    local vx, vy = cx + w * 0.05 * sin(t * 0.9), cy + h * 0.07 * sin(t * 0.7)
+    for _, k in ipairs(corners) do
+      local X, Y = k[1], k[2]
+      local n = math.ceil(max(math.abs(X - vx), math.abs(Y - vy) * 2)) * 2
+      local ch = slope_char(X - vx, Y - vy)
+      for j = 0, n do
+        local f = j / n
+        C.put(vx + (X - vx) * f, vy + (Y - vy) * f, (0.08 + 0.3 * f) * ((f * 7 - t * 1.6) % 1 < 0.5 and 1 or 0.35), ch)
+      end
+    end
+    for i = 0, N - 1 do
+      local z = (i - t * 2.2) % N + 0.35
+      local s = 1 / z
+      local hw, hh = s * w * 0.62, s * h * 0.62
+      if hw >= 1.5 then
+        local v = clamp(0.1 + 0.95 * s ^ 0.6) * smooth(N, N - 2, z)
+        local x0, x1 = floor(vx - hw + 0.5), floor(vx + hw + 0.5)
+        local y0, y1 = floor(vy - hh + 0.5), floor(vy + hh + 0.5)
+        for x = max(0, x0 + 1), min(w - 1, x1 - 1) do
+          C.put(x, y0, v, "─")
+          C.put(x, y1, v, "─")
+        end
+        for y = max(0, y0 + 1), min(h - 1, y1 - 1) do
+          C.put(x0, y, v, "│")
+          C.put(x1, y, v, "│")
+        end
+        C.put(x0, y0, v, "┌"); C.put(x1, y0, v, "┐"); C.put(x0, y1, v, "└"); C.put(x1, y1, v, "┘")
+      end
+    end
+  end
+end
+
+---------------------------------------------------------------------------
+-- monolith: cantilevered concrete blocks in oblique projection, with heavy
+-- outlines, board-formed lines and window slits. The light circles slowly, so
+-- front, side and top faces trade which one is lit.
+---------------------------------------------------------------------------
+
+function M.monolith(w, h)
+  local C = canvas(w, h)
+  local r, gy, fy = rng(100 + 3 * 17), h - 3, h / 32
+  local blocks = {}
+  for _ = 1, max(4, floor(10 * w / 100 + 0.5)) do
+    local bw, bh, dr = 8 + floor(r() * 18), floor((4 + floor(r() * 12)) * fy), 2 + floor(r() * 3)
+    local x = floor(r() * max(1, w - bw))
+    local lift = r() < 0.4 and floor(r() * 9 * fy) or 0
+    blocks[#blocks + 1] = { x = x, w = bw, h = max(3, bh), dr = dr, lift = lift, slits = r() < 0.5, z = r() }
+  end
+  for _, B in ipairs(blocks) do B.top = gy - B.lift - B.h end
+  table.sort(blocks, function(a, b) return a.z < b.z end)
+  return function(t, val, chr)
+    C.begin(val, chr)
+    local a = t * 0.3
+    local lf = 0.16 + 0.42 * (0.5 + 0.5 * cos(a))
+    local ls = 0.12 + 0.42 * (0.5 + 0.5 * cos(a + 2.1))
+    local lt = 0.2 + 0.45 * (0.5 + 0.5 * cos(a - 2.1))
+    for x = 0, w - 1 do
+      C.set(x, gy + 1, 0.3, "━")
+      if x % 3 == 0 then C.set(x, gy + 2, 0.08, "╌") end
+    end
+    for _, B in ipairs(blocks) do
+      local x1, bot = B.x + B.w - 1, B.top + B.h - 1
+      for r2 = 1, B.dr do
+        for x = B.x + 2 * r2, x1 + 2 * r2 do C.set(x, B.top - r2, lt, r2 == B.dr and "━" or nil) end
+        for x = x1 + 2 * r2 - 1, x1 + 2 * r2 do
+          for y = B.top - r2 + 1, bot - r2 do C.set(x, y, ls, (y - B.top) % 3 == 2 and "╱" or nil) end
+        end
+      end
+      for y = B.top, bot do
+        local fyy = y - B.top
+        for x = B.x, x1 do
+          if B.slits and fyy % 4 == 1 and x > B.x + 1 and x < x1 - 1 and (x - B.x) % 6 < 4 then
+            C.set(x, y, 0.02)
+          else
+            C.set(x, y, lf, fyy % 3 == 2 and "─" or nil)
+          end
+        end
+      end
+      local E = 0.8
+      for x = B.x, x1 do
+        C.set(x, B.top, E, "━")
+        C.set(x, bot, E, "━")
+      end
+      for y = B.top, bot do
+        C.set(B.x, y, E, "┃")
+        C.set(x1, y, E, "┃")
+      end
+      C.set(B.x, B.top, E, "┏"); C.set(x1, B.top, E, "┓"); C.set(B.x, bot, E, "┗"); C.set(x1, bot, E, "┛")
+      C.set(x1 + 2 * B.dr, B.top - B.dr, E * 0.8, "┓")
+    end
+  end
+end
+
+---------------------------------------------------------------------------
+-- wireframe: a cube and an octahedron tumbling in perspective in the free
+-- margins either side of the content, near edges bright, over a dotted floor.
+---------------------------------------------------------------------------
+
+local SOLIDS = {
+  cube = {
+    v = { { -1, -1, -1 }, { 1, -1, -1 }, { 1, 1, -1 }, { -1, 1, -1 }, { -1, -1, 1 }, { 1, -1, 1 }, { 1, 1, 1 }, { -1, 1, 1 } },
+    e = { { 1, 2 }, { 2, 3 }, { 3, 4 }, { 4, 1 }, { 5, 6 }, { 6, 7 }, { 7, 8 }, { 8, 5 }, { 1, 5 }, { 2, 6 }, { 3, 7 }, { 4, 8 } },
+  },
+  octa = {
+    v = { { 1.3, 0, 0 }, { -1.3, 0, 0 }, { 0, 1.3, 0 }, { 0, -1.3, 0 }, { 0, 0, 1.3 }, { 0, 0, -1.3 } },
+    e = { { 1, 3 }, { 1, 4 }, { 1, 5 }, { 1, 6 }, { 2, 3 }, { 2, 4 }, { 2, 5 }, { 2, 6 }, { 3, 5 }, { 3, 6 }, { 4, 5 }, { 4, 6 } },
+  },
+}
+
+function M.wireframe(w, h)
+  local C = canvas(w, h)
+  local R = min(w * 0.085, h * 0.62)
+  local objs = { { s = SOLIDS.cube, x = w * 0.11, y = h * 0.48, sp = 1 }, { s = SOLIDS.octa, x = w * 0.89, y = h * 0.48, sp = -0.8 } }
+  local f0 = floor(h * 0.78)
+  return function(t, val, chr)
+    C.begin(val, chr)
+    for y = f0, h - 1 do
+      for x = 0, w - 1 do
+        if (x + y) % 4 == 0 then C.put(x, y, 0.06 + 0.06 * ((y - h * 0.78) / (h * 0.22)), ".") end
+      end
+    end
+    for _, o in ipairs(objs) do
+      local ay, ax = t * 1.1 * o.sp, t * 0.7
+      local cyr, syr, cxr, sxr = cos(ay), sin(ay), cos(ax), sin(ax)
+      local P = {}
+      for k, p in ipairs(o.s.v) do
+        local X, Z = p[1] * cyr + p[3] * syr, -p[1] * syr + p[3] * cyr
+        local Y = p[2] * cxr - Z * sxr
+        Z = p[2] * sxr + Z * cxr
+        local f = 3.2 / (3.2 + Z)
+        P[k] = { o.x + X * R * f, o.y + Y * R * f / 2, Z }
+      end
+      for _, e in ipairs(o.s.e) do
+        local A, B = P[e[1]], P[e[2]]
+        local v = 0.25 + 0.65 * clamp((1.4 - (A[3] + B[3]) / 2) / 2.8)
+        local ch = slope_char(B[1] - A[1], B[2] - A[2])
+        local n = math.ceil(max(math.abs(B[1] - A[1]), math.abs(B[2] - A[2]) * 2)) + 1
+        for q = 0, n do C.put(A[1] + (B[1] - A[1]) * q / n, A[2] + (B[2] - A[2]) * q / n, v, ch) end
+      end
+      for _, p in ipairs(P) do C.put(p[1], p[2], p[3] < 0 and 1 or 0.5, "+") end
+    end
+  end
+end
+
+---------------------------------------------------------------------------
+-- hud: instruments around the content (rulers, brackets, heading tape, a
+-- simulated terminal, live Neovim readouts, event log, spectrum, waveform,
+-- target lock...). It lives in hud.lua; its modules are configured through
+-- `header_art_opts.hud`.
+---------------------------------------------------------------------------
+
+function M.hud(w, h, box) return require("header_art.hud").build(w, h, box) end
+
+-- Pieces whose builder takes the content box (third argument); the dashboard
+-- rebuilds them when the box moves.
+M.uses_box = { circuit = true, hud = true }
+
+M.names = { "plasma", "torus", "orb", "rings", "flow", "terrain", "galaxy", "galaxies", "descent", "spiral", "hilbert", "rain", "aurora", "turing", "attention", "kmeans", "matrix", "warp", "life", "horizon", "megacity", "phosphor", "radar", "circuit", "glitch", "tunnel", "monolith", "wireframe", "hud" }
 
 return M

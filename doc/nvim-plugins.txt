@@ -235,12 +235,28 @@ snacks.nvim dashboard ~  (folke/snacks.nvim)
   swaying curtains, `turing` Gray-Scott "mitosis" spots, `attention` a causal
   softmax map of 14 x 14 tokens, `kmeans` three clusters settling with
   Voronoi hairlines, `matrix` falling ASCII streams, `warp` a starfield and
-  `life` Conway's Game of Life on the window's grid. The timer runs only
+  `life` Conway's Game of Life on the window's grid. A third, cyberpunk /
+  retrofuturist / techno-brutalist set draws everything with line glyphs:
+  `horizon` a synthwave floor under a sliced sun, `megacity` towers with
+  flickering windows and flying traffic, `phosphor` an oscilloscope
+  Lissajous, `radar` a sweep orbiting the content, `circuit` PCB traces
+  routed into the content box with packets flowing in, `glitch` a tearing
+  hex dump, `tunnel` a vector corridor, `monolith` brutalist slabs under a
+  circling light, `wireframe` two solids tumbling in the margins and `hud`
+  a heads-up display around the content: rulers, brackets titled with the
+  cwd and git branch, a heading tape, a simulated terminal on the left, live
+  readouts (Neovim version, plugins and startup time, memory, load, uptime,
+  buffers, LSP clients, diagnostics), an event log of real editor events, a
+  spectrum, a waveform, a process map of your buffers, a target lock, a scan
+  bar, an alert banner (diagnostic errors when there are any) and a boot
+  sequence. Its left panel (terminal | rings | globe | radar) and each
+  module are set in `header_art_opts.hud` in `lua/plugins/snacks.lua`. The timer runs only
   while the dashboard is visible and Neovim is focused. Options live in `header_art_opts` in
   `lua/plugins/snacks.lua`: `enabled` (false shows the static braille
   header instead), `piece` (plasma | torus | orb | rings | flow | terrain |
   galaxy | galaxies | descent | spiral | hilbert | rain | aurora | turing |
-  attention | kmeans | matrix | warp | life), `charset` (classic | blocks | dots | binary), `fps`,
+  attention | kmeans | matrix | warp | life | horizon | megacity | phosphor |
+  radar | circuit | glitch | tunnel | monolith | wireframe | hud), `charset` (classic | blocks | dots | binary), `fps`,
   `speed`,
   `brightness`, `halo`, `steps`, `animate` (false = one still frame).
   `<leader>uA` (`:HeaderArt pick`) is a Telescope picker over the pieces

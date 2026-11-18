@@ -26,7 +26,7 @@ local ns = vim.api.nvim_create_namespace("header_art")
 
 ---@class header_art.opts
 ---@field enabled boolean   draw the art; false shows the static braille header instead
----@field piece string      plasma | torus | orb | rings | flow | terrain | galaxy | galaxies | descent | spiral | hilbert | rain | aurora | turing | attention | kmeans | matrix | warp | life
+---@field piece string      plasma | torus | orb | rings | flow | terrain | galaxy | galaxies | descent | spiral | hilbert | rain | aurora | turing | attention | kmeans | matrix | warp | life | horizon | megacity | phosphor | radar | circuit | glitch | tunnel | monolith | wireframe | hud
 ---@field charset string    classic | blocks | dots | binary
 ---@field fps integer       frames per second
 ---@field speed number      animation speed multiplier (1 = the pieces' natural pace)
@@ -192,9 +192,19 @@ local function draw()
     return true
   end
 
-  if S.w ~= w or S.h ~= h or S.piece ~= cfg.piece then
-    S.w, S.h, S.piece = w, h, cfg.piece
-    S.frame = pieces[cfg.piece](w, h)
+  -- Pieces drawn around the content (pieces.uses_box) get the box in screen
+  -- rows and are rebuilt when it moves; the others ignore it, so a stateful
+  -- piece isn't reset by the clock's minute re-render.
+  local box = content_box(buf, w)
+  local sbox, bkey = nil, ""
+  if pieces.uses_box[cfg.piece] and box then
+    local off = top - 1
+    sbox = { r0 = box.r0 - off, r1 = box.r1 - off, c0 = box.c0, c1 = box.c1 }
+    bkey = table.concat({ sbox.r0, sbox.r1, sbox.c0, sbox.c1 }, ",")
+  end
+  if S.w ~= w or S.h ~= h or S.piece ~= cfg.piece or S.bkey ~= bkey then
+    S.w, S.h, S.piece, S.bkey = w, h, cfg.piece, bkey
+    S.frame = pieces[cfg.piece](w, h, sbox)
     S.val, S.chr = {}, {}
   end
 
@@ -208,7 +218,6 @@ local function draw()
   S.frame(S.t, S.val, chr)
 
   local nlines = vim.api.nvim_buf_line_count(buf)
-  local box = content_box(buf, w)
   local set = charsets[cfg.charset] or charsets.classic
   local val, tick = S.val, math.floor(S.t * 0.7)
 
@@ -440,6 +449,8 @@ end
 function M.setup(opts)
   cfg = vim.tbl_deep_extend("force", vim.deepcopy(defaults), opts or {})
   load() -- the last picked piece / on-off wins over the spec's defaults
+  require("header_art.hud").configure(cfg.hud)
+  require("header_art.hud_data").setup()
   set_hl()
 
   local grp = vim.api.nvim_create_augroup("HeaderArt", { clear = true })

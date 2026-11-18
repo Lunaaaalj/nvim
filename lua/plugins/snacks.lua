@@ -31,7 +31,7 @@ local data = require("defaults.dashboard_data")
 -- With `enabled = false` the braille header (below) is shown instead.
 local header_art_opts = {
   enabled = true,
-  piece = "plasma", -- plasma | torus | orb | rings | flow | terrain | galaxy | galaxies | descent | spiral | hilbert | rain | aurora | turing | attention | kmeans | matrix | warp | life
+  piece = "plasma", -- plasma | torus | orb | rings | flow | terrain | galaxy | galaxies | descent | spiral | hilbert | rain | aurora | turing | attention | kmeans | matrix | warp | life | horizon | megacity | phosphor | radar | circuit | glitch | tunnel | monolith | wireframe | hud
   charset = "classic", -- classic | blocks | dots | binary
   fps = 30,
   speed = 0.4,
@@ -39,6 +39,15 @@ local header_art_opts = {
   halo = true, -- keep a clear border around the text
   steps = 8, -- colour steps between dim and accent
   animate = true, -- false: one still frame
+  -- The `hud` piece: left panel and which instruments to draw (all on by default).
+  hud = {
+    panel = "terminal", -- terminal | rings | globe | radar
+    modules = {
+      frame = true, brackets = true, tape = true, panel = true, ladder = true, spectrum = true,
+      wave = true, matrix = true, sys = true, clock = true, log = true, barcode = true,
+      coords = true, reticle = true, scan = true, alert = true, glitch = true, boot = true,
+    },
+  },
 }
 
 -- Built-in fallback header: a coiled Python snake.
