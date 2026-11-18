@@ -61,6 +61,15 @@ return {
             dap.listeners.after.event_initialized["dapui"] = function() dapui.open() end
             dap.listeners.before.event_terminated["dapui"] = function() dapui.close() end
             dap.listeners.before.event_exited["dapui"]     = function() dapui.close() end
+
+            -- sound cues: a stop other than a step (breakpoint, exception, pause) needs
+            -- you; the program's exit code is the result
+            dap.listeners.after.event_stopped["sounds"] = function(_, body)
+                if body and body.reason ~= "step" then require("sounds").emit("debug", "breakpoint") end
+            end
+            dap.listeners.after.event_exited["sounds"] = function(_, body)
+                require("sounds").emit("debug", (body and body.exitCode or 0) == 0 and "ok" or "fail")
+            end
         end,
     },
 }

@@ -8,6 +8,8 @@ return {
     },
     config = function()
         require("neotest").setup({
+            -- a sound when a run finishes (lua/sounds/neotest.lua)
+            consumers = { sounds = require("sounds.neotest") },
             adapters = {
                 require("neotest-python")({
                     runner = "pytest",

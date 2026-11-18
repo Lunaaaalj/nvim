@@ -31,6 +31,9 @@ PICKS = {
     "claude_input": "C",  # query pair
     "ok": "C",  # low blip
     "fail": "B",  # negative ack
+    "checkout": "B",  # bus swap
+    "claude_start": "C",  # engage
+    "breakpoint": "B",  # halt tone
 }
 
 # Peak level of each event in dBFS (the balance heard in the mockup).
@@ -43,6 +46,9 @@ LEVELS = {
     "claude_input": -14.6,
     "ok": -18.8,
     "fail": -14.0,
+    "checkout": -22.0,  # a quiet tick: branch switches are frequent
+    "claude_start": -24.0,  # quieter still: it plays on every prompt
+    "breakpoint": -14.6,  # like claude_input: it needs you
 }
 
 
@@ -246,6 +252,47 @@ CANDIDATES = {
             [(0, beep(330, 110, "square", 900), 0.8), (150, beep(220, 200, "square", 700), 0.8)],
         ),
         "C": ("Power drop", [(0, osc(150, 300, "saw", f2=60, lp=600, lp2=200, atk=5, rel=100), 0.7)]),
+    },
+    "checkout": {
+        "A": (
+            "Switch tick",
+            [(0, beep(1500, 14, lp=3500), 0.8), (30, beep(1000, 14, lp=3500), 0.7)],
+        ),
+        "B": (
+            "Bus swap",
+            [
+                (0, nz(70, f=3000, f2=800, q=1.5, atk=2), 0.5),
+                (50, beep(700, 40, "triangle", 1500), 0.6),
+            ],
+        ),
+        "C": (
+            "Data jitter",
+            [(x, beep(f, 12, lp=5000), 0.8 - 0.15 * i) for i, (x, f) in enumerate(((0, 3000), (22, 2200), (44, 2600)))],
+        ),
+    },
+    "claude_start": {
+        "A": (
+            "Intake tick",
+            [(0, nz(12, "highpass", f=5000, q=0.7), 0.6), (0, beep(900, 20, lp=2600), 0.6)],
+        ),
+        "B": ("Double tick", [(0, beep(1000, 15, lp=3000), 0.7), (40, beep(1000, 15, lp=3000), 0.5)]),
+        "C": (
+            "Engage",
+            [(0, beep(260, 50, "triangle", 1200), 0.9), (0, nz(10, "highpass", f=4500, q=0.7), 0.5)],
+        ),
+    },
+    "breakpoint": {
+        "A": (
+            "Query pair",
+            [(x, beep(400, 80, "square", 1200), 0.6) for x in (0, 200)]
+            + [(x + 100, beep(480, 80, "square", 1200), 0.6) for x in (0, 200)],
+        ),
+        "B": ("Halt tone", [(0, beep(300, 150, "square", 900), 0.8)]),
+        "C": (
+            "Tick, tick, pulse",
+            [(x, beep(1200, 14, lp=3500), 0.7) for x in (0, 30, 60)]
+            + [(130, beep(200, 90, "square", 600), 0.8)],
+        ),
     },
 }
 

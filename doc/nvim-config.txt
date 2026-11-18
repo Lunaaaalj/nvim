@@ -402,23 +402,38 @@ persisted. <leader>uS or `:Sounds` turns them on (with a confirming cue).
   save           a file is written (very quiet, at most every 1.5 s)
   commit         a commit lands (any git client: lazygit, a terminal, Claude)
   pull           a pull / merge / rebase finishes
-  push           a push updates a remote ref
+  push           a push updates a remote ref; a write in the GitHub float
+  checkout       a branch switch (`git checkout`, `git switch`)
+  claude_start   Claude Code received your prompt and starts working
   claude_done    Claude Code finished its turn
   claude_input   Claude Code is waiting for you
+  breakpoint     the debugger stopped on a breakpoint, exception or pause
+                 (not on a step)
   ok / fail      a LaTeX compile ended; a terminal command that ran at
-                 least `notify_after` (5 s) exited 0 / non-zero
+                 least `notify_after` (5 s) exited 0 / non-zero; a neotest
+                 run finished (fail if any test failed); the debugged
+                 program exited 0 / non-zero. `fail` also plays when a
+                 `git` command that changes things (commit, push, pull,
+                 merge, rebase, checkout...) exits non-zero in a terminal,
+                 however quickly, because git leaves no reflog line then.
 
 Git cues come from the reflog: a watcher on `<gitdir>/logs` runs only while
 sounds are on and follows `:cd` (`lua/sounds/git.lua`). The first commit of a
 brand-new repository is silent, because `logs/` doesn't exist yet.
 
-The Claude cues need hooks in `~/.claude/settings.json`: `Stop` and
-`Notification` run `nvim --server $NVIM --remote-expr
-"v:lua.require'sounds'.remote('claude_done')"`. `$NVIM` is only set inside
-Neovim terminals, so Claude sessions elsewhere stay silent.
+The Claude cues need hooks in `~/.claude/settings.json`: `UserPromptSubmit`,
+`Stop` and `Notification` run `nvim --server $NVIM --remote-expr
+"v:lua.require'sounds'.remote('claude_start')"` (`claude_done`,
+`claude_input`). `$NVIM` is only set inside Neovim terminals, so Claude
+sessions elsewhere stay silent. The prompt hook runs in the background and
+prints nothing, because a prompt hook blocks the prompt and its stdout is
+added to it.
 
 Silent in headless runs, over SSH, and without `afplay`. Tune volume, per-cue
-switches and minimum gaps in `require("sounds").config`.
+switches and minimum gaps in `require("sounds").config`. A cue can be turned
+off everywhere with `config.events.{cue} = false`; a whole source (who asked
+for the sound) with `config.sources.{source} = false`. Sources: save, git,
+git_fail, compile, terminal, tests, debug, upstream, claude.
 
 ==============================================================================
 12. OTHER HELP FILES                                      *nvim-config-help*

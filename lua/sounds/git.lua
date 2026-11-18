@@ -1,7 +1,8 @@
 -- Git cues from the reflog: commit / pull / push, whoever ran git (a terminal,
 -- lazygit, Claude, upstream.nvim). Watches `<gitdir>/logs` recursively (FSEvents
 -- on macOS) and reads only the bytes appended since the last event.
---   logs/HEAD                 "commit…", "pull…", "merge…", "rebase (finish)…"
+--   logs/HEAD                 "commit…", "pull…", "merge…", "rebase (finish)…",
+--                             "checkout: moving from a to b" (a branch switch)
 --   logs/refs/remotes/**      "update by push" (fetches are ignored)
 -- Only runs while sounds are enabled.
 local M = {}
@@ -17,15 +18,16 @@ local function classify(msg)
   if msg:match("^commit") then return "commit" end
   if msg:match("^pull") or msg:match("^merge") or msg:match("^rebase %(finish%)") then return "pull" end
   if msg:match("update by push") then return "push" end
+  if msg:match("^checkout: moving from") then return "checkout" end
 end
 
 local function flush()
   local kinds = pending
   pending = {}
   -- one cue per burst: a pull may log several lines (and a merge commit)
-  for _, kind in ipairs({ "pull", "commit", "push" }) do
+  for _, kind in ipairs({ "pull", "commit", "push", "checkout" }) do
     if kinds[kind] then
-      vim.schedule(function() require("sounds").play(kind) end)
+      vim.schedule(function() require("sounds").emit("git", kind) end)
       return
     end
   end

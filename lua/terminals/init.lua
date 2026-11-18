@@ -468,7 +468,13 @@ local function on_request(ev)
     changed()
     if dur >= M.config.notify_after then
       -- audible even when you're watching the terminal (a long build)
-      pcall(function() require("sounds").play(m.exit == 0 and "ok" or "fail") end)
+      pcall(function() require("sounds").emit("terminal", m.exit == 0 and "ok" or "fail") end)
+    elseif m.exit ~= 0 then
+      -- a quick `git commit` / `git push` that was rejected leaves no reflog line
+      pcall(function()
+        local sounds = require("sounds")
+        if sounds.is_git_write(cmd) then sounds.emit("git_fail", "fail") end
+      end)
     end
     if dur >= M.config.notify_after and vim.fn.bufwinid(ev.buf) == -1 then
       vim.notify(

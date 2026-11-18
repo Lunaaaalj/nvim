@@ -59,7 +59,10 @@ return {
             group = group,
             pattern = "UpstreamChanged",
             callback = function(ev)
-                if ev.data and ev.data.item then require("defaults.dashboard_data").refresh(true) end
+                if ev.data and ev.data.item then
+                    require("defaults.dashboard_data").refresh(true)
+                    require("sounds").emit("upstream", "push") -- sent
+                end
             end,
         })
     end,
