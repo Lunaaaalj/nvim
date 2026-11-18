@@ -13,7 +13,8 @@ CONTENTS                                                       *nvim-config*
   8. Writing companion ............................ |nvim-config-writing|
   9. Language references .......................... |nvim-config-refdocs|
  10. Window layout ................................ |nvim-config-layout|
- 11. Other help files ............................. |nvim-config-help|
+ 11. Sound cues .................................. |nvim-config-sounds|
+ 12. Other help files ............................. |nvim-config-help|
 
 This config also ships these companion help files:
 
@@ -379,7 +380,138 @@ or <leader>\ (along the window's longer side; repeating it tiles: vertical,
 then horizontal, then vertical...). |nvim-keymaps-windows| lists the keys.
 
 ==============================================================================
-11. OTHER HELP FILES                                      *nvim-config-help*
+11. SOUND CUES                                          *nvim-config-sounds*
+
+Short, dry cues for editor events in the voice of a sci-fi computer terminal:
+gated square and triangle beeps, low pulses, a little noise. Neovim has no
+audio, so they play through macOS `afplay`; the WAVs live in `sounds/` and are
+synthesized by `lua/sounds/gen.py` (stdlib Python). The generator keeps three
+candidates (A, B, C) per event and `PICKS` chooses the active one; to change
+an event, edit its letter and run `python3 -I lua/sounds/gen.py sounds`. Add
+`--candidates {dir}` to also write every candidate for auditioning with
+`afplay`.
+
+Opt-in: sounds are OFF at the start of every session and the choice is never
+persisted. <leader>uS or `:Sounds` turns them on (with a confirming cue).
+
+  :Sounds [on|off|toggle]   switch (no argument toggles)
+  :Sounds test {cue}        play one cue, even when sounds are off
+  :Sounds demo              every cue in turn, to tune by ear
+
+  Cue            When
+  save           a file is written (very quiet, at most every 1.5 s)
+  commit         a commit lands (any git client: lazygit, a terminal, Claude)
+  pull           a pull / merge / rebase finishes
+  push           a push updates a remote ref; a write in the GitHub float
+  checkout       a branch switch (`git checkout`, `git switch`)
+  claude_start   Claude Code received your prompt and starts working
+  claude_done    Claude Code finished its turn
+  claude_input   Claude Code is waiting for you
+  breakpoint     the debugger stopped on a breakpoint, exception or pause
+                 (not on a step)
+  ok / fail      a LaTeX compile ended; a terminal command that ran at
+                 least `notify_after` (5 s) exited 0 / non-zero; a neotest
+                 run finished (fail if any test failed); the debugged
+                 program exited 0 / non-zero. `fail` also plays when a
+                 `git` command that changes things (commit, push, pull,
+                 merge, rebase, checkout...) exits non-zero in a terminal,
+                 however quickly, because git leaves no reflog line then.
+
+Git cues come from the reflog: a watcher on `<gitdir>/logs` runs only while
+sounds are on and follows `:cd` (`lua/sounds/git.lua`). The first commit of a
+brand-new repository is silent, because `logs/` doesn't exist yet.
+
+The Claude cues need hooks in `~/.claude/settings.json`: `UserPromptSubmit`,
+`Stop` and `Notification` run `nvim --server $NVIM --remote-expr
+"v:lua.require'sounds'.remote('claude_start')"` (`claude_done`,
+`claude_input`). `$NVIM` is only set inside Neovim terminals, so Claude
+sessions elsewhere stay silent. The prompt hook runs in the background and
+prints nothing, because a prompt hook blocks the prompt and its stdout is
+added to it.
+
+Silent in headless runs, over SSH, and without `afplay`. Tune volume, per-cue
+switches and minimum gaps in `require("sounds").config`. A cue can be turned
+off everywhere with `config.events.{cue} = false`; a whole source (who asked
+for the sound) with `config.sources.{source} = false`. Sources: save, git,
+git_fail, compile, terminal, tests, debug, upstream, claude.
+
+                                                        *nvim-config-chatter*
+Chatter ~
+
+Experimental sounds that fire often, on two switches. They start off in every
+session and are NOT controlled by <leader>uS / `:Sounds`.
+
+  <leader>uC   Claude talking   a tick as Claude's text arrives
+  <leader>ui   Terminal         typing and output together: a tick per key
+                                typed in a terminal (Enter has its own sound)
+                                and a tick as a shell command prints lines
+
+  :Chatter {claude|terminal|input|output|all} [on|off|toggle]
+                          `input` and `output` switch the two halves of
+                          "terminal" separately
+  :Chatter test {cue} [A-F]
+                          play a cue (claude_line, claude_para, term_key,
+                          term_enter, term_out); with a letter, play that
+                          candidate (A to F) instead of the active one, at
+                          the real level through the real player, to
+                          compare them by ear
+
+Claude talking watches the Claude terminal buffers (the claudecode panel and
+claude_chats). Claude's screen is a full-screen app that redraws in place, so
+only new text counts: a line that grows adds the difference, text that merely
+scrolled or was redrawn adds nothing, and the spinner, input box, rules and
+status bar are ignored (`config.claude.ignore`). The default is a sound per 20
+new characters (`mode = "chunk"`, `chunk = 20`); `mode = "line"` plays one per
+new line. While you type in that terminal, nothing plays.
+
+Terminal input ignores Claude's terminals (`skip_claude_in_terminal`).
+Terminal output only plays while a shell command runs, between the zsh
+prompt hooks of lua/terminals (OSC 133;C and 133;D), so a REPL or a TUI
+program in a terminal stays silent.
+
+Each feature has a rate cap (`claude.cap` 12 /s, `input.cap` 25 /s,
+`output.cap` 20 /s) and a `volume` multiplier next to `chatter.config.volume`.
+Every sound exists in four pitch variants (`sounds/chatter/<cue>_1..4.wav`),
+one picked at random each time. They are played by a small helper
+(`lua/sounds/player.swift`), because `afplay` needs about 850 ms per run and
+would lag behind typing. It is compiled once, on first use, into
+stdpath("cache")/sounds/player (needs `swiftc`, from `xcode-select
+--install`), started on the first switch you turn on, stopped when all three
+are off, and exits by itself when Neovim does.
+
+The paragraph sound (`claude_para`) is generated but unused while
+`claude.mode = "chunk"`. `gen.py` keeps six candidates per cue
+(`CHATTER`, A to F) and `CHATTER_PICKS` chooses the active one.
+
+Claude working ~
+
+Part of the Claude switch (<leader>uC): while Claude is thinking or running a
+command, a mechanical watch ticks (6 beats a second, each beat two soft
+metallic clicks, the next one a touch lower, with a little unevenness like a
+real movement). `:Chatter working [on|off|toggle]` turns just this part on or
+off. Settings are in `config.claude.working`:
+
+  rate 6               ticks a second
+  delay 0              seconds of work before it starts (raise it so quick
+                       answers stay quiet)
+  pause_text true      steps aside while Claude's text is arriving (those
+                       ticks have their own sound), until 700 ms without new
+                       text; it does not pause while a command runs
+  low_for_commands     lower and slower while a Bash command runs
+  finished_sound true  plays the "finished" sound when Claude stops, unless
+                       the Stop hook just did
+
+Claude is "working" while the status bar (the last line with text on its
+screen) says `esc to interrupt`. The screen cannot tell thinking from running a
+command, so the lower pitch comes from two more Claude Code hooks in
+`~/.claude/settings.json`: `PreToolUse` and `PostToolUse` with the matcher
+`Bash`, which call `sounds.remote('claude_cmd_start')` and `claude_cmd_end`.
+Without them everything works except the lower pitch. The ticks are run by the
+player itself (it schedules each beat on the audio clock), so the rhythm stays
+even however busy Neovim is.
+
+==============================================================================
+12. OTHER HELP FILES                                      *nvim-config-help*
 
   |nvim-keymaps|      Every keymap in the config, grouped by area.
   |nvim-plugins|      Catalog of all plugins with their options and maps.
