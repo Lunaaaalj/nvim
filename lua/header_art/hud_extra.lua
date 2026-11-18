@@ -353,11 +353,11 @@ end
 -- orrery: language servers orbiting, one moon per attached buffer
 ---------------------------------------------------------------------------
 
-local function orrery(A, r, t, g, a, data)
+local function orrery(A, r, t, g, a, data, live)
   local cl = data.clients or {}
   local nbuf = 0
   for _, c in ipairs(cl) do nbuf = nbuf + c.bufs end
-  header(A, r, string.format("LSP ORRERY  %d CLIENT%s  %d BUF", #cl, #cl == 1 and "" or "S", nbuf), a)
+  header(A, r, string.format("%sLSP ORRERY  %d CLIENT%s  %d BUF", (live and live.avail) and "[6] " or "", #cl, #cl == 1 and "" or "S", nbuf), a)
   local Rm = min((r.w - 16) / 2, (r.h - 4) / 0.7) * g
   if Rm < 5 then return end
   local cx, cy, ry = r.x0 + (r.w - 10) / 2, r.y0 + 1.5 + (r.h - 3) / 2, 0.34
@@ -388,12 +388,14 @@ end
 -- hexdump: the last edited buffer as hex + ASCII, scrolling
 ---------------------------------------------------------------------------
 
-local function hexdump(A, r, t, g, a, data)
+local function hexdump(A, r, t, g, a, data, live)
   local src = data.hex or { name = "?", bytes = "" }
   local bytes = src.bytes
   if #bytes == 0 then bytes = "(empty)" end
   local bpr, rows = r.w >= 78 and 16 or 8, r.h - 1
-  header(A, r, string.format("MEM 0x7F3A0000  %s  %.1f KB", src.name, #bytes / 1024), a)
+  -- peeked (hud_live): the real buffer sits in a float over the rows
+  if live and live.peek then return header(A, r, "[3] PEEK " .. live.peek .. "  ·  q close · O pop out", a) end
+  header(A, r, string.format("%sMEM 0x7F3A0000  %s  %.1f KB", (live and live.avail) and "[3] " or "", src.name, #bytes / 1024), a)
   local step = floor(t * 2.2)
   for k = 0, rows - 1 do
     if k / rows > g then break end

@@ -190,7 +190,16 @@ function M.build(w, h, box)
       shell = { x0 = 4, x1 = L.leftX1 - 1, y0 = py0 + 1, y1 = py1 - 1 },
       log = { x0 = L.rightX0, x1 = lx1, y0 = L.topY1 + 3, y1 = L.botY0 - 3 },
       claude_big = big.x1 - big.x0 >= 50 and big or nil,
+      -- the process map's cells, the hex dump's rows (below its header), and
+      -- the whole HUD inside the edge rulers (lazygit)
+      proc = M.config.modules.matrix and { x0 = 3, y0 = L.botY0, x1 = 18, y1 = L.botY0 + 3 } or nil,
+      full = { x0 = 3, x1 = w - 4, y0 = 3, y1 = h - 4 },
     }
+    for _, e in ipairs(extras) do
+      if e.m == X.MODULES.hexdump then
+        live_rects.hex = { x0 = e.r.x0, x1 = e.r.x1, y0 = e.r.y0 + 1, y1 = e.r.y1 }
+      end
+    end
     if box then Live.set_layout(live_rects) end
   end
 
@@ -204,6 +213,7 @@ function M.build(w, h, box)
     local avail = box ~= nil and Live.available()
     local shell_open = box ~= nil and Live.is_open("shell")
     local claude_open = box ~= nil and Live.is_open("claude")
+    local live = { avail = avail, peek = box ~= nil and Live.peek_label() or nil }
 
     local function age(id)
       if mods.boot and BOOT[id] then return t - t0 - BOOT[id] end
@@ -241,6 +251,16 @@ function M.build(w, h, box)
       end
     end
 
+    -- a framed float (the expanded chat, lazygit): rulers around the rect
+    local function float_frame(r, title, hint)
+      local fx0, fx1, fy0, fy1 = r.x0 - 1, r.x1 + 1, r.y0 - 1, r.y1 + 1
+      for x = fx0 + 1, fx1 - 1 do set(x, fy0, 0.45, "─"); set(x, fy1, 0.45, "─") end
+      for y = fy0 + 1, fy1 - 1 do set(fx0, y, 0.45, "│"); set(fx1, y, 0.45, "│") end
+      set(fx0, fy0, 0.6, "┌"); set(fx1, fy0, 0.6, "┐"); set(fx0, fy1, 0.6, "└"); set(fx1, fy1, 0.6, "┘")
+      text(fx0 + 2, fy0, title, 0.75, 99, true)
+      text(fx1 - 1 - #chars(hint), fy1, hint, 0.45, 99, true)
+    end
+
     -- frame: rulers on all four edges, row letters, corner marks
     if on("frame") then
       local reach = min(1, age("frame") * 3)
@@ -269,8 +289,9 @@ function M.build(w, h, box)
       corner(B.c0, B.r0, 1, 1, "┏"); corner(B.c1, B.r0, -1, 1, "┓")
       corner(B.c0, B.r1, 1, -1, "┗"); corner(B.c1, B.r1, -1, -1, "┛")
       local room = B.c1 - B.c0 - 12
-      local title = string.format("[ %s  //  %s  //  SESSION 0x%02X ]", data.cwd, data.branch or "no git", data.pid % 256)
-      if #chars(title) > room then title = string.format("[ %s  //  %s ]", data.cwd, data.branch or "no git") end
+      local badge = avail and "[4] " or ""
+      local title = string.format("[ %s%s  //  %s  //  SESSION 0x%02X ]", badge, data.cwd, data.branch or "no git", data.pid % 256)
+      if #chars(title) > room then title = string.format("[ %s%s  //  %s ]", badge, data.cwd, data.branch or "no git") end
       if #chars(title) <= room then text(round((B.c0 + B.c1 - #chars(title)) / 2), B.r0, title, 0.5, a - 0.1) end
       local r0, r1 = B.c0 + 7, B.c1 - 7
       if r1 > r0 then
@@ -311,7 +332,7 @@ function M.build(w, h, box)
         { "MEM", string.format("%.1f MB", data.mem) },
         { "LOAD", string.format("%.2f %.2f %.2f", ld[1] or 0, ld[2] or 0, ld[3] or 0) },
         { "UP", string.format("%02d:%02d:%02d", floor(up / 3600), floor(up / 60) % 60, floor(up) % 60) },
-        { "BUF", string.format("%d   LSP %d   DIAG %d", data.bufs, data.lsp, data.diag) },
+        { "BUF", string.format("%d   %sLSP %d   %sDIAG %d", data.bufs, avail and "[6] " or "", data.lsp, avail and "[7] " or "", data.diag) },
       }
       for i, r in ipairs(rows) do
         local d = (i - 1) * 0.04
@@ -501,11 +522,23 @@ function M.build(w, h, box)
     if on("spectrum") then
       local nb = max(8, min(28, w - L.rightX0 - 6))
       local bx, base, H6 = w - 5 - nb, h - 3, 6
-      local g = grow("spectrum")
+      -- Apple Music (lua/music, cached state only): the song as the label,
+      -- bars down to a murmur while paused or stopped
+      local mus = package.loaded["music"] and package.loaded["music"].state
+      local playing = mus and mus.running and mus.playing
+      local g = grow("spectrum") * ((not mus or playing) and 1 or 0.12)
       local function hv(i, tt)
         return (0.5 + 0.5 * sin(i * 1.7 + tt * 2.3 + sin(tt * 0.7 + i))) * H6 * (1 - i / nb * 0.35) * g
       end
-      text(bx, base - H6 - 1, "SPECTRUM", 0.3, age("spectrum"))
+      local label = "SPECTRUM"
+      if mus and mus.running and mus.track then
+        local tr = mus.track
+        label = (playing and "♪ " or "‖ ") .. (tr.artist ~= "" and (tr.artist .. " – " .. tr.name) or tr.name)
+      end
+      label = (avail and "[5] " or "") .. label
+      local lc = chars(label)
+      if #lc > nb + 4 then label = table.concat(lc, "", 1, nb + 3) .. "…" end
+      text(bx, base - H6 - 1, label, playing and 0.5 or 0.3, age("spectrum"))
       for i = 0, nb - 1 do
         local v = hv(i, t)
         for j = 0, H6 - 1 do
@@ -539,8 +572,10 @@ function M.build(w, h, box)
     -- process map: listed buffers first (bright = modified), then ambient cells
     if on("matrix") then
       local a, y0 = age("matrix"), L.botY0
-      text(3, y0 - 1, string.format("PROC MAP  %d BUF", data.bufs), 0.3, a)
-      for i = 0, 63 do
+      local sel = box ~= nil and Live.proc_label()
+      local head = string.format("%sPROC MAP  %d BUF", avail and "[2] " or "", data.bufs)
+      text(3, y0 - 1, head .. (sel and ("  → " .. sel) or ""), sel and 0.6 or 0.3, a)
+      for i = 0, (sel and -1 or 63) do -- the buffer map's float covers the cells
         if i / 64 > a * 2 then break end
         local x, y = 3 + i % 16, y0 + floor(i / 16)
         local b = data.buflist[i + 1]
@@ -572,19 +607,17 @@ function M.build(w, h, box)
     -- free-zone modules (hud_extra.lua)
     for _, e in ipairs(extras) do
       local a = age(e.id)
-      if a > 0 then e.m.draw(e.A, e.r, t, grow(e.id), a, data) end
+      if a > 0 then e.m.draw(e.A, e.r, t, grow(e.id), a, data, live) end
     end
 
     -- the chat's frame while it is expanded (the float fills the inside)
     if claude_open and Live.expanded() and live_rects.claude_big then
-      local r = live_rects.claude_big
-      local fx0, fx1, fy0, fy1 = r.x0 - 1, r.x1 + 1, r.y0 - 1, r.y1 + 1
-      for x = fx0 + 1, fx1 - 1 do set(x, fy0, 0.45, "─"); set(x, fy1, 0.45, "─") end
-      for y = fy0 + 1, fy1 - 1 do set(fx0, y, 0.45, "│"); set(fx1, y, 0.45, "│") end
-      set(fx0, fy0, 0.6, "┌"); set(fx1, fy0, 0.6, "┐"); set(fx0, fy1, 0.6, "└"); set(fx1, fy1, 0.6, "┘")
-      text(fx0 + 2, fy0, "┤ [1] CLAUDE ├", 0.75, 99, true)
-      local hint = "┤ C-q close · O pop out ├"
-      text(fx1 - 1 - #chars(hint), fy1, hint, 0.45, 99, true)
+      float_frame(live_rects.claude_big, "┤ [1] CLAUDE ├", "┤ C-q close · O pop out ├")
+    end
+    -- lazygit over the whole HUD
+    if box ~= nil and Live.is_open("git") then
+      float_frame(live_rects.full, string.format("┤ [4] GIT :: %s // %s ├", data.cwd, data.branch or "no git"),
+        "┤ q quit · C-q close · O pop out ├")
     end
 
     -- reticle: glides to a target outside the content, locks, moves on

@@ -75,6 +75,14 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
                 (Claude with its ANSI-only theme), so they match the HUD. The
                 sessions outlive the dashboard (the shell is a normal terminal
                 for <leader>tt; `0`/`1` again shows the same ones).
+  2 / 3 / 4     Same conditions: `2` walks the process map's buffer cells
+                with the cursor (the HUD names the selection; <CR> opens it,
+                `d` deletes it, `q` closes); `3` peeks at the last edited file
+                in a float over the hex dump (`O` opens it in the window); `4`
+                runs lazygit over the whole HUD (its `q` gives the HUD back).
+  5 / 6 / 7     The Apple Music player (the spectrum also shows the playing
+                song and goes quiet when paused) / an LSP menu (info, log,
+                restart a client) / diagnostics in Telescope.
   <leader>sn    Show notification history (Noice)
   <leader>sd    Dismiss visible notifications
   <leader>fml   Make it rain (cellular-automaton, just for fun)
