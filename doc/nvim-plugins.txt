@@ -255,7 +255,12 @@ snacks.nvim dashboard ~  (folke/snacks.nvim)
   an orrery of the attached LSP clients (one moon per buffer), a hex dump of
   the buffer you last edited and a double helix spelling the HEAD commit; a
   zone too small for its module is skipped, so a split window looks as
-  before. Its left panel (terminal | rings | globe | radar), each module and
+  before. With `hud` the dashboard's clock, date, keys and GitHub stats are
+  redrawn by the HUD as an instrument panel: a seven-segment clock with
+  seconds and centiseconds, UTC, Unix epoch and session time, day of year,
+  ISO week, a seconds sweep, the keys as keycaps (still the same keys) and
+  the stats in the panel's frame. Other pieces keep the normal dashboard.
+  Its left panel (terminal | rings | globe | radar), each module and
   each zone (`zones`) are set in `header_art_opts.hud` in
   `lua/plugins/snacks.lua`. The timer runs only
   while the dashboard is visible and Neovim is focused. Options live in `header_art_opts` in

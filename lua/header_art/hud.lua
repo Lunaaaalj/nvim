@@ -34,6 +34,7 @@
 local G = require("header_art.glyph")
 local D = require("header_art.hud_data")
 local X = require("header_art.hud_extra")
+local K = require("header_art.hud_core")
 
 local floor, min, max, abs = math.floor, math.min, math.max, math.abs
 local sin, cos, exp, pi = math.sin, math.cos, math.exp, math.pi
@@ -54,6 +55,9 @@ M.config = {
   },
   -- free-zone modules (hud_extra.lua): a module name, or false
   zones = { z1 = "icosa", z2 = "globe", z3 = "strip", z4 = "orrery", z5 = "hexdump", z6 = "helix" },
+  -- the dashboard content as an instrument panel (hud_core.lua):
+  -- { keys = { { key, hint }, ... }, stats = function() -> { prs, issues, contributions, streak } }
+  content = {},
 }
 
 function M.configure(opts)
@@ -64,7 +68,7 @@ end
 local BOOT = {
   frame = 0, brackets = 0.08, tape = 0.16, sys = 0.2, clock = 0.24, panel = 0.3, log = 0.34, ladder = 0.38,
   spectrum = 0.42, wave = 0.46, matrix = 0.5, coords = 0.54, barcode = 0.56, reticle = 0.6,
-  z1 = 0.64, z2 = 0.68, z3 = 0.72, z4 = 0.76, z5 = 0.8, z6 = 0.84,
+  z1 = 0.64, z2 = 0.68, z3 = 0.72, z4 = 0.76, z5 = 0.8, z6 = 0.84, core = 0.1,
 }
 
 local AMBIENT = {
@@ -600,6 +604,20 @@ function M.build(w, h, box)
           end
         end
       end
+    end
+
+    -- the dashboard's content (hud_core.lua), drawn last on a cleared box so
+    -- the reticle, scan bar and glitch never cross it
+    for y = max(0, P.r0), min(h - 1, P.r1) do
+      for x = max(0, P.c0), min(w - 1, P.c1) do
+        val[y * w + x + 1], chr[y * w + x + 1] = 0, false
+      end
+    end
+    local ix, iy = P.c0 + 6, P.r0 + 1 -- the box is padded 6 cols / 1 row (header_art PAD_C/PAD_R)
+    if box and P.c1 - P.c0 + 1 >= K.W + 12 and P.r1 - P.r0 + 1 >= K.H + 2 then
+      K.draw(set, ix + floor((P.c1 - P.c0 + 1 - 12 - K.W) / 2), iy, age("core"), cfg.content)
+    else
+      K.draw_compact(set, L.cx, L.cy)
     end
   end
 end

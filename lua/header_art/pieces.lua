@@ -1696,6 +1696,10 @@ function M.hud(w, h, box) return require("header_art.hud").build(w, h, box) end
 -- Pieces whose builder takes the content box (third argument); the dashboard
 -- rebuilds them when the box moves.
 M.uses_box = { circuit = true, hud = true }
+-- Pieces that draw the dashboard's content themselves (the HUD's clock panel):
+-- the renderer lets them paint inside the box, and the snacks sections only
+-- reserve its size (header_art.owns_content()).
+M.paints_box = { hud = true }
 
 M.names = { "plasma", "torus", "orb", "rings", "flow", "terrain", "galaxy", "galaxies", "descent", "spiral", "hilbert", "rain", "aurora", "turing", "attention", "kmeans", "matrix", "warp", "life", "horizon", "megacity", "phosphor", "radar", "circuit", "glitch", "tunnel", "monolith", "wireframe", "hud" }
 

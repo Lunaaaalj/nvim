@@ -83,6 +83,14 @@ end
 -- piece chose for the cell (its `chr` table, e.g. a contour's direction); it
 -- replaces the charset's, and only the level decides the colour.
 local function cell(set, v, x, sr, tick, forced)
+  -- Content tier (pieces.paints_box): a level above 1 is text the piece draws
+  -- in the content box (the HUD's clock panel). It skips the `brightness` cap,
+  -- and its brightest cells get the bold top group.
+  if v > 1 then
+    local lv = clamp(v - 1)
+    if lv >= 0.9 then return forced or " ", cfg.steps + 1 end
+    return forced or " ", math.min(cfg.steps, math.floor(lv * cfg.steps) + 1)
+  end
   local nch = #set
   local idx = math.min(nch, math.floor(clamp(v) * nch) + 1)
   local ch = set[idx]
@@ -115,6 +123,8 @@ local function set_hl()
     local k = cfg.steps == 1 and 1 or (i - 1) / (cfg.steps - 1)
     vim.api.nvim_set_hl(0, "HeaderArt" .. i, { fg = colors.blend(accent, dim, k) })
   end
+  -- the content tier's top step (see cell())
+  vim.api.nvim_set_hl(0, "HeaderArt" .. (cfg.steps + 1), { fg = accent, bold = true })
 end
 
 ---------------------------------------------------------------------------
@@ -224,6 +234,7 @@ local function draw()
   -- Screen row `sr` (document row `row`) as runs of chunks: { { start_col, chunks }, ... }.
   -- Cells inside the content box end a run (overlay rows must not cover the
   -- text), or, with `fill` (virt_lines, which can't skip cells), become blanks.
+  local paints = pieces.paints_box[cfg.piece]
   local function segments(sr, row, fill)
     local segs, chunks, run, cur, startx = {}, nil, nil, nil, 0
     local function flush()
@@ -231,6 +242,8 @@ local function draw()
     end
     for x = 0, w - 1 do
       local f = box_factor(box, row, x)
+      -- a piece that paints the box (the HUD's clock panel) blanks it itself
+      if f == 0 and paints then f = 1 end
       if f == 0 and not fill then
         if chunks then
           flush()
@@ -341,6 +354,10 @@ function M.enabled() return cfg.enabled end
 
 function M.options() return vim.deepcopy(cfg) end
 
+--- True when the active piece draws the dashboard's own content (the HUD's
+--- clock panel): the snacks sections then only reserve its box.
+function M.owns_content() return cfg.enabled and pieces.paints_box[cfg.piece] == true end
+
 local function refresh_dashboard()
   if _G.Snacks and Snacks.dashboard and dashboard_win() then Snacks.dashboard.update() end
 end
@@ -375,8 +392,10 @@ end
 function M.apply(piece, persist)
   if piece then
     if type(pieces[piece]) ~= "function" then return end
+    local owned = M.owns_content()
     cfg.piece = piece
     set_enabled(true)
+    if M.owns_content() ~= owned then refresh_dashboard() end
     if cfg.animate then start() else vim.schedule(safe_draw) end
   else
     set_enabled(false)

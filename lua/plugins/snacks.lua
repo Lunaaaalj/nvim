@@ -214,15 +214,29 @@ return {
     },
     dashboard = {
       enabled = true,
-      width = math.max(header_width, 60),
+      -- at least the HUD panel's width (hud_core.lua), so its reserved block isn't clipped
+      width = math.max(header_width, 60, 80),
       sections = {
         -- The braille header only shows when the generative art is off (re-run on every render).
         function()
           if require("header_art").enabled() then return nil end
           return { text = table.concat(header_lines, "\n"), align = "center", padding = 2, hl = "SnacksDashboardHeader" }
         end,
+        -- With the HUD piece the art draws the clock, date, keys and stats itself
+        -- (header_art/hud_core.lua, an instrument panel with seconds): this only
+        -- reserves its box. No-break spaces are blank on screen but count as text
+        -- for header_art's content_box(), which then measures exactly the panel.
+        function()
+          if not require("header_art").owns_content() then return nil end
+          local core = require("header_art.hud_core")
+          local row = ("\u{a0}"):rep(core.W)
+          local rows = {}
+          for i = 1, core.H do rows[i] = row end
+          return { text = table.concat(rows, "\n"), align = "center" }
+        end,
         -- Sections-as-functions re-run on every render, so the time stays current.
         function()
+          if require("header_art").owns_content() then return nil end
           local text = {}
           for _, row in ipairs(require("defaults.bigclock").render(os.date("%H:%M"))) do
             text[#text + 1] = { row, hl = "DashboardAccent" }
@@ -235,10 +249,12 @@ return {
         -- Stats and key hints sit together as a two-line footer under the clock,
         -- so the whole block stays compact and the art keeps clear of one box.
         function()
+          if require("header_art").owns_content() then return nil end
           local stats = data.render_stats()
           return stats and { text = stats, align = "center", padding = 1 } or nil
         end,
         function()
+          if require("header_art").owns_content() then return nil end
           return { text = hint_line(), align = "center" }
         end,
         -- every key stays bound, without its own row
@@ -250,6 +266,11 @@ return {
     require("snacks").setup(opts)
     data.setup({ issues = "assignee" }) -- or "author"
     set_hl()
+    -- the HUD's panel shows the same keys (those with a hint) and stats
+    header_art_opts.hud.content = {
+      keys = vim.tbl_map(function(k) return { k.key, k.hint } end, vim.tbl_filter(function(k) return k.hint end, keys)),
+      stats = data.stats,
+    }
     require("header_art").setup(header_art_opts)
 
     local grp = vim.api.nvim_create_augroup("DashboardLive", { clear = true })

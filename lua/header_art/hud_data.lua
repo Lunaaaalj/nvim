@@ -154,6 +154,9 @@ function M.now()
   return uv.gettimeofday()
 end
 
+-- Seconds since startup, live (sample().uptime only changes once a second).
+function M.uptime() return (uv.hrtime() - START) / 1e9 end
+
 function M.setup()
   local grp = vim.api.nvim_create_augroup("HeaderArtHud", { clear = true })
   local function au(ev, fn, pattern)

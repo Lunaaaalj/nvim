@@ -129,6 +129,10 @@ local function thousands(n)
   end
 end
 
+-- The cached numbers ({ prs, issues, contributions, streak }) or nil, for
+-- the HUD's panel.
+function M.stats() return read_cache() end
+
 -- "4 open PRs · 3 issues · 1,284 contributions · 12 day streak", numbers in
 -- the accent, labels muted. nil (line hidden) until the first fetch lands.
 function M.render_stats()
