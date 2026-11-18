@@ -218,7 +218,10 @@ end
 --- starts `claude` (resuming `session_id` if given, else a fresh chat).
 --- `prompt` seeds a new chat: it's passed as claude's positional argument, so
 --- the chat starts already working on it (upstream.nvim's "work on issue").
----@param opts { session_id?: string, title?: string, win?: integer, prompt?: string }?
+--- `colors` (16 colours) becomes the buffer's terminal palette and
+--- `settings` is passed as `--settings` JSON (e.g. `{ theme = "dark-ansi" }`,
+--- so Claude draws with that palette instead of its own RGB colours).
+---@param opts { session_id?: string, title?: string, win?: integer, prompt?: string, colors?: string[], settings?: table }?
 ---@return integer bufnr
 function M.open(opts)
   opts = opts or {}
@@ -234,9 +237,11 @@ function M.open(opts)
   -- session log (and listed under "Running") before Claude writes anything.
   local id = opts.session_id or uuid4()
   local cmd = opts.session_id and { "claude", "--resume", id } or { "claude", "--session-id", id }
+  if opts.settings then vim.list_extend(cmd, { "--settings", vim.json.encode(opts.settings) }) end
   if opts.prompt and opts.prompt ~= "" then cmd[#cmd + 1] = opts.prompt end
 
   local buf = vim.api.nvim_create_buf(true, false)
+  for i, c in ipairs(opts.colors or {}) do vim.b[buf]["terminal_color_" .. (i - 1)] = c end -- read at TermOpen
   vim.api.nvim_win_set_buf(win, buf)
   vim.api.nvim_win_call(win, function()
     vim.fn.jobstart(cmd, {

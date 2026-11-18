@@ -470,6 +470,7 @@ function M.setup(opts)
   load() -- the last picked piece / on-off wins over the spec's defaults
   require("header_art.hud").configure(cfg.hud)
   require("header_art.hud_data").setup()
+  require("header_art.hud_live").setup()
   set_hl()
 
   local grp = vim.api.nvim_create_augroup("HeaderArt", { clear = true })

@@ -110,6 +110,7 @@ local sections = {
     { "<leader>uf", "Toggle format on save" },
     { "<leader>uh", "Toggle inlay hints" },
     { "<leader>ua / uA", "Dashboard background art: toggle / pick (live preview, persisted)" },
+    { "0 / 1 (HUD dashboard)", "Terminal panel = real shell / event log = Claude (C-q close, O pop out)" },
     { "<leader>us", "Toggle spell-check" },
     { "<leader>sa", "Spell audit: fix/skip/ignore/add each issue, auto-next" },
     { "<leader>Wg / WG", "Grammar audit with Claude (+ style), walk issues" },

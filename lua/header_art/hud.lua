@@ -35,6 +35,7 @@ local G = require("header_art.glyph")
 local D = require("header_art.hud_data")
 local X = require("header_art.hud_extra")
 local K = require("header_art.hud_core")
+local Live = require("header_art.hud_live")
 
 local floor, min, max, abs = math.floor, math.min, math.max, math.abs
 local sin, cos, exp, pi = math.sin, math.cos, math.exp, math.pi
@@ -166,6 +167,7 @@ function M.build(w, h, box)
   -- free zones that fit their module (resolved per build: the box is fixed)
   local zones = X.zones(w, h, P, L, max(16, min(64, w - 72)) / 2, max(8, min(28, w - L.rightX0 - 6)), min(h - 6, L.botY0 + 2))
   local extras, cap_log = {}, false
+  local live_rects -- filled below, after cap_log is known
   for _, id in ipairs(X.ZONE_IDS) do
     local name = (M.config.zones or {})[id]
     local m, z = name and X.MODULES[name], zones[id]
@@ -175,12 +177,33 @@ function M.build(w, h, box)
     end
   end
 
+  -- Rects the live sessions sit in (hud_live.lua): the terminal panel's
+  -- inside, the event log's lines, and the area the chat grows into when it
+  -- has focus (right of the content, framed). Only the real dashboard (a box)
+  -- publishes them; the picker preview has none.
+  do
+    local py0 = max(L.topY1 + 1, 12)
+    local py1 = M.config.modules.matrix and L.botY0 - 3 or h - 6
+    local lx1 = cap_log and min(w - 11, L.rightX0 + 44) or w - 11
+    local big = { x0 = L.rightX0 - 1, x1 = w - 4, y0 = 3, y1 = h - 4 }
+    live_rects = {
+      shell = { x0 = 4, x1 = L.leftX1 - 1, y0 = py0 + 1, y1 = py1 - 1 },
+      log = { x0 = L.rightX0, x1 = lx1, y0 = L.topY1 + 3, y1 = L.botY0 - 3 },
+      claude_big = big.x1 - big.x0 >= 50 and big or nil,
+    }
+    if box then Live.set_layout(live_rects) end
+  end
+
   return function(t, val, chr)
     C.begin(val, chr)
     if not t0 or t < t0 then t0 = t end
     local cfg = M.config
     local mods = cfg.modules
     local data = D.sample()
+    -- live sessions (only on the real dashboard)
+    local avail = box ~= nil and Live.available()
+    local shell_open = box ~= nil and Live.is_open("shell")
+    local claude_open = box ~= nil and Live.is_open("claude")
 
     local function age(id)
       if mods.boot and BOOT[id] then return t - t0 - BOOT[id] end
@@ -318,7 +341,7 @@ function M.build(w, h, box)
     -- left panel: simulated terminal, or a gauge
     if on("panel") then
       local a = age("panel")
-      if cfg.panel == "terminal" then
+      if cfg.panel == "terminal" or shell_open then
         local x0, x1 = 3, L.leftX1
         local y0 = max(L.topY1 + 1, 12)
         local y1 = mods.matrix and L.botY0 - 3 or h - 6
@@ -331,9 +354,18 @@ function M.build(w, h, box)
           for y = y0 + 1, yb - 1 do put(x0, y, 0.35, "│"); put(x1, y, 0.35, "│") end
           put(x0, y0, 0.45, "┌"); put(x1, y0, 0.45, "┐")
           if yb == y1 then put(x0, y1, 0.45, "└"); put(x1, y1, 0.45, "┘") end
-          text(x0 + 2, y0, "┤ zsh :: ttys004 ├", 0.5, a - 0.1, true)
-          text(x1 - 6, y0, " ■ □ ", 0.35, a - 0.1, true)
-          if a >= 0.35 then
+          if shell_open then
+            local T, id = require("terminals"), Live.shell_id()
+            local detail = id and T.detail(id) or ""
+            local label = id and T.label(id) or "shell"
+            text(x0 + 2, y0, "┤ [0] " .. label .. (detail ~= "" and (" · " .. detail) or "") .. " ├", 0.6, a - 0.1, true)
+            local tag = Live.is_focused("shell") and " C-q close ◉ " or " ● LIVE "
+            text(x1 - #chars(tag), y0, tag, Live.is_focused("shell") and 0.75 or 0.45, a - 0.1, true)
+          else
+            text(x0 + 2, y0, avail and "┤ [0] zsh :: ttys004 ├" or "┤ zsh :: ttys004 ├", 0.5, a - 0.1, true)
+            text(x1 - 6, y0, " ■ □ ", 0.35, a - 0.1, true)
+          end
+          if a >= 0.35 and not shell_open then
             local inner, rows = x1 - x0 - 3, y1 - y0 - 1
             local lines = term_lines((t - t0) % TERM_TOTAL, max(6, min(20, inner - 18)))
             local first = max(1, #lines - rows + 1)
@@ -439,7 +471,11 @@ function M.build(w, h, box)
       local y0, y1 = L.topY1 + 3, L.botY0 - 2
       local rows = y1 - y0
       if width >= 14 and rows >= 2 then
-        text(x0, y0 - 1, "── EVENT LOG " .. ("─"):rep(width - 13), 0.3, a)
+        local head = claude_open and "── [1] CLAUDE · LIVE " or (avail and "── [1] EVENT LOG " or "── EVENT LOG ")
+        text(x0, y0 - 1, head .. ("─"):rep(max(0, width - #chars(head))), claude_open and 0.5 or 0.3, a)
+      end
+      -- the lines (the chat's float covers them while it is open)
+      if width >= 14 and rows >= 2 and not claude_open then
         local now = D.wall()
         local items = {}
         for _, e in ipairs(D.events) do items[#items + 1] = { time = e.time, text = e.text, real = true } end
@@ -537,6 +573,18 @@ function M.build(w, h, box)
     for _, e in ipairs(extras) do
       local a = age(e.id)
       if a > 0 then e.m.draw(e.A, e.r, t, grow(e.id), a, data) end
+    end
+
+    -- the chat's frame while it is expanded (the float fills the inside)
+    if claude_open and Live.expanded() and live_rects.claude_big then
+      local r = live_rects.claude_big
+      local fx0, fx1, fy0, fy1 = r.x0 - 1, r.x1 + 1, r.y0 - 1, r.y1 + 1
+      for x = fx0 + 1, fx1 - 1 do set(x, fy0, 0.45, "─"); set(x, fy1, 0.45, "─") end
+      for y = fy0 + 1, fy1 - 1 do set(fx0, y, 0.45, "│"); set(fx1, y, 0.45, "│") end
+      set(fx0, fy0, 0.6, "┌"); set(fx1, fy0, 0.6, "┐"); set(fx0, fy1, 0.6, "└"); set(fx1, fy1, 0.6, "┘")
+      text(fx0 + 2, fy0, "┤ [1] CLAUDE ├", 0.75, 99, true)
+      local hint = "┤ C-q close · O pop out ├"
+      text(fx1 - 1 - #chars(hint), fy1, hint, 0.45, 99, true)
     end
 
     -- reticle: glides to a target outside the content, locks, moves on

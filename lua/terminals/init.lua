@@ -227,6 +227,25 @@ function M.new(opts)
   return id
 end
 
+--- Start a shell (first free id) without opening a window: the job and its
+--- buffer exist, tracked like any other terminal (on_create -> attach), and
+--- the caller shows the buffer where it likes (the dashboard HUD's live panel,
+--- lua/header_art/hud_live.lua). toggleterm opens it normally later.
+--- `buf`: a fresh buffer to run it in, e.g. one carrying `b:terminal_color_N`
+--- (read at TermOpen) for its own palette.
+---@param opts? { dir?: string, name?: string, buf?: integer }
+---@return integer? id, integer? bufnr
+function M.spawn(opts)
+  local id = free_shell_id()
+  if not id then return vim.notify("No free terminal ids (1-" .. SHELL_MAX .. ")", vim.log.levels.WARN) end
+  local t = make(id, opts)
+  if not (t.bufnr and vim.api.nvim_buf_is_valid(t.bufnr)) then
+    if opts and opts.buf then t.bufnr = opts.buf end -- toggleterm's spawn() reuses a valid bufnr
+    t:spawn()
+  end
+  return id, t.bufnr
+end
+
 --- New shell in the current file's directory, or its project (git) root.
 function M.new_here(root)
   local file = vim.api.nvim_buf_get_name(0)

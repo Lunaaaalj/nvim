@@ -260,6 +260,9 @@ snacks.nvim dashboard ~  (folke/snacks.nvim)
   seconds and centiseconds, UTC, Unix epoch and session time, day of year,
   ISO week, a seconds sweep, the keys as keycaps (still the same keys) and
   the stats in the panel's frame. Other pieces keep the normal dashboard.
+  When the dashboard is the only window, `0` and `1` make two modules live:
+  the terminal panel becomes a real shell and the event log a Claude chat
+  (see |nvim-keymaps|).
   Its left panel (terminal | rings | globe | radar), each module and
   each zone (`zones`) are set in `header_art_opts.hud` in
   `lua/plugins/snacks.lua`. The timer runs only

@@ -64,6 +64,17 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
                 preview, like <leader>cs; <CR> keeps it across restarts, <Esc>
                 reverts
                 (also `:HeaderArt` / `:HeaderArt pick`)
+  0 / 1         On the dashboard with the `hud` piece, when it is the only
+                window: `0` turns the terminal panel into a real shell in the
+                cwd, `1` turns the event log into a Claude chat (it grows over
+                the right of the HUD while focused). Inside: <C-q> or `q`
+                (normal mode) closes it and the module shows its fake terminal
+                / log again, the session keeps running; `O` pops it out into
+                the window; `exit` / Claude's `/exit` also gives the module
+                back. Both use a monochrome palette from the colorscheme
+                (Claude with its ANSI-only theme), so they match the HUD. The
+                sessions outlive the dashboard (the shell is a normal terminal
+                for <leader>tt; `0`/`1` again shows the same ones).
   <leader>sn    Show notification history (Noice)
   <leader>sd    Dismiss visible notifications
   <leader>fml   Make it rain (cellular-automaton, just for fun)

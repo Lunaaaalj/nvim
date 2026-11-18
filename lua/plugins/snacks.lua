@@ -149,6 +149,10 @@ local keys = {
   { key = "m", action = ":Mason" },
   { key = "G", action = ":Upstream" },
   { key = "q", hint = "quit", action = ":qa" },
+  -- HUD live modules (header_art/hud_live.lua; only with the hud piece and a
+  -- lone dashboard): the terminal panel becomes a shell, the event log Claude
+  { key = "0", action = function() require("header_art.hud_live").focus("shell") end },
+  { key = "1", action = function() require("header_art.hud_live").focus("claude") end },
 }
 
 local function hint_line()
