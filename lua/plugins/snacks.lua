@@ -149,7 +149,13 @@ local keys = {
   { key = "m", action = ":Mason" },
   { key = "G", action = ":Upstream" },
   { key = "q", hint = "quit", action = ":qa" },
+  -- HUD live modules (header_art/hud_live.lua; only with the hud piece and a
+  -- lone dashboard): 0 shell, 1 Claude, 2 buffers, 3 peek, 4 lazygit,
+  -- 5 music, 6 LSP, 7 diagnostics
 }
+for i, id in ipairs({ "shell", "claude", "procs", "peek", "git", "music", "lsp", "diagnostics" }) do
+  keys[#keys + 1] = { key = tostring(i - 1), action = function() require("header_art.hud_live").focus(id) end }
+end
 
 local function hint_line()
   local out = {}
