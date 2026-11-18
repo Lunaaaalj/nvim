@@ -21,6 +21,10 @@
 --   glitch    rows torn sideways for one beat
 --   boot      modules type / grow in when the piece is built (startup, resize)
 --
+-- Zones (`header_art_opts.hud.zones`): the free space a large window leaves
+-- around these modules, filled by hud_extra.lua (icosa, globe, strip, orrery,
+-- hexdump, helix); a zone too small for its module is skipped.
+--
 -- Layout: every module is placed relative to the padded content box `P`, in
 -- four zones kept 9 columns / 5 rows clear of it (so nothing sits in its
 -- fade); a module that doesn't fit is skipped. The builder gets `P` as its
@@ -29,6 +33,7 @@
 
 local G = require("header_art.glyph")
 local D = require("header_art.hud_data")
+local X = require("header_art.hud_extra")
 
 local floor, min, max, abs = math.floor, math.min, math.max, math.abs
 local sin, cos, exp, pi = math.sin, math.cos, math.exp, math.pi
@@ -47,6 +52,8 @@ M.config = {
     wave = true, matrix = true, sys = true, clock = true, log = true, barcode = true,
     coords = true, reticle = true, scan = true, alert = true, glitch = true, boot = true,
   },
+  -- free-zone modules (hud_extra.lua): a module name, or false
+  zones = { z1 = "icosa", z2 = "globe", z3 = "strip", z4 = "orrery", z5 = "hexdump", z6 = "helix" },
 }
 
 function M.configure(opts)
@@ -57,6 +64,7 @@ end
 local BOOT = {
   frame = 0, brackets = 0.08, tape = 0.16, sys = 0.2, clock = 0.24, panel = 0.3, log = 0.34, ladder = 0.38,
   spectrum = 0.42, wave = 0.46, matrix = 0.5, coords = 0.54, barcode = 0.56, reticle = 0.6,
+  z1 = 0.64, z2 = 0.68, z3 = 0.72, z4 = 0.76, z5 = 0.8, z6 = 0.84,
 }
 
 local AMBIENT = {
@@ -150,6 +158,18 @@ function M.build(w, h, box)
   local C = G.canvas(w, h)
   local put, set = C.put, C.set
   local t0
+
+  -- free zones that fit their module (resolved per build: the box is fixed)
+  local zones = X.zones(w, h, P, L, max(16, min(64, w - 72)) / 2, max(8, min(28, w - L.rightX0 - 6)), min(h - 6, L.botY0 + 2))
+  local extras, cap_log = {}, false
+  for _, id in ipairs(X.ZONE_IDS) do
+    local name = (M.config.zones or {})[id]
+    local m, z = name and X.MODULES[name], zones[id]
+    if m and z.w >= m.min[1] and z.h >= m.min[2] then
+      extras[#extras + 1] = { id = id, m = m, r = z, A = X.api(C, z) }
+      cap_log = cap_log or id == "z6"
+    end
+  end
 
   return function(t, val, chr)
     C.begin(val, chr)
@@ -409,7 +429,8 @@ function M.build(w, h, box)
 
     -- event log: real events (bright) between ambient lines
     if on("log") then
-      local a, x0, x1 = age("log"), L.rightX0, w - 11
+      local a, x0 = age("log"), L.rightX0
+      local x1 = cap_log and min(w - 11, x0 + 44) or w - 11
       local width = x1 - x0
       local y0, y1 = L.topY1 + 3, L.botY0 - 2
       local rows = y1 - y0
@@ -506,6 +527,12 @@ function M.build(w, h, box)
       local a = age("coords")
       text(3, h - 4, "LAT 35.6895N  LON 139.6917E", 0.22, a)
       text(3, h - 3, "GRID 7-ALPHA  //  SECTOR " .. pad((t / 3) % 100, 2), 0.22, a - 0.05)
+    end
+
+    -- free-zone modules (hud_extra.lua)
+    for _, e in ipairs(extras) do
+      local a = age(e.id)
+      if a > 0 then e.m.draw(e.A, e.r, t, grow(e.id), a, data) end
     end
 
     -- reticle: glides to a target outside the content, locks, moves on

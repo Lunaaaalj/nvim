@@ -47,6 +47,10 @@ local header_art_opts = {
       wave = true, matrix = true, sys = true, clock = true, log = true, barcode = true,
       coords = true, reticle = true, scan = true, alert = true, glitch = true, boot = true,
     },
+    -- Free zones a big window leaves around those modules (hud_extra.lua): a
+    -- module name or false; one that doesn't fit its zone is skipped.
+    -- icosa | globe | strip | orrery | hexdump | helix
+    zones = { z1 = "icosa", z2 = "globe", z3 = "strip", z4 = "orrery", z5 = "hexdump", z6 = "helix" },
   },
 }
 

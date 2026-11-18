@@ -249,8 +249,15 @@ snacks.nvim dashboard ~  (folke/snacks.nvim)
   buffers, LSP clients, diagnostics), an event log of real editor events, a
   spectrum, a waveform, a process map of your buffers, a target lock, a scan
   bar, an alert banner (diagnostic errors when there are any) and a boot
-  sequence. Its left panel (terminal | rings | globe | radar) and each
-  module are set in `header_art_opts.hud` in `lua/plugins/snacks.lua`. The timer runs only
+  sequence. In a large window (fullscreen) six free zones around those
+  modules fill in too: a wireframe icosahedron, an Earth globe with the real
+  day/night line and your timezone marked, a two-minute memory/load strip,
+  an orrery of the attached LSP clients (one moon per buffer), a hex dump of
+  the buffer you last edited and a double helix spelling the HEAD commit; a
+  zone too small for its module is skipped, so a split window looks as
+  before. Its left panel (terminal | rings | globe | radar), each module and
+  each zone (`zones`) are set in `header_art_opts.hud` in
+  `lua/plugins/snacks.lua`. The timer runs only
   while the dashboard is visible and Neovim is focused. Options live in `header_art_opts` in
   `lua/plugins/snacks.lua`: `enabled` (false shows the static braille
   header instead), `piece` (plasma | torus | orb | rings | flow | terrain |
