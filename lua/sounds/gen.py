@@ -14,6 +14,7 @@ browser mockup ("Workstation Cues"). PICKS chooses the one that is written to
 so alternates can be auditioned with `afplay` without touching PICKS.
 """
 import math
+import os
 import struct
 import sys
 import wave
@@ -125,7 +126,7 @@ def beep(f, dur, wave="square", lp=2400, f2=None):
     return osc(f, dur, wave, f2=f2, lp=lp, atk=3, rel=min(20, dur / 3), env="gate")
 
 
-def nz(dur, kind="bandpass", f=1000, f2=None, q=1.0, atk=1):
+def nz(dur, kind="bandpass", f=1000, f2=None, q=1.0, atk=1.0):
     """Filtered noise (state-variable filter), centre/cutoff gliding f -> f2."""
     r = Rng(21)
     n = ms(dur)
@@ -297,6 +298,199 @@ CANDIDATES = {
 }
 
 
+# ---- chatter: the experimental "talking" cues (lua/sounds/chatter.lua) -------
+# They play very often (a key, a line of output), so each is a few ms and very
+# quiet, and every cue is rendered in several pitch variants (VARIANTS):
+# chatter.lua plays one at random, so a stream doesn't sound like one sample on
+# repeat. The candidates are the same 30 as the browser mockup "Chatter Cues"
+# (A-C, then D-F: serial bits, chirps, dual tones, AM wobble, static pops).
+
+VARIANTS = (0.92, 0.97, 1.03, 1.08)  # pitch factors -> sounds/chatter/<cue>_1..4.wav
+
+CHATTER_PICKS = {
+    "claude_line": "B",  # low pulse
+    "claude_para": "B",  # settle tone (kept, but unused while claude.mode = "chunk")
+    "term_key": "B",  # soft blip (was A, "tick": too sharp at the volume it plays at in the editor)
+    "term_enter": "B",  # low confirm
+    "term_out": "F",  # AM tick
+}
+
+# dBFS peaks. The mockup scale put these at -31..-23; they are nudged louder
+# (about +4 dB) because they play at a fraction of the volume of the main cues.
+CHATTER_LEVELS = {
+    "claude_line": -27.0,
+    "claude_para": -20.0,
+    "term_key": -27.0,
+    "term_enter": -21.0,
+    "term_out": -29.0,
+}
+
+
+def tick(f, dur, wave="square", lp=2400):
+    """A gated beep: 2 ms attack, short release."""
+    return osc(f, dur, wave, lp=lp, atk=2, rel=min(12, dur / 3), env="gate")
+
+
+def chirp(f0, f1, dur):
+    """A very fast pitch glide (an interface chirp, not a slow boop)."""
+    return osc(f0, dur, "triangle", f2=f1, lp=4000, atk=2, rel=min(8, dur / 3), env="gate")
+
+
+def am(f, dur, rate):
+    """A tone whose loudness wobbles at `rate` Hz (robotic, ring-modulated)."""
+    n = ms(dur)
+    r = max(1, ms(min(8, dur / 3)))
+    a = max(1, ms(2))
+    out, ph = [], 0.0
+    for i in range(n):
+        ph = (ph + f / SR) % 1.0
+        lfo = 0.5 + 0.5 * math.sin(TAU * rate * i / SR)
+        env = i / a if i < a else (1e-4 ** ((i - (n - r)) / r) if i >= n - r else 1.0)
+        out.append(math.sin(TAU * ph) * lfo * env)
+    return finish(out)
+
+
+def dual(f1, f2, dur, gain):
+    """Two sine pitches at once."""
+    return [(0, tick(f1, dur, "sine", 6000), gain * 0.6), (0, tick(f2, dur, "sine", 6000), gain * 0.6)]
+
+
+CHATTER = {
+    "claude_line": {
+        "A": ("Soft tick", lambda k: [(0, tick(1400 * k, 14, "triangle", 2500), 0.8)]),
+        "B": ("Low pulse", lambda k: [(0, tick(180 * k, 20, "square", 500), 0.8)]),
+        "C": ("Scan tick", lambda k: [(0, nz(7, f=2500 * k, q=3.0, atk=1), 0.8), (0, tick(600 * k, 10, "sine"), 0.5)]),
+        "D": ("Serial bits", lambda k: [(x, tick(1800 * k, 4, lp=4000), 0.7) for x in (0, 7, 14)]),
+        "E": ("Chirp", lambda k: [(0, chirp(1500 * k, 2100 * k, 12), 0.7)]),
+        "F": ("AM blip", lambda k: [(0, am(900 * k, 16, 90), 0.9)]),
+    },
+    "claude_para": {
+        "A": (
+            "Double pulse",
+            lambda k: [(0, tick(150 * k, 30, "square", 520), 0.8), (50, tick(150 * k, 30, "square", 520), 0.8)],
+        ),
+        "B": ("Settle tone", lambda k: [(0, tick(330 * k, 60, "triangle", 1500), 0.9)]),
+        "C": ("Sweep down", lambda k: [(0, nz(80, "lowpass", f=3000 * k, f2=600 * k, q=0.8, atk=4), 0.8)]),
+        "D": (
+            "Data burst",
+            lambda k: [(i * 11, tick(f * k, 8, lp=4000), 0.7) for i, f in enumerate((1200, 1800, 1500, 2100, 1650, 1350))],
+        ),
+        "E": ("Seal chirp", lambda k: [(0, chirp(900 * k, 500 * k, 50), 0.8)]),
+        "F": ("Dual tone", lambda k: dual(600 * k, 900 * k, 50, 0.9)),
+    },
+    "term_key": {
+        "A": ("Tick", lambda k: [(0, tick(2200 * k, 8, "square", 4500), 0.8)]),
+        "B": ("Soft blip", lambda k: [(0, tick(1200 * k, 12, "triangle", 2500), 0.8)]),
+        "C": (
+            "Static click",
+            lambda k: [(0, nz(6, "highpass", f=6000, q=0.7, atk=1), 0.8), (0, tick(900 * k, 5, "sine"), 0.5)],
+        ),
+        "D": ("Bit", lambda k: [(0, tick(3200 * k, 4, "square", 6000), 0.8)]),
+        "E": ("Chirp tick", lambda k: [(0, chirp(2000 * k, 2800 * k, 6), 0.8)]),
+        "F": ("Dual tick", lambda k: dual(1500 * k, 2300 * k, 6, 0.9)),
+    },
+    "term_enter": {
+        "A": (
+            "Double tick",
+            lambda k: [(0, tick(1000 * k, 12, lp=3000), 0.8), (30, tick(1500 * k, 12, lp=3000), 0.8)],
+        ),
+        "B": ("Low confirm", lambda k: [(0, tick(220 * k, 40, "triangle", 900), 0.9)]),
+        "C": ("Sweep", lambda k: [(0, nz(45, f=600 * k, f2=2500 * k, q=1.2, atk=3), 0.8)]),
+        "D": ("Serial burst", lambda k: [(x, tick(1800 * k, 8, lp=4000), 0.8) for x in (0, 13, 26, 39)]),
+        "E": ("Down chirp", lambda k: [(0, chirp(1400 * k, 700 * k, 40), 0.8)]),
+        "F": (
+            "Ack pair",
+            lambda k: [(0, tick(880 * k, 20, "sine", 3000), 0.8), (30, tick(660 * k, 20, "sine", 3000), 0.8)],
+        ),
+    },
+    "term_out": {
+        "A": ("Data tick", lambda k: [(0, tick(3000 * k, 6, "square", 5000), 0.8)]),
+        "B": ("Telemetry blip", lambda k: [(0, tick(1000 * k, 10, "triangle", 2500), 0.8)]),
+        "C": (
+            "Chatter pair",
+            lambda k: [(0, tick(2200 * k, 8, lp=4500), 0.8), (14, tick(1700 * k, 8, lp=4500), 0.8)],
+        ),
+        "D": ("Static pop", lambda _k: [(0, nz(3, "highpass", f=5000, q=0.7, atk=0.5), 0.9)]),
+        "E": ("Micro chirp", lambda k: [(0, chirp(2400 * k, 3000 * k, 5), 0.8)]),
+        "F": ("AM tick", lambda k: [(0, am(1600 * k, 8, 120), 0.9)]),
+    },
+}
+
+
+# ---- working: the sound that plays while Claude is thinking or running a command ------
+# The mockup "Working Cues", candidate J: a mechanical watch beating 6 times a second.
+# The player (lua/sounds/player.swift) runs the train: it picks a tick or tock file at
+# random for each beat and schedules the beats on the audio clock. Every beat is two
+# metallic clicks (lock, then a softer and lower drop) from a ringing plate over a faint
+# case body, through one gentle low-pass. The other candidates (A-I) live in the mockup.
+
+WORKING_LEVEL = -29.0  # dBFS; the tock is 1.4 dB softer, as in the mockup
+WORKING_VARIANTS = (0.98, 1.0, 1.02)  # tiny pitch differences, one picked per beat
+WORKING_LOW = 0.79  # played at this speed while a Bash command runs: lower, and stretched
+
+
+def _biquad(x, kind, fc, q):
+    w0 = 2 * math.pi * fc / SR
+    alpha, c = math.sin(w0) / (2 * q), math.cos(w0)
+    if kind == "bp":
+        b0, b1, b2 = alpha, 0.0, -alpha
+    else:
+        b0, b1, b2 = (1 - c) / 2, 1 - c, (1 - c) / 2
+    a0, a1, a2 = 1 + alpha, -2 * c, 1 - alpha
+    y, x1, x2, y1, y2 = [], 0.0, 0.0, 0.0, 0.0
+    for v in x:
+        o = (b0 * v + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2) / a0
+        y.append(o)
+        x2, x1, y2, y1 = x1, v, y1, o
+    return y
+
+
+def _decay(i, n, a, peak):
+    """Linear attack over `a` samples, then exponential decay to silence at n."""
+    if i < a:
+        return peak * i / max(1, a)
+    return peak * (1e-4 / peak) ** ((i - a) / max(1, n - a))
+
+
+def _wclick(f, q, dur_ms, gain, atk_ms, rng):
+    n = ms(dur_ms)
+    x = _biquad([rng() for _ in range(n + 256)], "bp", f, q)[256:]
+    a = max(1, ms(atk_ms))
+    return [x[i] * _decay(i, n, a, gain) for i in range(n)]
+
+
+def _wring(f, dur_ms, gain):
+    n = ms(dur_ms)
+    a = max(1, ms(0.5))
+    return [math.sin(TAU * f * i / SR) * _decay(i, n, a, gain) for i in range(n)]
+
+
+def watch_beat(k, gap_ms, low=False, seed=1):
+    """One beat of the watch at pitch factor k, `gap_ms` between the lock and the drop click."""
+    r = WORKING_LOW if low else 1.0  # slower playback lowers the pitch and stretches time, like the browser's rate
+    t = 1.0 / r
+    kk = k * r
+    rng = Rng(seed)
+    b = [0.0] * ms(130 * t)
+
+    def add(start_ms, sig):
+        o = ms(start_ms * t)
+        for i, v in enumerate(sig):
+            if o + i < len(b):
+                b[o + i] += v
+
+    add(0, _wclick(2800 * kk, 1.4, 4 * t, 0.55, 1.0 * t, rng))
+    for f, g, d in ((2350, 0.455, 9), (3720, 0.26, 6), (5100, 0.104, 4)):
+        add(0, _wring(f * kk, d * t, g))
+    add(1, _wring(300 * kk, 16 * t, 0.10))
+    add(0, _wring(620 * kk, 10 * t, 0.05))
+    add(gap_ms, _wclick(2200 * kk, 1.4, 4 * t, 0.385, 1.0 * t, rng))
+    for f, g, d in ((1900, 0.286, 7), (3000, 0.156, 5)):
+        add(gap_ms, _wring(f * kk, d * t, g))
+    add(gap_ms, _wring(280 * kk, 9.6 * t, 0.045))
+    return finish(_biquad(b, "lp", 5200 * r, 0.7))
+
+
 def render(peak_db, parts):
     end = max(ms(off) + len(x) for off, x, _ in parts)
     mix = [0.0] * end
@@ -332,10 +526,33 @@ def main():
         path = f"{outdir}/{event}.wav"
         write(path, render(LEVELS[event], parts))
         print(path)
+    chatter_dir = f"{outdir}/chatter"
+    os.makedirs(chatter_dir, exist_ok=True)
+    for cue, letter in CHATTER_PICKS.items():
+        _, build = CHATTER[cue][letter]
+        for n, k in enumerate(VARIANTS, 1):
+            write(f"{chatter_dir}/{cue}_{n}.wav", render(CHATTER_LEVELS[cue], build(k)))
+    # the working sound: working[_low]_{tick,tock}_{1..3}.wav (low = while a command runs)
+    for low in (False, True):
+        for n, v in enumerate(WORKING_VARIANTS, 1):
+            for beat, base, gap, db in (("tick", 1.0, 17, 0.0), ("tock", 0.9, 19, -1.4)):
+                voice = watch_beat(base * v, gap, low, seed=10 * n + (3 if beat == "tock" else 1))
+                name = f"working_{'low_' if low else ''}{beat}_{n}.wav"
+                write(f"{chatter_dir}/{name}", render(WORKING_LEVEL + db, [(0, voice, 1.0)]))
+    # every candidate (one file each), so `:Chatter test <cue> <A-F>` can audition them
+    # through the real player, at the real level
+    os.makedirs(f"{chatter_dir}/candidates", exist_ok=True)
+    for cue, options in CHATTER.items():
+        for letter, (_, build) in options.items():
+            write(f"{chatter_dir}/candidates/{cue}_{letter}.wav", render(CHATTER_LEVELS[cue], build(1.0)))
+    print(f"chatter -> {chatter_dir}/ ({len(CHATTER_PICKS) * len(VARIANTS)} files + 30 candidates)")
     if cand_dir:
         for event, options in CANDIDATES.items():
             for letter, (_, parts) in options.items():
                 write(f"{cand_dir}/{event}_{letter}.wav", render(LEVELS[event], parts))
+        for cue, options in CHATTER.items():
+            for letter, (_, build) in options.items():
+                write(f"{cand_dir}/chatter_{cue}_{letter}.wav", render(CHATTER_LEVELS[cue], build(1.0)))
         print(f"candidates -> {cand_dir}/")
 
 

@@ -2,6 +2,7 @@ any	nvim-plugins.txt	/*any*
 before	nvim-plugins.txt	/*before*
 nvim-config	nvim-config.txt	/*nvim-config*
 nvim-config-architecture	nvim-config.txt	/*nvim-config-architecture*
+nvim-config-chatter	nvim-config.txt	/*nvim-config-chatter*
 nvim-config-clang-indent	nvim-config.txt	/*nvim-config-clang-indent*
 nvim-config-colorscheme	nvim-config.txt	/*nvim-config-colorscheme*
 nvim-config-cursorline	nvim-config.txt	/*nvim-config-cursorline*

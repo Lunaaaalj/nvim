@@ -80,10 +80,20 @@ function M.emit(source, name)
 end
 
 --- Entry point for `nvim --remote-expr` (Claude Code hooks): always returns a value.
+--- `claude_cmd_start` / `claude_cmd_end` (PreToolUse / PostToolUse for Bash) are not
+--- cues: they tell the chatter "working" sound that a command is running.
 function M.remote(name)
+  if name == "claude_cmd_start" or name == "claude_cmd_end" then
+    local ok, chatter = pcall(require, "sounds.chatter")
+    if ok then chatter.command(name == "claude_cmd_start") end
+    return 0
+  end
   M.emit("claude", name)
   return 0
 end
+
+--- uv.now() of the last time `name` was played through play(), or nil.
+function M.last_played(name) return last[name] end
 
 -- git subcommands whose failure is worth a sound. Not `diff`/`grep`/`status`…:
 -- those exit 1 for answers, not errors.
@@ -195,6 +205,10 @@ function M.setup()
     end,
   })
   vim.keymap.set("n", "<leader>uS", M.toggle, { desc = "Toggle sound cues" })
+
+  -- The experimental chatter sounds (Claude talking, terminal input / output) have
+  -- their own switches and are not controlled by `enabled` above.
+  require("sounds.chatter").setup()
 end
 
 return M

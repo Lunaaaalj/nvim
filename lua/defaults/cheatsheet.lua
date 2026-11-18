@@ -35,6 +35,7 @@ local sections = {
     { "<leader>uT", "Auto dark-light (follow macOS); uB turns it off" },
     { "<leader>uc", "Cycle cursorline style" },
     { "<leader>uS", "Toggle sound cues (off every session; :Sounds demo)" },
+    { "<leader>uC / ui", "Chatter sounds, each its own switch: Claude talking + working watch / terminal (typing + output)" },
     { "<leader>ut", "Toggle treesitter context" },
     { "<leader>up", "Toggle precognition motion hints" },
     { "<leader>sn", "Show notification history (Noice)" },
