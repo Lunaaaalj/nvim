@@ -43,15 +43,9 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
                 (persisted; also `:ToggleAutoTheme`)
   <leader>uc    Cycle cursorline style: number / underline / band
                 (transparent mode)
-  <leader>uS    Toggle sound cues (off at every start; also `:Sounds`,
-                see |nvim-config-sounds|)
-  <leader>uC    Toggle "Claude talking" sounds (a tick as Claude's text
-                arrives, and a ticking watch while Claude works;
-                `:Chatter working` switches just the watch; experimental,
-                separate from <leader>uS)
-  <leader>ui    Toggle terminal sounds (a tick per key typed in a terminal,
-                a distinct one for Enter, and a tick as a command prints;
-                also `:Chatter`, see |nvim-config-chatter|)
+  <leader>uS    Sounds menu (also `:SoundsMenu`, see |nvim-config-sounds|):
+                master switch, every cue and chatter sound, which sound each
+                plays, preset and volume
   <leader>ut    Toggle treesitter sticky context header
   <leader>up    Toggle precognition motion hints
   <leader>ua    Toggle the dashboard's animated background art (back to the

@@ -1,0 +1,121 @@
+{
+ "events": {
+  "save": {
+   "A": "Tick blip",
+   "B": "Data tick",
+   "C": "Static tick"
+  },
+  "commit": {
+   "A": "Ack pair",
+   "B": "Pulse triple",
+   "C": "Seal sweep"
+  },
+  "pull": {
+   "A": "Downlink",
+   "B": "Sweep in",
+   "C": "Carrier lock"
+  },
+  "push": {
+   "A": "Uplink",
+   "B": "Burst",
+   "C": "Sent"
+  },
+  "claude_done": {
+   "A": "Terminal bell",
+   "B": "Ready tone",
+   "C": "Descending pair"
+  },
+  "claude_input": {
+   "A": "Low pulse",
+   "B": "Triple pulse",
+   "C": "Query pair"
+  },
+  "ok": {
+   "A": "Blip",
+   "B": "Double blip",
+   "C": "Low blip"
+  },
+  "fail": {
+   "A": "Error buzz",
+   "B": "Negative ack",
+   "C": "Power drop"
+  },
+  "checkout": {
+   "A": "Switch tick",
+   "B": "Bus swap",
+   "C": "Data jitter"
+  },
+  "claude_start": {
+   "A": "Intake tick",
+   "B": "Double tick",
+   "C": "Engage"
+  },
+  "breakpoint": {
+   "A": "Query pair",
+   "B": "Halt tone",
+   "C": "Tick, tick, pulse"
+  }
+ },
+ "picks": {
+  "save": "A",
+  "commit": "B",
+  "pull": "C",
+  "push": "C",
+  "claude_done": "C",
+  "claude_input": "C",
+  "ok": "C",
+  "fail": "B",
+  "checkout": "B",
+  "claude_start": "C",
+  "breakpoint": "B"
+ },
+ "chatter": {
+  "claude_line": {
+   "A": "Soft tick",
+   "B": "Low pulse",
+   "C": "Scan tick",
+   "D": "Serial bits",
+   "E": "Chirp",
+   "F": "AM blip"
+  },
+  "claude_para": {
+   "A": "Double pulse",
+   "B": "Settle tone",
+   "C": "Sweep down",
+   "D": "Data burst",
+   "E": "Seal chirp",
+   "F": "Dual tone"
+  },
+  "term_key": {
+   "A": "Tick",
+   "B": "Soft blip",
+   "C": "Static click",
+   "D": "Bit",
+   "E": "Chirp tick",
+   "F": "Dual tick"
+  },
+  "term_enter": {
+   "A": "Double tick",
+   "B": "Low confirm",
+   "C": "Sweep",
+   "D": "Serial burst",
+   "E": "Down chirp",
+   "F": "Ack pair"
+  },
+  "term_out": {
+   "A": "Data tick",
+   "B": "Telemetry blip",
+   "C": "Chatter pair",
+   "D": "Static pop",
+   "E": "Micro chirp",
+   "F": "AM tick"
+  }
+ },
+ "chatter_picks": {
+  "claude_line": "B",
+  "claude_para": "B",
+  "term_key": "B",
+  "term_enter": "B",
+  "term_out": "F"
+ }
+}

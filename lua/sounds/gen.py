@@ -1,4 +1,5 @@
-"""Synthesizes the editor's sound cues: the voice of a sci-fi computer terminal.
+"""Synthesizes the editor's sound cues: the sci-fi terminal set (sounds/) and the serious
+presets Ledger, Muted keys and Advisory (sounds/<preset>/, see SERIOUS below).
 
 Usage:  python3 -I gen.py <outdir> [--candidates <dir>]
 
@@ -17,6 +18,7 @@ import math
 import os
 import struct
 import sys
+import json
 import wave
 
 SR = 44100
@@ -511,6 +513,477 @@ def write(path, samples):
         w.writeframes(b"".join(struct.pack("<h", int(max(-1, min(1, v)) * 32767)) for v in samples))
 
 
+# ---- serious presets: Ledger, Muted keys, Advisory ---------------------------
+#
+# Three whole-set presets from the browser mockup "Serious Cues"
+# (https://claude.ai/artifact/HvCdJMZnHbqfocVAZ8zdP4). Plain tones, still
+# computer-like: dry, low-mid register, small intervals, no arpeggios. Each preset
+# folder (sounds/<preset>/) has the layout of sounds/ and holds all three families
+# as letters A (Ledger), B (Muted keys), C (Advisory); the preset's own letter is
+# its pick, the others are alternatives for the menu.
+
+FAMILIES = {
+    "A": ("ledger", "Ledger", 220.0),  # pure sines, soft decay
+    "B": ("muted_keys", "Muted keys", 293.66),  # sine + damped tine
+    "C": ("advisory", "Advisory", 440.0),  # flat gated triangle
+}
+
+# event: (dBFS peak, {letter: (name, gap ms, [(semitones from root, length ms)])})
+SERIOUS = {
+    "save": (-23.0, {
+        "A": ("Soft tick", 0, [(12, 50)]),
+        "B": ("Tine tick", 0, [(12, 40)]),
+        "C": ("Blip", 0, [(12, 28)])}),
+    "commit": (-15.5, {
+        "A": ("Settled fifth", 140, [(0, 160), (7, 330)]),
+        "B": ("Major third close", 120, [(4, 110), (0, 320)]),
+        "C": ("Two-tone chime", 110, [(0, 90), (7, 150)])}),
+    "pull": (-15.5, {
+        "A": ("Stepped descent", 110, [(9, 120), (5, 120), (2, 280)]),
+        "B": ("Fourth down", 100, [(5, 100), (0, 280)]),
+        "C": ("Two-tone down", 110, [(7, 90), (0, 150)])}),
+    "push": (-15.5, {
+        "A": ("Hand-off", 90, [(0, 100), (5, 250)]),
+        "B": ("Fifth out", 100, [(0, 90), (7, 280)]),
+        "C": ("Two-tone up", 110, [(0, 90), (5, 150)])}),
+    "checkout": (-21.0, {
+        "A": ("Double tick", 80, [(7, 55), (7, 90)]),
+        "B": ("Step", 70, [(0, 50), (5, 80)]),
+        "C": ("Pair", 75, [(0, 38), (0, 38)])}),
+    "claude_start": (-20.0, {
+        "A": ("Open line", 0, [(5, 200)]),
+        "B": ("Wake", 60, [(0, 70), (7, 210)]),
+        "C": ("Advisory", 0, [(5, 120)])}),
+    "claude_done": (-15.0, {
+        "A": ("Resolve", 150, [(7, 150), (0, 440)]),
+        "B": ("Fall to root", 130, [(9, 130), (4, 130), (0, 420)]),
+        "C": ("Long fall", 120, [(7, 90), (0, 320)])}),
+    "claude_input": (-15.0, {
+        "A": ("Query", 130, [(0, 120), (3, 380)]),
+        "B": ("Open fifth", 120, [(0, 120), (7, 380)]),
+        "C": ("Attention", 210, [(5, 100), (5, 100)])}),
+    "breakpoint": (-16.0, {
+        "A": ("Held low", 0, [(-12, 430)]),
+        "B": ("Low pedal", 0, [(-5, 420)]),
+        "C": ("Caution tone", 0, [(-12, 280)])}),
+    "ok": (-17.0, {
+        "A": ("Confirm", 0, [(7, 170)]),
+        "B": ("Soft third", 0, [(4, 150)]),
+        "C": ("Single beep", 0, [(7, 95)])}),
+    "fail": (-14.5, {
+        "A": ("Tritone drop", 120, [(0, 140), (-6, 380)]),
+        "B": ("Minor second", 100, [(0, 120), (-1, 380)]),
+        "C": ("Triple low", 105, [(-5, 85), (-5, 85), (-5, 210)])}),
+}
+
+# chatter cues: the same shape, one short note each (played with the pitch variants)
+SERIOUS_CHATTER = {
+    "claude_line": (-26.0, {
+        "A": ("Low pulse", 0, [(-7, 24)]),
+        "B": ("Low tine", 0, [(-5, 22)]),
+        "C": ("Low tick", 0, [(-12, 18)])}),
+    "term_key": (-28.0, {
+        "A": ("Soft tick", 0, [(19, 14)]),
+        "B": ("Tine", 0, [(14, 14)]),
+        "C": ("Click tone", 0, [(17, 9)])}),
+    "term_enter": (-22.0, {
+        "A": ("Low confirm", 0, [(-5, 60)]),
+        "B": ("Soft thud", 0, [(-7, 60)]),
+        "C": ("Low beep", 0, [(-12, 45)])}),
+    "term_out": (-30.0, {
+        "A": ("Faint tick", 0, [(24, 10)]),
+        "B": ("Faint tine", 0, [(19, 10)]),
+        "C": ("Faint pip", 0, [(22, 8)])}),
+}
+
+
+def _mix(layers):
+    """Sum (offset ms, samples, gain) layers into one list (not normalised)."""
+    n = max(ms(o) + len(v) for o, v, _ in layers)
+    out = [0.0] * n
+    for o, v, g in layers:
+        base = ms(o)
+        for i, x in enumerate(v):
+            out[base + i] += x * g
+    return out
+
+
+def serious_note(letter, f, length):
+    """One note of family A (sine, soft decay), B (sine + damped tine) or C (flat triangle)."""
+    s = length
+    if letter == "A":
+        layers = [
+            (0, osc(f, s * 1.35 + 70, "sine", lp=4000, atk=6, env="exp"), 1.0),
+            (0, osc(f * 2, s * 0.7 + 40, "sine", lp=4000, atk=6, env="exp"), 0.07),
+        ]
+    elif letter == "B":
+        layers = [
+            (0, osc(f, s * 1.5 + 60, "sine", lp=5000, atk=3, env="exp"), 0.9),
+            (0, osc(f * 2, s * 0.8 + 40, "sine", lp=5000, atk=2, env="exp"), 0.28),
+            (0, osc(f * 4.02, 35, "sine", lp=7000, atk=1, env="exp"), 0.1),
+        ]
+    else:
+        layers = [(0, osc(f, s + 30, "triangle", lp=2600, atk=6, rel=30, env="gate"), 0.8)]
+    return finish(_mix(layers))
+
+
+def serious_cue(letter, spec, level, k=1.0):
+    """The samples of one cue: its notes, `gap` ms apart, the last one a little louder."""
+    _, gap, notes = spec
+    root = FAMILIES[letter][2] * k
+    parts = []
+    for i, (semi, length) in enumerate(notes):
+        gain = 0.75 + 0.25 * (1.0 if i == len(notes) - 1 else 0.8)
+        parts.append((gap * i, serious_note(letter, root * 2 ** (semi / 12), length), gain))
+    return render(level, parts)
+
+
+# ---- character presets: Cupertino, Mission Control, Sonar, Whisper -----------
+#
+# From the browser mockup "Character Cues" (https://claude.ai/artifact/4ATs2S5c1nRmUiHJZt6aE2).
+# Each note is (voice, at ms, ...args); the voices below are Python ports of the
+# mockup's Web Audio voices, left at their natural amplitudes so a cue keeps the
+# mockup's balance between its layers (render() then sets the cue's peak).
+# "working" is (name, beats a second, tick notes, tock notes): the Claude-working train.
+
+CHARACTER = {
+    "cupertino": {
+        "events": {
+            "save": ("Tink", [("fm", 0, 1175, 80, 0.5, 2, 0.5)]),
+            "commit": ("Soft pair", [("fm", 0, 587, 200, 0.55, 2, 0.4), ("fm", 110, 880, 420, 0.6, 2, 0.4)]),
+            "pull": ("Swoosh in", [("sw", 0, 280, 0.4, "down")]),
+            "push": ("Swoosh out + tink", [("sw", 0, 260, 0.4, "up"), ("fm", 230, 988, 160, 0.4, 2, 0.4)]),
+            "checkout": ("Tock", [("tock", 0, 0.5)]),
+            "claude_start": ("Pop", [("pop", 0, 440, 120, 150, 0.7)]),
+            "claude_done": ("Falling notes", [("fm", 0, 784, 180, 0.5, 2, 0.35), ("fm", 130, 587, 180, 0.5, 2, 0.35), ("fm", 260, 392, 460, 0.6, 2, 0.35)]),
+            "claude_input": ("Ping ping", [("fm", 0, 880, 160, 0.55, 2, 0.4), ("fm", 200, 880, 340, 0.6, 2, 0.4)]),
+            "breakpoint": ("Low thud", [("fm", 0, 131, 450, 0.7, 1, 0.5)]),
+            "ok": ("Soft tink", [("fm", 0, 988, 140, 0.5, 2, 0.4)]),
+            "fail": ("Low pair", [("fm", 0, 174, 170, 0.6, 1, 0.5), ("fm", 130, 131, 440, 0.65, 1, 0.5)]),
+        },
+        "chatter": {
+            "term_key": ("Soft tock", [("tock", 0, 0.3)]),
+            "term_enter": ("Pop", [("pop", 0, 260, 100, 60, 0.6)]),
+            "term_out": ("Soft dot", [("fm", 0, 1568, 14, 0.25, 2, 0.3)]),
+            "claude_line": ("Soft pop", [("pop", 0, 330, 160, 35, 0.45)]),
+        },
+        "working": ("Soft tock pair", 4.0, [("fm", 0, 700, 28, 0.4, 2, 0.3)], [("fm", 0, 520, 30, 0.34, 2, 0.3)]),
+    },
+    "mission_control": {
+        "events": {
+            "save": ("Tick tone", [("q", 0, 1400, 22, 0.4)]),
+            "commit": ("Telemetry lock", [("q", 0, 1000, 40, 0.55), ("q", 90, 1000, 40, 0.55), ("q", 180, 1000, 40, 0.55)]),
+            "pull": ("Downlink", [("q", 0, 1500, 50, 0.5), ("q", 120, 1000, 90, 0.55, True)]),
+            "push": ("Key-up, blip", [("q", 0, 2525, 70, 0.4), ("q", 120, 1000, 50, 0.5)]),
+            "checkout": ("Single tick", [("q", 0, 1000, 28, 0.45)]),
+            "claude_start": ("Key-up tone", [("q", 0, 2525, 70, 0.4, True)]),
+            "claude_done": ("Over and out", [("q", 0, 2475, 70, 0.45), ("q", 130, 700, 60, 0.5, True)]),
+            "claude_input": ("Callout", [("q", 0, 1500, 70, 0.5), ("q", 170, 1500, 70, 0.5)]),
+            "breakpoint": ("Hold tone", [("q", 0, 440, 380, 0.55, True)]),
+            "ok": ("Go", [("q", 0, 1000, 90, 0.5)]),
+            "fail": ("No-go", [("q", 0, 800, 90, 0.55), ("q", 130, 500, 200, 0.55)]),
+        },
+        "chatter": {
+            "term_key": ("Radio tick", [("q", 0, 1800, 6, 0.3)]),
+            "term_enter": ("Key-up", [("q", 0, 900, 40, 0.5)]),
+            "term_out": ("Data tick", [("q", 0, 1400, 5, 0.25)]),
+            "claude_line": ("Carrier blip", [("q", 0, 1000, 12, 0.4)]),
+        },
+        "working": ("Telemetry pulse", 4.0, [("q", 0, 1000, 8, 0.4)], [("q", 0, 800, 8, 0.32)]),
+    },
+    "sonar": {
+        "events": {
+            "save": ("Small ping", [("ping", 0, 1300, 45, 0.4)]),
+            "commit": ("Ping, near echo", [("ping", 0, 660, 420, 0.65), ("ping", 230, 660, 300, 0.22)]),
+            "pull": ("Ping, close return", [("ping", 0, 880, 260, 0.5), ("ping", 140, 880, 300, 0.35)]),
+            "push": ("Ping, far echo", [("ping", 0, 520, 300, 0.6), ("ping", 320, 520, 350, 0.2)]),
+            "checkout": ("Short ping", [("ping", 0, 1000, 60, 0.4)]),
+            "claude_start": ("Low ping", [("ping", 0, 330, 260, 0.55)]),
+            "claude_done": ("Ping, fading echoes", [("ping", 0, 440, 360, 0.65), ("ping", 240, 440, 320, 0.28), ("ping", 480, 440, 300, 0.12)]),
+            "claude_input": ("Two pings", [("ping", 0, 600, 200, 0.6), ("ping", 230, 600, 300, 0.6)]),
+            "breakpoint": ("Deep ping", [("ping", 0, 165, 500, 0.7)]),
+            "ok": ("Clear ping", [("ping", 0, 740, 240, 0.5)]),
+            "fail": ("Dissonant return", [("ping", 0, 247, 320, 0.65), ("ping", 110, 233, 420, 0.5)]),
+        },
+        "chatter": {
+            "term_key": ("Micro ping", [("ping", 0, 1600, 8, 0.25)]),
+            "term_enter": ("Low ping", [("ping", 0, 300, 60, 0.5)]),
+            "term_out": ("Sonar dot", [("ping", 0, 2000, 6, 0.2)]),
+            "claude_line": ("Low ping", [("ping", 0, 520, 16, 0.3)]),
+        },
+        "working": ("Slow sweep", 0.8, [("ping", 0, 520, 380, 0.45), ("ping", 220, 520, 300, 0.14)], [("ping", 0, 520, 380, 0.45), ("ping", 220, 520, 300, 0.14)]),
+    },
+    "whisper": {
+        "events": {
+            "save": ("Tick", [("tick", 0, 3200, 10, 0.5)]),
+            "commit": ("Double knock", [("thump", 0, 85, 70, 0.7), ("thump", 110, 110, 110, 0.65)]),
+            "pull": ("Breath in", [("breath", 0, 230, 0.55, "up")]),
+            "push": ("Breath out", [("breath", 0, 230, 0.55, "down")]),
+            "checkout": ("Tick tick", [("tick", 0, 2600, 8, 0.5), ("tick", 70, 2600, 8, 0.5)]),
+            "claude_start": ("Soft thump", [("thump", 0, 95, 80, 0.6)]),
+            "claude_done": ("Heartbeat", [("thump", 0, 80, 70, 0.65), ("thump", 140, 70, 160, 0.65)]),
+            "claude_input": ("Nudge", [("tick", 0, 3000, 8, 0.5), ("tick", 90, 3000, 8, 0.5), ("thump", 200, 100, 100, 0.65)]),
+            "breakpoint": ("Long thump", [("thump", 0, 70, 260, 0.85)]),
+            "ok": ("Tap", [("thump", 0, 120, 50, 0.5), ("tick", 0, 3400, 6, 0.35)]),
+            "fail": ("Heavy double", [("thump", 0, 60, 90, 0.85), ("thump", 100, 52, 200, 0.85)]),
+        },
+        "chatter": {
+            "term_key": ("Finger tick", [("tick", 0, 3500, 4, 0.35)]),
+            "term_enter": ("Small thump", [("thump", 0, 110, 35, 0.6)]),
+            "term_out": ("Grain", [("tick", 0, 5000, 3, 0.25)]),
+            "claude_line": ("Soft thump", [("thump", 0, 90, 18, 0.5)]),
+        },
+        "working": ("Slow heartbeat", 1.3, [("thump", 0, 78, 80, 0.55)], [("thump", 0, 70, 90, 0.38)]),
+    },
+}
+
+NOTE_ARGS = {
+    "fm": ("at", "f", "ms", "g", "r", "i"),
+    "pop": ("at", "f", "f1", "ms", "g"),
+    "tock": ("at", "g"),
+    "sw": ("at", "ms", "g", "dir"),
+    "q": ("at", "f", "ms", "g", "sq"),
+    "ping": ("at", "f", "ms", "g"),
+    "thump": ("at", "f", "ms", "g"),
+    "tick": ("at", "f", "ms", "g"),
+    "breath": ("at", "ms", "g", "dir"),
+}
+NOTE_DEFAULTS = {"r": 3.01, "i": 1.4, "sq": False, "f": 190.0, "ms": 35.0, "dir": "up"}
+
+
+def _note(t, pitch=1.0, stretch=1.0):
+    """A note tuple as a dict, with pitch and time scaled (the "lower, slower" working sound)."""
+    n = dict(NOTE_DEFAULTS)
+    n["kind"] = t[0]
+    n.update(zip(NOTE_ARGS[t[0]], t[1:]))
+    for key in ("f", "f1"):
+        if key in n:
+            n[key] *= pitch
+    n["at"] *= stretch
+    if t[0] != "tock":
+        n["ms"] *= stretch
+    return n
+
+
+def _exp_env(i, n, atk, peak=1.0):
+    """Linear attack over `atk` samples, then an exponential fall to 1e-4 at sample n."""
+    if i < atk:
+        return peak * i / max(1, atk)
+    return peak * (1e-4 / peak) ** ((i - atk) / max(1, n - atk))
+
+
+def _lp(x, fc):
+    """Two cascaded one-pole low-passes (as in osc)."""
+    a = 1 - math.exp(-TAU * fc / SR)
+    s1 = s2 = 0.0
+    out = []
+    for v in x:
+        s1 += a * (v - s1)
+        s2 += a * (s1 - s2)
+        out.append(s2)
+    return out
+
+
+def _noise_raw(n, seed):
+    r = Rng(seed)
+    return [r() for _ in range(n)]
+
+
+def _swept(x, kind, f0, f1, q):
+    """A biquad (bandpass / lowpass) whose cutoff glides f0 -> f1 (exponentially) across x."""
+    n = len(x)
+    out = []
+    x1 = x2 = y1 = y2 = 0.0
+    c = (1.0, 0.0, 0.0, 0.0, 0.0)
+    for i, v in enumerate(x):
+        if i % 32 == 0:
+            fc = f0 * (f1 / f0) ** (i / max(1, n - 1))
+            w0 = TAU * min(fc, SR / 2.2) / SR
+            alpha, cs = math.sin(w0) / (2 * q), math.cos(w0)
+            if kind == "bp":
+                b0, b1, b2 = alpha, 0.0, -alpha
+            else:
+                b0, b1, b2 = (1 - cs) / 2, 1 - cs, (1 - cs) / 2
+            a0 = 1 + alpha
+            c = (b0 / a0, b1 / a0, b2 / a0, -2 * cs / a0, (1 - alpha) / a0)
+        o = c[0] * v + c[1] * x1 + c[2] * x2 - c[3] * y1 - c[4] * y2
+        out.append(o)
+        x2, x1, y2, y1 = x1, v, y1, o
+    return out
+
+
+def _bell(n, up_frac, peak):
+    """Linear rise to `peak` at up_frac of n, then an exponential fall to 1e-4."""
+    a = max(1, int(n * up_frac))
+    return [(peak * i / a) if i < a else peak * (1e-4 / peak) ** ((i - a) / max(1, n - a)) for i in range(n)]
+
+
+def _sweep_ph(n, f0, f1, over):
+    """Phase of a tone gliding f0 -> f1 over `over` samples, then holding."""
+    ph, out = 0.0, []
+    for i in range(n):
+        f = f0 * (f1 / f0) ** min(1.0, i / max(1, over))
+        ph += f / SR
+        out.append(ph)
+    return out
+
+
+def v_fm(n):
+    f, d = n["f"], n["ms"] / 1000 * 1.1
+    atk, tot = ms(5), ms(5) + int(SR * d) + ms(20)
+    beta0 = n["i"] / n["r"]
+    out, ph = [], 0.0
+    for i in range(tot):
+        t = i / SR
+        env = (0.02 / n["i"]) ** min(1.0, t / (0.5 * d))
+        ph += f / SR
+        out.append(math.sin(TAU * ph + beta0 * env * math.sin(TAU * f * n["r"] * t)) * _exp_env(i, atk + int(SR * d), atk, n["g"]) if i < atk + int(SR * d) else 0.0)
+    return _lp(out, 3000)
+
+
+def v_pop(n):
+    d = n["ms"] / 1000
+    N = ms(3) + int(SR * d) + ms(20)
+    ph = _sweep_ph(N, n["f"], n["f1"], int(SR * d * 0.6))
+    return [math.sin(TAU * ph[i]) * (_exp_env(i, ms(3) + int(SR * d), ms(3), n["g"]) if i < ms(3) + int(SR * d) else 0.0) for i in range(N)]
+
+
+def v_tock(n):
+    g = n["g"]
+    nz1 = _swept(_noise_raw(ms(20), 31), "bp", 1000, 1000, 0.9)
+    a = [v * _exp_env(i, ms(18), ms(2), g * 1.3) if i < ms(18) else 0.0 for i, v in enumerate(nz1)]
+    N = ms(60)
+    b = [math.sin(TAU * n["f"] * 0.85 * i / SR) * (_exp_env(i, ms(43), ms(3), g * 0.9) if i < ms(43) else 0.0) for i in range(N)]
+    return _mix([(0, a, 1.0), (0, b, 1.0)])
+
+
+def v_sw(n):
+    d = n["ms"] / 1000
+    N = int(SR * d)
+    up = n["dir"] == "up"
+    x = _swept(_noise_raw(N, 41), "bp", 350 if up else 1800, 1800 if up else 350, 1.0)
+    env = _bell(N, 0.45, n["g"] * 1.6)
+    return [v * e for v, e in zip(x, env)]
+
+
+def v_q(n):
+    d, g = n["ms"] / 1000, n["g"]
+    hold, rel, atk = int(SR * d), ms(12), ms(3)
+    N = hold + rel
+    x = []
+    for i in range(N):
+        a = g * i / atk if i < atk else g if i < hold else g * (1e-4 / g) ** ((i - hold) / rel)
+        x.append(math.sin(TAU * n["f"] * i / SR) * a)
+    x = _lp(x, 4500)
+    if n["sq"]:
+        sq = _swept(_noise_raw(ms(40), 51), "bp", 2800, 2800, 0.7)
+        sq = [v * _exp_env(i, ms(40), ms(2), g * 0.5) for i, v in enumerate(sq)]
+        return _mix([(0, x, 1.0), (n["ms"], sq, 1.0)])
+    return x
+
+
+def v_ping(n):
+    d = n["ms"] / 1000 * 1.1
+    N = ms(4) + int(SR * d) + ms(20)
+    ph = _sweep_ph(N, n["f"] * 1.035, n["f"], ms(40))
+    x = [math.sin(TAU * ph[i]) * (_exp_env(i, ms(4) + int(SR * d), ms(4), n["g"]) if i < ms(4) + int(SR * d) else 0.0) for i in range(N)]
+    return _lp(x, 3000)
+
+
+def v_thump(n):
+    d = n["ms"] / 1000
+    N = ms(2) + int(SR * d) + ms(20)
+    ph = _sweep_ph(N, n["f"] * 1.5, n["f"], ms(30))
+    return [
+        (math.sin(TAU * ph[i]) + 0.5 * math.sin(TAU * n["f"] * 2 * i / SR)) * (_exp_env(i, ms(2) + int(SR * d), ms(2), n["g"]) if i < ms(2) + int(SR * d) else 0.0)
+        for i in range(N)
+    ]
+
+
+def v_tick(n):
+    d = n["ms"] / 1000
+    N = int(SR * d) + ms(10)
+    x = _swept(_noise_raw(N, 61), "bp", n["f"], n["f"], 1.2)
+    return [v * (_exp_env(i, ms(1) + int(SR * d), ms(1), n["g"] * 2.2) if i < ms(1) + int(SR * d) else 0.0) for i, v in enumerate(x)]
+
+
+def v_breath(n):
+    d = n["ms"] / 1000
+    N = int(SR * d)
+    up = n["dir"] == "up"
+    x = _swept(_noise_raw(N, 71), "lp", 250 if up else 1500, 1500 if up else 250, 0.7)
+    env = _bell(N, 0.5, n["g"] * 1.5)
+    return [v * e for v, e in zip(x, env)]
+
+
+VOICES = {"fm": v_fm, "pop": v_pop, "tock": v_tock, "sw": v_sw, "q": v_q, "ping": v_ping, "thump": v_thump, "tick": v_tick, "breath": v_breath}
+
+
+# steady sines (Mission Control) read louder than their peak says; thumps and noise quieter
+FAMILY_TRIM_DB = {"mission_control": -3.0, "whisper": 1.0}
+
+
+def character_cue(notes, level, pitch=1.0, stretch=1.0, trim=0.0):
+    level += trim
+    parts = []
+    for t in notes:
+        n = _note(t, pitch, stretch)
+        parts.append((n["at"], VOICES[n["kind"]](n), 1.0))
+    return render(level, parts)
+
+
+# the library: every family, one folder each (sounds/library/<key>/), shared by all presets
+LIBRARY = [
+    ("ledger", "Ledger", "A"),
+    ("muted_keys", "Muted keys", "B"),
+    ("advisory", "Advisory", "C"),
+    ("cupertino", "Cupertino", None),
+    ("mission_control", "Mission Control", None),
+    ("sonar", "Sonar", None),
+    ("whisper", "Whisper", None),
+]
+WORKING_LOW_RATE = 0.8  # beats a second while a command runs, times the family's own rate
+
+
+def write_library(outdir):
+    """sounds/library/<family>/: <event>.wav, chatter/<cue>_<1..4>.wav (+ working beats), and
+    sounds/library/catalog.json. A preset is then only a choice of family per cue (menu.lua)."""
+    lib = f"{outdir}/library"
+    catalog = {"families": [{"key": k, "label": l} for k, l, _ in LIBRARY], "events": {}, "chatter": {}, "working": {}}
+    for key, label, letter in LIBRARY:
+        root = f"{lib}/{key}"
+        os.makedirs(f"{root}/chatter", exist_ok=True)
+        if letter:  # one of the serious families, written as semitone phrases
+            for event, (level, options) in SERIOUS.items():
+                write(f"{root}/{event}.wav", serious_cue(letter, options[letter], level))
+                catalog["events"].setdefault(event, {})[key] = options[letter][0]
+            for cue, (level, options) in SERIOUS_CHATTER.items():
+                for n, k in enumerate(VARIANTS, 1):
+                    write(f"{root}/chatter/{cue}_{n}.wav", serious_cue(letter, options[letter], level, k))
+                catalog["chatter"].setdefault(cue, {})[key] = options[letter][0]
+        else:
+            data = CHARACTER[key]
+            for event, (name, notes) in data["events"].items():
+                write(f"{root}/{event}.wav", character_cue(notes, SERIOUS[event][0], trim=FAMILY_TRIM_DB.get(key, 0.0)))
+                catalog["events"].setdefault(event, {})[key] = name
+            for cue, (name, notes) in data["chatter"].items():
+                for n, k in enumerate(VARIANTS, 1):
+                    write(f"{root}/chatter/{cue}_{n}.wav", character_cue(notes, SERIOUS_CHATTER[cue][0], k, trim=FAMILY_TRIM_DB.get(key, 0.0)))
+                catalog["chatter"].setdefault(cue, {})[key] = name
+            wname, rate, tick, tock = data["working"]
+            for low in (False, True):
+                for n, v in enumerate(WORKING_VARIANTS, 1):
+                    for beat, notes, db in (("tick", tick, 0.0), ("tock", tock, -1.4)):
+                        pitch, stretch = (v * WORKING_LOW, 1 / WORKING_LOW) if low else (v, 1.0)
+                        name = f"working_{'low_' if low else ''}{beat}_{n}.wav"
+                        write(f"{root}/chatter/{name}", character_cue(notes, WORKING_LEVEL + db, pitch, stretch, FAMILY_TRIM_DB.get(key, 0.0)))
+            catalog["working"][key] = {"name": wname, "rate": rate, "rate_low": round(rate * WORKING_LOW_RATE, 3)}
+        print(f"library {label} -> {root}/")
+    with open(f"{lib}/catalog.json", "w") as f:
+        json.dump(catalog, f, indent=1, ensure_ascii=False)
+        f.write("\n")
+
+
 def main():
     args = sys.argv[1:]
     cand_dir = None
@@ -546,6 +1019,29 @@ def main():
         for letter, (_, build) in options.items():
             write(f"{chatter_dir}/candidates/{cue}_{letter}.wav", render(CHATTER_LEVELS[cue], build(1.0)))
     print(f"chatter -> {chatter_dir}/ ({len(CHATTER_PICKS) * len(VARIANTS)} files + 30 candidates)")
+    # Alternatives the sound menu (lua/sounds/menu.lua) can switch to at runtime:
+    #   candidates/<event>_<letter>.wav          every letter of every event
+    #   chatter/alt/<cue>_<letter>_<1..4>.wav    every letter of every chatter cue, with pitch variants
+    os.makedirs(f"{outdir}/candidates", exist_ok=True)
+    for event, options in CANDIDATES.items():
+        for letter, (_, parts) in options.items():
+            write(f"{outdir}/candidates/{event}_{letter}.wav", render(LEVELS[event], parts))
+    os.makedirs(f"{chatter_dir}/alt", exist_ok=True)
+    for cue, options in CHATTER.items():
+        for letter, (_, build) in options.items():
+            for n, k in enumerate(VARIANTS, 1):
+                write(f"{chatter_dir}/alt/{cue}_{letter}_{n}.wav", render(CHATTER_LEVELS[cue], build(k)))
+    # catalog.json: names and active letters, read by the menu (one source of truth)
+    catalog = {
+        "events": {e: {l: n for l, (n, _) in o.items()} for e, o in CANDIDATES.items()},
+        "picks": PICKS,
+        "chatter": {c: {l: n for l, (n, _) in o.items()} for c, o in CHATTER.items()},
+        "chatter_picks": CHATTER_PICKS,
+    }
+    with open(f"{outdir}/catalog.json", "w") as f:
+        json.dump(catalog, f, indent=1, ensure_ascii=False)
+        f.write("\n")
+    write_library(outdir)
     if cand_dir:
         for event, options in CANDIDATES.items():
             for letter, (_, parts) in options.items():

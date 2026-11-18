@@ -1,0 +1,193 @@
+{
+ "families": [
+  {
+   "key": "ledger",
+   "label": "Ledger"
+  },
+  {
+   "key": "muted_keys",
+   "label": "Muted keys"
+  },
+  {
+   "key": "advisory",
+   "label": "Advisory"
+  },
+  {
+   "key": "cupertino",
+   "label": "Cupertino"
+  },
+  {
+   "key": "mission_control",
+   "label": "Mission Control"
+  },
+  {
+   "key": "sonar",
+   "label": "Sonar"
+  },
+  {
+   "key": "whisper",
+   "label": "Whisper"
+  }
+ ],
+ "events": {
+  "save": {
+   "ledger": "Soft tick",
+   "muted_keys": "Tine tick",
+   "advisory": "Blip",
+   "cupertino": "Tink",
+   "mission_control": "Tick tone",
+   "sonar": "Small ping",
+   "whisper": "Tick"
+  },
+  "commit": {
+   "ledger": "Settled fifth",
+   "muted_keys": "Major third close",
+   "advisory": "Two-tone chime",
+   "cupertino": "Soft pair",
+   "mission_control": "Telemetry lock",
+   "sonar": "Ping, near echo",
+   "whisper": "Double knock"
+  },
+  "pull": {
+   "ledger": "Stepped descent",
+   "muted_keys": "Fourth down",
+   "advisory": "Two-tone down",
+   "cupertino": "Swoosh in",
+   "mission_control": "Downlink",
+   "sonar": "Ping, close return",
+   "whisper": "Breath in"
+  },
+  "push": {
+   "ledger": "Hand-off",
+   "muted_keys": "Fifth out",
+   "advisory": "Two-tone up",
+   "cupertino": "Swoosh out + tink",
+   "mission_control": "Key-up, blip",
+   "sonar": "Ping, far echo",
+   "whisper": "Breath out"
+  },
+  "checkout": {
+   "ledger": "Double tick",
+   "muted_keys": "Step",
+   "advisory": "Pair",
+   "cupertino": "Tock",
+   "mission_control": "Single tick",
+   "sonar": "Short ping",
+   "whisper": "Tick tick"
+  },
+  "claude_start": {
+   "ledger": "Open line",
+   "muted_keys": "Wake",
+   "advisory": "Advisory",
+   "cupertino": "Pop",
+   "mission_control": "Key-up tone",
+   "sonar": "Low ping",
+   "whisper": "Soft thump"
+  },
+  "claude_done": {
+   "ledger": "Resolve",
+   "muted_keys": "Fall to root",
+   "advisory": "Long fall",
+   "cupertino": "Falling notes",
+   "mission_control": "Over and out",
+   "sonar": "Ping, fading echoes",
+   "whisper": "Heartbeat"
+  },
+  "claude_input": {
+   "ledger": "Query",
+   "muted_keys": "Open fifth",
+   "advisory": "Attention",
+   "cupertino": "Ping ping",
+   "mission_control": "Callout",
+   "sonar": "Two pings",
+   "whisper": "Nudge"
+  },
+  "breakpoint": {
+   "ledger": "Held low",
+   "muted_keys": "Low pedal",
+   "advisory": "Caution tone",
+   "cupertino": "Low thud",
+   "mission_control": "Hold tone",
+   "sonar": "Deep ping",
+   "whisper": "Long thump"
+  },
+  "ok": {
+   "ledger": "Confirm",
+   "muted_keys": "Soft third",
+   "advisory": "Single beep",
+   "cupertino": "Soft tink",
+   "mission_control": "Go",
+   "sonar": "Clear ping",
+   "whisper": "Tap"
+  },
+  "fail": {
+   "ledger": "Tritone drop",
+   "muted_keys": "Minor second",
+   "advisory": "Triple low",
+   "cupertino": "Low pair",
+   "mission_control": "No-go",
+   "sonar": "Dissonant return",
+   "whisper": "Heavy double"
+  }
+ },
+ "chatter": {
+  "claude_line": {
+   "ledger": "Low pulse",
+   "muted_keys": "Low tine",
+   "advisory": "Low tick",
+   "cupertino": "Soft pop",
+   "mission_control": "Carrier blip",
+   "sonar": "Low ping",
+   "whisper": "Soft thump"
+  },
+  "term_key": {
+   "ledger": "Soft tick",
+   "muted_keys": "Tine",
+   "advisory": "Click tone",
+   "cupertino": "Soft tock",
+   "mission_control": "Radio tick",
+   "sonar": "Micro ping",
+   "whisper": "Finger tick"
+  },
+  "term_enter": {
+   "ledger": "Low confirm",
+   "muted_keys": "Soft thud",
+   "advisory": "Low beep",
+   "cupertino": "Pop",
+   "mission_control": "Key-up",
+   "sonar": "Low ping",
+   "whisper": "Small thump"
+  },
+  "term_out": {
+   "ledger": "Faint tick",
+   "muted_keys": "Faint tine",
+   "advisory": "Faint pip",
+   "cupertino": "Soft dot",
+   "mission_control": "Data tick",
+   "sonar": "Sonar dot",
+   "whisper": "Grain"
+  }
+ },
+ "working": {
+  "cupertino": {
+   "name": "Soft tock pair",
+   "rate": 4.0,
+   "rate_low": 3.2
+  },
+  "mission_control": {
+   "name": "Telemetry pulse",
+   "rate": 4.0,
+   "rate_low": 3.2
+  },
+  "sonar": {
+   "name": "Slow sweep",
+   "rate": 0.8,
+   "rate_low": 0.64
+  },
+  "whisper": {
+   "name": "Slow heartbeat",
+   "rate": 1.3,
+   "rate_low": 1.04
+  }
+ }
+}

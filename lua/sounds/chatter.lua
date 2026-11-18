@@ -15,7 +15,8 @@ local M = {}
 
 local uv = vim.uv
 local player = require("sounds.player")
-local dir = vim.fn.stdpath("config") .. "/sounds/chatter"
+-- the working watch and the candidates exist only in the terminal set for now
+local function dir() return require("sounds").root("terminal") .. "/chatter" end
 local VARIANTS = 4
 
 M.config = {
@@ -44,7 +45,7 @@ M.config = {
     -- It belongs to the Claude switch; `:Chatter working` turns just this part on or off.
     working = {
       enabled = true,
-      rate = 6, -- ticks a second
+      rate = 6, -- ticks a second (the terminal watch; other presets set their own in library/catalog.json)
       delay = 0, -- seconds of working before it starts (so quick answers stay quiet)
       pause_text = true, -- pause while Claude's text is arriving (those ticks have their own sound)
       text_quiet_ms = 700, -- ...until no new text for this long
@@ -72,7 +73,7 @@ local function play(cue, feature, cap)
   if last_play[cue] and now - last_play[cue] < 1000 / (cap or cfg.cap) then return false end
   last_play[cue] = now
   local volume = (require("sounds").config.volume or 0.5) * M.config.volume * (cfg.volume or 1)
-  return player.play(("%s/%s_%d.wav"):format(dir, cue, math.random(VARIANTS)), math.min(1, volume))
+  return player.play(require("sounds").chatter_path(cue, math.random(VARIANTS)), math.min(1, volume))
 end
 
 --- A terminal buffer running Claude (claudecode's panel or a claude_chats buffer).
@@ -226,10 +227,12 @@ end
 -- schedules them on the audio clock; this code only starts, changes and stops it.
 
 local function define_sets()
+  local wdir = require("sounds").working().dir
+  wk.defined = require("sounds").preset
   local function files(prefix) -- three tick variants, then three tock variants
     local t = {}
     for _, beat in ipairs({ "tick", "tock" }) do
-      for n = 1, 3 do t[#t + 1] = ("%s/%s_%s_%d.wav"):format(dir, prefix, beat, n) end
+      for n = 1, 3 do t[#t + 1] = ("%s/%s_%s_%d.wav"):format(wdir, prefix, beat, n) end
     end
     return t
   end
@@ -266,7 +269,7 @@ local function finished()
   if cfg.finished_sound and wk.ticked then
     local last = require("sounds").last_played("claude_done")
     if not (last and uv.now() - last < 1500) then -- the Stop hook already played it
-      player.play(vim.fn.stdpath("config") .. "/sounds/claude_done.wav", volume_for())
+      player.play(require("sounds").path("claude_done"), volume_for())
     end
   end
   wk.since, wk.cmd, wk.ticked, wk.idle = nil, 0, false, 0
@@ -303,9 +306,16 @@ local function eval_working()
     stop_train()
     return
   end
-  local set = (cfg.low_for_commands and wk.cmd > 0) and "watch_low" or "watch"
+  if wk.defined ~= require("sounds").preset then -- another preset: its own beats and tempo
+    stop_train()
+    define_sets()
+  end
+  local low = cfg.low_for_commands and wk.cmd > 0
+  local set = low and "watch_low" or "watch"
+  local w = require("sounds").working()
+  local rate = (low and w.rate_low or w.rate) or cfg.rate
   if wk.running and wk.set == set and wk.epoch == player.epoch() and player.status() == "ready" then return end
-  if player.train(set, cfg.rate, volume_for(cfg), cfg.jitter_ms) then
+  if player.train(set, rate, volume_for(cfg), cfg.jitter_ms) then
     wk.running, wk.set, wk.epoch, wk.ticked = true, set, player.epoch(), true
   end
 end
@@ -432,7 +442,7 @@ local function set_one(feature, on)
 end
 
 --- Switch a feature: "claude", "input", "output", or "terminal" (input + output).
-function M.set(feature, on)
+function M.set(feature, on, silent)
   if feature == "terminal" then
     set_one("input", on)
     set_one("output", on)
@@ -442,6 +452,7 @@ function M.set(feature, on)
     on = M.state[feature]
   end
   sync_hooks()
+  if silent then return end
   vim.notify(LABEL[feature] .. " sounds " .. (on and "on" or "off"), vim.log.levels.INFO, { title = "Sounds" })
 end
 
@@ -466,7 +477,7 @@ local function command(opts)
     local ok
     if letter then
       -- audition any of the six candidates of a cue through the real player
-      local path = ("%s/candidates/%s_%s.wav"):format(dir, b, letter:upper())
+      local path = ("%s/candidates/%s_%s.wav"):format(dir(), b, letter:upper())
       local cfg = M.config[CUE_FEATURE[b]]
       local vol = (require("sounds").config.volume or 0.5) * M.config.volume * (cfg.volume or 1)
       ok = uv.fs_stat(path) ~= nil and player.play(path, math.min(1, vol))
@@ -524,8 +535,6 @@ function M.setup()
       return { "on", "off", "toggle" }
     end,
   })
-  vim.keymap.set("n", "<leader>uC", function() M.toggle("claude") end, { desc = "Toggle Claude-talking sounds" })
-  vim.keymap.set("n", "<leader>ui", function() M.toggle("terminal") end, { desc = "Toggle terminal sounds (input + output)" })
 end
 
 return M

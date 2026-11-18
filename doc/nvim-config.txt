@@ -382,19 +382,50 @@ then horizontal, then vertical...). |nvim-keymaps-windows| lists the keys.
 ==============================================================================
 11. SOUND CUES                                          *nvim-config-sounds*
 
-Short, dry cues for editor events in the voice of a sci-fi computer terminal:
-gated square and triangle beeps, low pulses, a little noise. Neovim has no
-audio, so they play through macOS `afplay`; the WAVs live in `sounds/` and are
-synthesized by `lua/sounds/gen.py` (stdlib Python). The generator keeps three
-candidates (A, B, C) per event and `PICKS` chooses the active one; to change
-an event, edit its letter and run `python3 -I lua/sounds/gen.py sounds`. Add
-`--candidates {dir}` to also write every candidate for auditioning with
-`afplay`.
+Short, dry cues for editor events, in eight presets (a preset is a style of
+sounds for every event; change it in the menu):
+
+  Cupertino        soft, rounded, Apple-like: a different timbre per job
+                   (the default)
+  Mission Control  radio comms: key-up tones, a squelch tail, telemetry blips
+  Sonar            dark pings; the echoes carry the meaning
+  Whisper          haptic thumps, ticks and breaths (needs real speakers)
+  Ledger           pure sines with a soft decay: calm, neutral
+  Muted keys       a softly struck, damped tine: warmer
+  Advisory         flat gated tones, like an instrument panel
+  Terminal         the original sci-fi computer: gated square beeps
+
+Neovim has no audio, so they play through macOS `afplay`; the WAVs are
+synthesized by `lua/sounds/gen.py` (stdlib Python, `python3 -I lua/sounds/gen.py
+sounds`). Seven families share a library (`sounds/library/<family>/`); a preset
+plays its family for every cue, and the menu can give any cue another family's
+sound. Terminal lives in `sounds/` with three candidates (A, B, C) per event,
+chosen by `PICKS`; `--candidates {dir}` also writes them all for auditioning
+with `afplay`. Cupertino, Mission Control, Sonar and Whisper also have their
+own "Claude working" sound (a tempo and beats per preset); the others use the
+terminal watch.
 
 Opt-in: sounds are OFF at the start of every session and the choice is never
-persisted. <leader>uS or `:Sounds` turns them on (with a confirming cue).
+persisted. <leader>uS opens the sounds menu (`:SoundsMenu`); `m` there, or
+`:Sounds on`, turns them on (with a confirming cue).
+
+The menu is the one place for everything (`lua/sounds/menu.lua`):
+
+  <CR> / <Space>  switch the cue or chatter sound under the cursor
+  s               choose which sound it plays (any family; `*` = not the preset's)
+  r               back to the preset's sound
+  t               play it
+  m               master switch (this session only)
+  p / P           next / previous preset
+  + / -           volume
+
+Cue switches, chosen sounds, preset and volume persist in
+stdpath("state")/sounds.json. The master switch and the chatter switches never
+do. A preset is registered in `require("sounds").presets`; the library and its
+`catalog.json` are written by `gen.py`.
 
   :Sounds [on|off|toggle]   switch (no argument toggles)
+  :Sounds menu              the menu above (same as <leader>uS)
   :Sounds test {cue}        play one cue, even when sounds are off
   :Sounds demo              every cue in turn, to tune by ear
 
@@ -439,12 +470,14 @@ git_fail, compile, terminal, tests, debug, upstream, claude.
 Chatter ~
 
 Experimental sounds that fire often, on two switches. They start off in every
-session and are NOT controlled by <leader>uS / `:Sounds`.
+session and are NOT controlled by the master switch of `:Sounds`. They have
+no keys of their own: switch them in the sounds menu (<leader>uS) or with
+`:Chatter`.
 
-  <leader>uC   Claude talking   a tick as Claude's text arrives
-  <leader>ui   Terminal         typing and output together: a tick per key
-                                typed in a terminal (Enter has its own sound)
-                                and a tick as a shell command prints lines
+  Claude talking   a tick as Claude's text arrives
+  Terminal         typing and output together: a tick per key typed in a
+                   terminal (Enter has its own sound) and a tick as a shell
+                   command prints lines
 
   :Chatter {claude|terminal|input|output|all} [on|off|toggle]
                           `input` and `output` switch the two halves of
