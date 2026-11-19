@@ -613,6 +613,23 @@ Cool set:
   cobalt-kinetic    (mohseenrm/brutus)           via global autocmd only;
                     dark only (pins 'background'), deep navy + cobalt/cyan
 
+In-repo schemes (no plugin; `colors/<name>.lua` + `lua/schemes/`, one shared
+builder, one palette file each; the strip autocmd makes Normal transparent):
+  concrete          brutalist: grey only, weight not hue, one signal orange
+                    (functions, search, cursor line number); dark + light.
+                    `let g:concrete_accent = v:false` before loading drops
+                    the orange (accent = brightest ink)
+  graphite          pencil greys on dark, no accent at all: brightness and
+                    weight only, colour just for diagnostics/git; dark only
+  paper             ink on a printed page: near-white / near-black, italics
+                    and bold for hierarchy, no accent; dark + light
+  phosphor          monochrome CRT in green, brightness as the syntax axis;
+                    dark only
+  phosphor-amber    the same in amber; dark only
+  To tweak one, edit its palette in lua/schemes/<name>.lua (re-read on every
+  load; `:colorscheme <name>` to see it). A new one is a palette file plus a
+  two-line colors/ file.
+
 ==============================================================================
 10. AI                                                      *nvim-plugins-ai*
 

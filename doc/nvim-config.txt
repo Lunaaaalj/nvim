@@ -248,8 +248,10 @@ Installed schemes (one file each under `lua/plugins/`): catppuccin, kanagawa,
 kanso, lackluster, nightfox, everforest, melange, gruvbox-material, zenbones
 with its variants (forestbones, neobones, kanagawabones, seoulbones), and a
 warm set: rose-pine, kanagawa-paper, bamboo, flexoki, evergarden, vesper, plus
-cobalt-kinetic (mohseenrm/brutus; dark only). See
-|nvim-plugins-colorschemes|.
+cobalt-kinetic (mohseenrm/brutus; dark only). Four more live in the repo
+itself (`lua/schemes/`, `colors/`), all monochrome-leaning: concrete
+(brutalist), graphite and paper (no accent; dark / dark + light), phosphor and
+phosphor-amber (CRT; dark only). See |nvim-plugins-colorschemes|.
 
 ==============================================================================
 7. PROJECT SETTINGS                                    *nvim-config-project*
