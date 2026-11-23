@@ -16,6 +16,8 @@ return {
         { os.date("%H:%M", math.floor(e.time)) .. " ", "dim" }, { (verb or ""):sub(1, 7):gsub("$", string.rep(" ", math.max(0, 7 - #(verb or "")))) .. " ", "mid" }, { rest or "", i == #ev and "" or "mid" },
       }, {}, w)
     end
+    -- fixed height: a growing log would relayout (and re-render the dashboard) on each of the first events
+    while #out < 5 do out[#out + 1] = U.line({}) end
     return out
   end,
 }
