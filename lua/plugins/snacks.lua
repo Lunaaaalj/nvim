@@ -1,7 +1,7 @@
 -- snacks.nvim is already pulled in as a dependency of claudecode.nvim. This spec
 -- turns on two of its modules:
 --   * dashboard — a minimal, single-column start screen (see below)
---   * scroll    — smooth animated scrolling (pairs with smear_cursor); currently OFF
+--   * scroll    — smooth animated scrolling; currently OFF
 --
 -- Dashboard, top to bottom, all centered: header art, a big block-digit clock + date
 -- (lua/defaults/bigclock.lua), a

@@ -24,7 +24,7 @@ end
 
 -- What actually shows behind a transparent editor: Alacritty's background.
 -- alacritty.toml sets no colors.primary.background, so this is Alacritty's
--- default. Animations that fade (smear trail, yank flash) fade toward it; if you
+-- default. Animations that fade (the yank flash) fade toward it; if you
 -- change the terminal background, change this too.
 M.terminal_bg = "#181818"
 

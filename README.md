@@ -118,7 +118,7 @@ Every colour scheme draws without an editor background, so the terminal's transl
   <dt><code>:q</code> closes the buffer</dt>
   <dd>In the last window you get the next buffer, or the dashboard. <code>:q</code> on the dashboard leaves Neovim. Unsaved buffers ask Save / Discard / Cancel.</dd>
   <dt>Motion over fades</dt>
-  <dd>A terminal cell is either a colour or glass, so animations move rather than fade: a stiff smear cursor, 140 ms eased scrolling, a short glimmer on yank, notifications that slide.</dd>
+  <dd>A terminal cell is either a colour or glass, so animations move rather than fade: kitty's GPU cursor trail, 140 ms eased scrolling, a short glimmer on yank, notifications that slide.</dd>
   <dt>A dashboard that's actually live</dt>
   <dd>The clock ticks only while the dashboard is visible. The stats line comes from one cached GitHub GraphQL call, so it never blocks startup.</dd>
   <dt>And for breaks</dt>
@@ -195,7 +195,7 @@ nvim   # lazy.nvim bootstraps itself; Mason installs servers, formatters and deb
 | **Moving around** | telescope (+ fzf-native), neo-tree, oil.nvim, harpoon, flash.nvim, grug-far, which-key |
 | **Editing** | nvim-surround, Comment.nvim, mini.ai, treesj, nvim-ufo, nvim-autopairs, todo-comments |
 | **Interface** | lualine, bufferline, noice + nvim-notify, barbecue + navic, snacks (dashboard, scroll), satellite, mini.indentscope, illuminate, rainbow-delimiters, colorizer, tiny-devicons |
-| **Motion** | smear-cursor, tiny-glimmer, precognition |
+| **Motion** | tiny-glimmer, precognition (the cursor trail is kitty's own) |
 | **Git** | lazygit.nvim, gitsigns, diffview, git-conflict |
 | **Test & debug** | neotest (pytest), nvim-dap + dap-ui (Python, C/C++), trouble.nvim |
 | **Writing** | VimTeX, render-markdown, zen-mode + twilight, hover.nvim |

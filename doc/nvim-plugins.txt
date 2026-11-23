@@ -292,10 +292,10 @@ barbecue.nvim ~  (utilyre/barbecue.nvim)
 nvim-navic ~  (SmiteshP/nvim-navic)
   LSP-driven location provider feeding barbecue's breadcrumbs.
 
-smear-cursor.nvim ~  (sphamba/smear-cursor.nvim)
-  Animated cursor trail; owns all cursor animation. Stiffer than the defaults
-  (settles faster). Its trail fades into `colors.terminal_bg` (#181818,
-  Alacritty's default bg) because a transparent Normal has no bg to fade into.
+Cursor trail ~
+  No plugin: kitty's own `cursor_trail` animates the cursor on the GPU, so
+  Neovim sends no extra redraws. smear-cursor.nvim was removed because it
+  stacked a second cursor animation on top of kitty's.
 
 tiny-glimmer.nvim ~  (rachartier/tiny-glimmer.nvim)
   Flash on yank: the yanked text highlights (Visual) and fades out over
