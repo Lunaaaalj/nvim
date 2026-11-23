@@ -250,7 +250,13 @@ local function window_dims()
     local info = vim.fn.getwininfo(win)[1]
     return info.width - info.textoff, info.height
   end
-  return vim.o.columns, vim.o.lines
+  -- Before the window exists (snacks renders the section first): the editor area
+  -- without the command line, statusline and tabline, so the block is sized for the
+  -- window it is about to get and the layout is not redone a moment later.
+  local lines = vim.o.lines - vim.o.cmdheight
+  if vim.o.laststatus > 0 then lines = lines - 1 end
+  if vim.o.showtabline == 2 or (vim.o.showtabline == 1 and #vim.api.nvim_list_tabpages() > 1) then lines = lines - 1 end
+  return vim.o.columns, lines
 end
 
 --- Size of the block the snacks sections must reserve (header_art.content_size()).
@@ -344,6 +350,7 @@ local function build(buf, win, cols, rows)
     S.state[it.id] = st
   end
   M.W = L.W
+  if S.booting then S.boot_rebuilt = true end -- the reveal's tick re-orders the new modules
   return L
 end
 
@@ -607,6 +614,15 @@ M.reveal_styles = {
 }
 M.reveal_names = { "wipe", "cascade", "sweep", "type", "none" }
 
+--- Module order top-to-bottom, left-to-right (the `cascade` reveal's `k`), and fresh
+--- per-row reveal counters.
+local function assign_order()
+  local order = {}
+  for _, st in pairs(S.state) do order[#order + 1] = st end
+  table.sort(order, function(a, b) if a.y ~= b.y then return a.y < b.y end return a.x < b.x end)
+  for k, st in ipairs(order) do st.k, st.bc = k, {} end
+end
+
 local function boot_end(style)
   local last = 0
   for _, st in pairs(S.state) do
@@ -619,11 +635,7 @@ local function boot()
   if S.booted then return end
   local style = M.reveal_styles[M.opts.boot] or M.reveal_styles.wipe
   S.booted, S.booting = true, true
-  -- module order for `cascade`
-  local order = {}
-  for _, st in pairs(S.state) do order[#order + 1] = st end
-  table.sort(order, function(a, b) if a.y ~= b.y then return a.y < b.y end return a.x < b.x end)
-  for k, st in ipairs(order) do st.k, st.bc = k, {} end
+  assign_order()
   vim.api.nvim_buf_clear_namespace(S.buf, ns, 0, -1)
   local finish_at, t0 = boot_end(style), uv.now()
   S.boot_redraw = false
@@ -636,8 +648,13 @@ local function boot()
       return
     end
     local t = uv.now() - t0
+    if S.boot_rebuilt then
+      -- the window changed size (or a module appeared) mid-reveal: carry on with the new layout
+      S.boot_rebuilt, S.boot_redraw = false, true
+      assign_order()
+    end
     for _, st in pairs(S.state) do
-      st.bc = st.bc or {} -- modules rebuilt by a relayout mid-reveal
+      st.bc = st.bc or {}
       for i = 1, st.h do
         local start = style.t0(st, i, st.y + i - 1, st.k or 1)
         local p = style.dur == 0 and (t >= start and 1 or 0) or math.max(0, math.min(1, (t - start) / style.dur))
