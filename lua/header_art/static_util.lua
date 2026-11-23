@@ -82,6 +82,15 @@ function M.age(t)
   return math.floor(d / 86400) .. "d"
 end
 
+--- Epoch seconds of an ISO-8601 UTC timestamp ("2026-11-22T20:14:18Z"), or nil.
+function M.iso_epoch(s)
+  local y, mo, d, h, mi, se = (s or ""):match("^(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)")
+  if not y then return nil end
+  local t = os.time({ year = y, month = mo, day = d, hour = h, min = mi, sec = se })
+  local now = os.time()
+  return t + (os.time(os.date("*t", now)) - os.time(os.date("!*t", now))) -- local -> UTC
+end
+
 --- Open a file in the current window (the dashboard's), at an optional line.
 function M.open_file(path, lnum)
   vim.cmd.edit(vim.fn.fnameescape(path))

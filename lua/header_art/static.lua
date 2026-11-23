@@ -132,8 +132,18 @@ end
 --- A module's lines at width `w`, each padded to exactly `w` cells: a title row
 --- (dim caps, key badge on the right) then the body. `bare` modules (clock,
 --- key hints) have no title.
+local warned = {}
 local function block(m, w)
-  local body = m.render(w) or {}
+  -- a broken module shows its error in its own rows instead of taking the dashboard down
+  local ok, body = pcall(m.render, w)
+  if not ok then
+    if not warned[m.id] then
+      warned[m.id] = true
+      vim.schedule(function() vim.notify("header_art.static: " .. m.id .. ": " .. tostring(body), vim.log.levels.WARN) end)
+    end
+    body = { U.line({ { "error: " .. tostring(body):gsub("^.-:%d+: ", ""):sub(1, math.max(8, w - 8)), "err" } }) }
+  end
+  body = body or {}
   local out = {}
   if not m.bare then
     local badge = m.badge and { { "[" .. m.badge .. "]", "acc" } } or {}
@@ -147,7 +157,7 @@ end
 
 local function sig_of(ln)
   local parts = {}
-  for i, s in ipairs(ln.s) do parts[i] = s[2] .. "\0" .. s[1] end
+  for i, s in ipairs(ln.s) do parts[i] = (s[2] or "") .. "\0" .. s[1] end
   return table.concat(parts, "\1")
 end
 
@@ -163,7 +173,7 @@ local function build_layout(cols, rows)
   for id, on in pairs(o.modules) do
     if on then
       local m = load_module(id)
-      if m and (not m.available or m.available()) then present[id] = m end
+      if m and (not m.available or select(2, pcall(m.available))) then present[id] = m end
     end
   end
   local dropped, drop_i = {}, 0
@@ -274,7 +284,7 @@ local function draw_row(st, i, flash)
   local selected = S.sel and S.sel.id == st.id and S.sel.i == i
   local virt = {}
   for _, seg in ipairs(ln.s) do
-    local class = seg[2]
+    local class = seg[2] or ""
     if flash then class = class .. " fl" elseif selected then class = class .. " sel" end
     virt[#virt + 1] = { seg[1], hlgroup(class) }
   end
@@ -340,6 +350,8 @@ end
 ---------------------------------------------------------------------------
 
 local function refresh_module(st)
+  -- a module that has nothing left to show leaves the layout
+  if st.m.available and not st.m.available() then return relayout() end
   local lines = block(st.m, st.w)
   if #lines ~= st.h then return relayout() end
   for i, ln in ipairs(lines) do
@@ -360,6 +372,10 @@ end
 local function flush()
   S.flush_pending = false
   if not (S.buf and vim.api.nvim_buf_is_valid(S.buf)) or S.booting or not S.row0 then return end
+  if S.need_layout then
+    S.need_layout = false
+    return relayout()
+  end
   local ids = {}
   for id, st in pairs(S.state) do
     if st.dirty then ids[#ids + 1] = id end
@@ -471,7 +487,13 @@ local grp
 local function mark(ids)
   for _, id in ipairs(ids) do
     local st = S.state[id]
-    if st then st.dirty = true end
+    if st then
+      st.dirty = true
+    elseif M.opts.modules[id] then
+      -- not on the dashboard yet: it may have something to show now
+      local m = load_module(id)
+      if m and (not m.available or m.available()) then S.need_layout = true end
+    end
   end
   schedule_flush()
 end
