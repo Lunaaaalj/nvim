@@ -24,6 +24,12 @@ return {
     { "<leader>sd", "<cmd>Noice dismiss<cr>", desc = "Dismiss visible notifications" },
   },
   opts = {
+    -- Noice's message router re-arms a timer every `throttle` ms forever, idle
+    -- or not: the default 1000/30 was ~30 of an idle Neovim's ~55 wake-ups/s
+    -- (`nvim --clean`: 0). The cmdline renders in blocking mode, which this
+    -- doesn't affect; only notifications, LSP progress and the search count can
+    -- now appear up to 100 ms later.
+    throttle = 100,
     cmdline = {
       enabled = true,
       view = "cmdline_popup", -- popup command line (can appear near top)

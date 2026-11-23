@@ -98,7 +98,7 @@ return {
           globalstatus = true,
           refresh = {
             statusline = 1000,
-            refresh_time = 16, -- ~60fps
+            refresh_time = 50, -- event→redraw latency; also how often it wakes (16 = 60/s idle)
             events = {
               "WinEnter", "BufEnter", "BufWritePost", "SessionLoadPost",
               "FileChangedShellPost", "VimResized", "Filetype",
