@@ -562,10 +562,17 @@ function M.detach()
   S = { state = {}, ready = false }
 end
 
+-- Rows of the block revealed so far (0 = none), as the boot sweeps down it.
+local function draw_revealed()
+  for _, st in pairs(S.state) do
+    for i = 1, math.min(st.h, S.boot_y - st.y) do draw_row(st, i) end
+  end
+end
+
 local function boot()
   if S.booted then return end
-  S.booted, S.booting = true, true
-  local H, y = S.layout.H, 0
+  S.booted, S.booting, S.boot_y = true, true, 0
+  local H = S.layout.H
   vim.api.nvim_buf_clear_namespace(S.buf, ns, 0, -1)
   local t = uv.new_timer()
   t:start(0, 28, vim.schedule_wrap(function()
@@ -575,12 +582,12 @@ local function boot()
       S.booting = false
       return
     end
+    S.boot_y = S.boot_y + 1
     for _, st in pairs(S.state) do
-      local i = y - st.y + 1
+      local i = S.boot_y - st.y
       if i >= 1 and i <= st.h then draw_row(st, i) end
     end
-    y = y + 1
-    if y >= H then
+    if S.boot_y >= H then
       t:stop()
       t:close()
       S.booting, S.ready = false, true
@@ -615,6 +622,10 @@ function M.attach(force)
 
   if fresh and not S.booted and not vim.g.header_art_static_noboot then
     boot()
+  elseif S.booting then
+    -- snacks rewrote the text mid-sweep (its UpdatePost): put back the rows shown so far
+    -- and let the sweep carry on, instead of jumping to the finished picture
+    if fresh or moved or force then draw_revealed() end
   elseif fresh or moved or force then
     draw_all()
     S.ready = true
