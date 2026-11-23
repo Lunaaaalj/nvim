@@ -54,7 +54,9 @@ local palette, hl_cache = nil, {}
 
 local function make_palette()
   local fg = colors.fg("Normal") or 0xd0d0d0
-  local bg = vim.g.ui_transparent and tonumber(colors.terminal_bg:sub(2), 16) or colors.bg()
+  -- the scheme's own background, also in transparent mode: dimmed tones blend toward
+  -- it, which is right for light schemes too (terminal_bg is a dark grey)
+  local bg = colors.bg()
   local accent = colors.accent() or fg
   local dim = colors.fg("Comment") or colors.blend(fg, bg, 0.45)
   return {
