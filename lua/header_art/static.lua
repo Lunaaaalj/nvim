@@ -43,6 +43,7 @@ M.opts = {
   margin = 4, -- rows kept free above/below the block
   live_dot = true, -- a dot in the corner that toggles once a second (the clock module)
   notes_file = vim.fn.stdpath("data") .. "/dashboard-notes.md",
+  boot = "wipe", -- how the dashboard appears: wipe | cascade | sweep | type | none (`:HeaderArt boot <style>` replays)
 }
 M.W = M.opts.width
 
@@ -278,17 +279,43 @@ local function placeholder_origin(buf)
   return r0, c0, n
 end
 
-local function draw_row(st, i, flash)
+--- The first `cells` cells of a row's segments; the last `lead` of them in the
+--- accent, like the head of a wipe. Used while the dashboard is revealing itself.
+local function cut(segs, cells, lead)
+  local out, n = {}, 0
+  for _, seg in ipairs(segs) do
+    local text, class = seg[1], seg[2] or ""
+    local len = vim.fn.strchars(text)
+    if n >= cells then break end
+    local take = math.min(len, cells - n)
+    local from = n -- cells before this segment
+    local plain = math.max(0, math.min(take, (cells - lead) - from))
+    if plain > 0 then out[#out + 1] = { vim.fn.strcharpart(text, 0, plain), hlgroup(class) } end
+    if take > plain then out[#out + 1] = { vim.fn.strcharpart(text, plain, take - plain), hlgroup("acc b") } end
+    n = n + take
+  end
+  return out
+end
+
+local function draw_row(st, i, flash, cells, lead)
   local buf = S.buf
   if not (buf and vim.api.nvim_buf_is_valid(buf)) or not S.row0 then return end
   local ln = st.lines[i]
   if not ln then return end
   local selected = S.sel and S.sel.id == st.id and S.sel.i == i
   local virt = {}
-  for _, seg in ipairs(ln.s) do
-    local class = seg[2] or ""
-    if flash then class = class .. " fl" elseif selected then class = class .. " sel" end
-    virt[#virt + 1] = { seg[1], hlgroup(class) }
+  if cells then
+    virt = cut(ln.s, cells, lead or 0)
+  else
+    for _, seg in ipairs(ln.s) do
+      local class = seg[2] or ""
+      if flash then class = class .. " fl" elseif selected then class = class .. " sel" end
+      virt[#virt + 1] = { seg[1], hlgroup(class) }
+    end
+  end
+  if #virt == 0 then
+    pcall(vim.api.nvim_buf_del_extmark, buf, ns, st.eid + i)
+    return
   end
   pcall(vim.api.nvim_buf_set_extmark, buf, ns, S.row0 + st.y + i - 1, 0, {
     id = st.eid + i,
@@ -562,38 +589,86 @@ function M.detach()
   S = { state = {}, ready = false }
 end
 
--- Rows of the block revealed so far (0 = none), as the boot sweeps down it.
-local function draw_revealed()
+-- Reveal styles. Each gives a row its start time (ms after the sweep begins) and
+-- how long the row takes to appear (0 = at once); `lead` cells at the head of a
+-- row are drawn in the accent. y = row in the block (0-based), i = row in its
+-- module, k = the module's order top-to-bottom, left-to-right.
+M.reveal_styles = {
+  -- whole rows appear top to bottom
+  sweep = { t0 = function(st, i, y) return y * 26 end, dur = 0, lead = 0 },
+  -- a diagonal wipe: every row is drawn left to right, each starting a little after
+  -- the one above, so the picture arrives from the top-left corner with a bright edge
+  wipe = { t0 = function(st, i, y) return y * 22 + st.x * 3 end, dur = 340, lead = 3 },
+  -- modules come in one after another, each typed out quickly
+  cascade = { t0 = function(st, i, y, k) return (k - 1) * 90 + (i - 1) * 34 end, dur = 200, lead = 2 },
+  -- line by line, each typed left to right (slow, like a terminal)
+  type = { t0 = function(st, i, y) return y * 40 end, dur = 240, lead = 1 },
+  none = { t0 = function() return 0 end, dur = 0, lead = 0 },
+}
+M.reveal_names = { "wipe", "cascade", "sweep", "type", "none" }
+
+local function boot_end(style)
+  local last = 0
   for _, st in pairs(S.state) do
-    for i = 1, math.min(st.h, S.boot_y - st.y) do draw_row(st, i) end
+    for i = 1, st.h do last = math.max(last, style.t0(st, i, st.y + i - 1, st.k or 1) + style.dur) end
   end
+  return last
 end
 
 local function boot()
   if S.booted then return end
-  S.booted, S.booting, S.boot_y = true, true, 0
-  local H = S.layout.H
+  local style = M.reveal_styles[M.opts.boot] or M.reveal_styles.wipe
+  S.booted, S.booting = true, true
+  -- module order for `cascade`
+  local order = {}
+  for _, st in pairs(S.state) do order[#order + 1] = st end
+  table.sort(order, function(a, b) if a.y ~= b.y then return a.y < b.y end return a.x < b.x end)
+  for k, st in ipairs(order) do st.k, st.bc = k, {} end
   vim.api.nvim_buf_clear_namespace(S.buf, ns, 0, -1)
-  local t = uv.new_timer()
-  t:start(0, 28, vim.schedule_wrap(function()
+  local finish_at, t0 = boot_end(style), uv.now()
+  S.boot_redraw = false
+  local timer = uv.new_timer()
+  timer:start(0, 28, vim.schedule_wrap(function()
     if not (S.buf and vim.api.nvim_buf_is_valid(S.buf)) or not S.row0 then
-      t:stop()
-      t:close()
+      timer:stop()
+      timer:close()
       S.booting = false
       return
     end
-    S.boot_y = S.boot_y + 1
+    local t = uv.now() - t0
     for _, st in pairs(S.state) do
-      local i = S.boot_y - st.y
-      if i >= 1 and i <= st.h then draw_row(st, i) end
+      st.bc = st.bc or {} -- modules rebuilt by a relayout mid-reveal
+      for i = 1, st.h do
+        local start = style.t0(st, i, st.y + i - 1, st.k or 1)
+        local p = style.dur == 0 and (t >= start and 1 or 0) or math.max(0, math.min(1, (t - start) / style.dur))
+        local cells = math.floor(p * st.w + 0.5)
+        -- a redraw after snacks rewrote the text repaints every row that has started
+        if cells ~= st.bc[i] or (S.boot_redraw and cells > 0) then
+          st.bc[i] = cells
+          if cells >= st.w then draw_row(st, i) else draw_row(st, i, false, cells, style.lead) end
+        end
+      end
     end
-    if S.boot_y >= H then
-      t:stop()
-      t:close()
+    S.boot_redraw = false
+    if t >= finish_at then
+      timer:stop()
+      timer:close()
       S.booting, S.ready = false, true
       flush()
     end
   end))
+end
+
+--- Play the reveal again, optionally in another style (`:HeaderArt boot [style]`).
+function M.replay(style)
+  if style then
+    if not M.reveal_styles[style] then return vim.notify("header_art: unknown reveal " .. style, vim.log.levels.WARN) end
+    M.opts.boot = style
+  end
+  if not (S.layout and S.row0 and not S.booting) then return end
+  S.booted = false
+  S.ready = false
+  boot()
 end
 
 --- Show the dashboard (or catch up after a pause; `force` redraws every row, needed
@@ -623,9 +698,9 @@ function M.attach(force)
   if fresh and not S.booted and not vim.g.header_art_static_noboot then
     boot()
   elseif S.booting then
-    -- snacks rewrote the text mid-sweep (its UpdatePost): put back the rows shown so far
-    -- and let the sweep carry on, instead of jumping to the finished picture
-    if fresh or moved or force then draw_revealed() end
+    -- snacks rewrote the text mid-reveal (its UpdatePost): the next tick puts back the
+    -- rows shown so far and the reveal carries on, instead of jumping to the finished picture
+    if fresh or moved or force then S.boot_redraw = true end
   elseif fresh or moved or force then
     draw_all()
     S.ready = true

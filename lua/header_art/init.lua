@@ -535,6 +535,7 @@ function M.setup(opts)
     if sub == "halo" then return M.set("halo", not cfg.halo) end
     if sub == "animate" then return M.set("animate", not cfg.animate) end
     if sub == "next" then return M.cycle_piece() end
+    if sub == "boot" then return require("header_art.static").replay(arg) end
     local num = tonumber(arg)
     M.set(sub, (sub == "piece" or sub == "charset") and arg or num)
   end, {
@@ -543,8 +544,9 @@ function M.setup(opts)
     complete = function(_, line)
       local parts = vim.split(line, "%s+")
       if #parts <= 2 then
-        return { "pick", "toggle", "next", "halo", "animate", "piece", "charset", "fps", "speed", "brightness", "steps" }
+        return { "pick", "toggle", "next", "halo", "animate", "boot", "piece", "charset", "fps", "speed", "brightness", "steps" }
       end
+      if parts[2] == "boot" then return require("header_art.static").reveal_names end
       if parts[2] == "piece" then return pieces.names end
       if parts[2] == "charset" then return charset_names end
       return {}

@@ -271,7 +271,9 @@ snacks.nvim dashboard ~  (folke/snacks.nvim)
   Project, Editor, event log, Battery/load, a 12-week activity map and a key
   tip. `j`/`k` over a row and <CR> opens it. When the window is too short,
   modules drop in the order of `static.drop`; under 100 columns it is one
-  column. Modules are `lua/header_art/static_mods/<id>.lua`.
+  column. Modules are `lua/header_art/static_mods/<id>.lua`. The dashboard
+  draws itself in once (`header_art_opts.static.boot`: wipe, cascade, sweep,
+  type or none); `:HeaderArt boot [style]` plays it again in a style.
   When the dashboard is the only window, the number keys make modules live:
   `0` shell, `1` Claude, `2` buffers, `3` peek, `4` lazygit, `5` music,
   `6` LSP, `7` diagnostics; each module shows its number (see
