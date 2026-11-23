@@ -2,9 +2,16 @@
 local U = require("header_art.static_util")
 local uv = vim.uv or vim.loop
 
-local bat, running = nil, false
-local function poll()
+local bat, running, last_poll = nil, false, 0
+local POLL_EVERY = 60 -- seconds between pmset runs
+
+-- Never from render() unconditionally: the poll's callback re-renders this
+-- module, so an unguarded poll in render() re-polled forever (~160 pmset
+-- processes a second, found as a battery drain). The rate limit is the guard.
+local function poll(force)
   if running or vim.fn.executable("pmset") == 0 then return end
+  if not force and os.time() - last_poll < POLL_EVERY then return end
+  last_poll = os.time()
   running = true
   pcall(vim.system, { "pmset", "-g", "batt" }, { text = true, timeout = 3000 }, function(res)
     vim.schedule(function()
@@ -22,11 +29,11 @@ return {
   title = "SYSTEM",
   every = 60,
   available = function()
-    if bat == nil then poll() end
+    if bat == nil then poll(true) end
     return bat ~= false
   end,
   render = function(w)
-    poll()
+    poll() -- rate limited: only the once-a-minute `every` tick gets past
     local l1, l2, l3 = uv.loadavg()
     local out = {}
     if bat then

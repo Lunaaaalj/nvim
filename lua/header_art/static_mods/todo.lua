@@ -47,7 +47,7 @@ return {
     return (vim.diagnostic.count()[1] or 0) + (vim.diagnostic.count()[2] or 0) > 0 or next(cache.counts) ~= nil
   end,
   render = function(w)
-    if cache.cwd ~= vim.fn.getcwd() or os.time() - cache.at > 5 then refresh() end
+    if cache.cwd ~= vim.fn.getcwd() or os.time() - cache.at > 30 then refresh() end
     local c = vim.diagnostic.count()
     local e, wn = c[vim.diagnostic.severity.ERROR] or 0, c[vim.diagnostic.severity.WARN] or 0
     local out = { U.line({

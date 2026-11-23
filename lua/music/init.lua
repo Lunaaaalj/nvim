@@ -325,6 +325,10 @@ function M.setup(opts)
   -- while we sat on the slow "closed" interval
   vim.defer_fn(M.poll, 1500)
   vim.api.nvim_create_autocmd("FocusGained", { group = group, callback = function() M.poll() end })
+  -- No polling while the terminal is in the background: every poll is an osascript
+  -- process talking to Music over Apple Events (measured: one every 3-5 s, for as long
+  -- as Neovim stays open). FocusGained above polls at once and re-arms the timer.
+  vim.api.nvim_create_autocmd("FocusLost", { group = group, callback = function() M.stop() end })
   vim.api.nvim_create_autocmd("User", {
     group = group,
     pattern = "MusicChanged",
