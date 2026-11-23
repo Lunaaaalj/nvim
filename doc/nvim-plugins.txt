@@ -260,6 +260,18 @@ snacks.nvim dashboard ~  (folke/snacks.nvim)
   seconds and centiseconds, UTC, Unix epoch and session time, day of year,
   ISO week, a seconds sweep, the keys as keycaps (still the same keys) and
   the stats in the panel's frame. Other pieces keep the normal dashboard.
+  `hud-static` is the calm alternative (default): no animation, so an idle
+  dashboard costs ~0 B/s of terminal output (`scripts/dash-meter.py` counts
+  it; the animated pieces are 300+ KiB/s). Two columns of modules, each
+  redrawn only when its data changes: a seven-segment clock with the date and
+  a "needs you" strip (review requests, failing runs, shells that exited
+  non-zero), Continue (last project sessions + their last file), Recent files,
+  scratch notes (`header_art_opts.static.notes_file`), GitHub (titles and
+  check state), Sessions (terminals, Claude chats), TODO/FIXME + diagnostics,
+  Project, Editor, event log, Battery/load, a 12-week activity map and a key
+  tip. `j`/`k` over a row and <CR> opens it. When the window is too short,
+  modules drop in the order of `static.drop`; under 100 columns it is one
+  column. Modules are `lua/header_art/static_mods/<id>.lua`.
   When the dashboard is the only window, the number keys make modules live:
   `0` shell, `1` Claude, `2` buffers, `3` peek, `4` lazygit, `5` music,
   `6` LSP, `7` diagnostics; each module shows its number (see
