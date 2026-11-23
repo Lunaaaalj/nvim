@@ -250,6 +250,9 @@ local sections = {
   } },
 }
 
+-- exported for the dashboard's key tip (header_art/static_mods/tip.lua)
+M.sections = sections
+
 local ns = vim.api.nvim_create_namespace("cheatsheet")
 
 -- Build the rendered lines plus a list of highlight instructions.
