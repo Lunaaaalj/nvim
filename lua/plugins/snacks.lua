@@ -31,7 +31,7 @@ local data = require("defaults.dashboard_data")
 -- With `enabled = false` the braille header (below) is shown instead.
 local header_art_opts = {
   enabled = true,
-  piece = "plasma", -- plasma | torus | orb | rings | flow | terrain | galaxy | galaxies | descent | spiral | hilbert | rain | aurora | turing | attention | kmeans | matrix | warp | life | horizon | megacity | phosphor | radar | circuit | glitch | tunnel | monolith | wireframe | hud
+  piece = "hud-static", -- hud-static (event-driven, ~0 B/s idle) | plasma | torus | orb | rings | flow | terrain | galaxy | galaxies | descent | spiral | hilbert | rain | aurora | turing | attention | kmeans | matrix | warp | life | horizon | megacity | phosphor | radar | circuit | glitch | tunnel | monolith | wireframe | hud
   charset = "classic", -- classic | blocks | dots | binary
   fps = 30,
   speed = 0.4,
@@ -200,6 +200,9 @@ local function start_clock()
   local ms_to_minute = (60 - tonumber(os.date("%S"))) * 1000
   timer:start(ms_to_minute, 60 * 1000, vim.schedule_wrap(function()
     if not dashboard_visible() then return stop_clock() end
+    -- the static HUD redraws its own clock; a re-render would only repaint every row
+    local ha = package.loaded["header_art"]
+    if ha and ha.owns_content() and require("header_art.pieces").static[ha.options().piece] then return end
     Snacks.dashboard.update()
   end))
 end
