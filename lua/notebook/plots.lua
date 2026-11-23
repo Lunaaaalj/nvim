@@ -151,6 +151,8 @@ local view_win ---@type integer?
 -- Show `path` in the plot window, reusing it (the previous image buffer is
 -- wiped), else in a new split beside the first file window. Keeps the focus.
 local function show_in_split(path)
+  -- free each replaced plot's pixels in kitty, not just its placement
+  pcall(function() require("pdfview.viewer").fix_snacks_image() end)
   local cur = vim.api.nvim_get_current_win()
   local function load(win)
     vim.api.nvim_win_call(win, function()

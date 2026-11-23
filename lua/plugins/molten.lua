@@ -71,5 +71,24 @@ return {
                 org = { enabled = false },
             },
         },
+        config = function(_, opts)
+            require("image").setup(opts)
+            -- image.nvim clears an image with a lowercase `d=i`, which in the
+            -- kitty protocol removes its placements but keeps the image data in
+            -- kitty's memory (only `d=I` frees it), so every plot ever shown
+            -- stayed resident. It re-transmits after any clear (it forgets
+            -- `transmitted_images`), so freeing the data is safe. Not `d=a`:
+            -- `d=A` would also free snacks.image's (pdfview) images on screen,
+            -- which snacks still thinks it has sent. Same spelling as
+            -- image.nvim's own require, or this is a different table. pcall:
+            -- the module opens stdout as a TTY on load and errors without one.
+            local ok, helpers = pcall(require, "image/backends/kitty/helpers")
+            if not ok then return end
+            local write = helpers.write_graphics
+            helpers.write_graphics = function(config, ...)
+                if config and config.display_delete == "i" then config.display_delete = "I" end
+                return write(config, ...)
+            end
+        end,
     },
 }

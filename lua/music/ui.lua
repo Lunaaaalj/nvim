@@ -457,7 +457,7 @@ local function render_grid(v, list)
   -- `gen` so late arrivals for an old layout are dropped
   ui.gen = (ui.gen or 0) + 1
   local gen = ui.gen
-  pcall(function() require("pdfview.viewer").fix_snacks_spinner() end)
+  pcall(function() require("pdfview.viewer").fix_snacks_image() end)
   for k, it in ipairs(list) do
     local id = cover_id(it)
     if id then
@@ -616,7 +616,7 @@ local function update_art()
   if not (id and Snacks and Snacks.image and Snacks.image.supports_terminal()) then return end
   music.artwork(id, function(png)
     if not png or ui.art_id ~= id or not valid_win(ui.art) then return end
-    pcall(function() require("pdfview.viewer").fix_snacks_spinner() end)
+    pcall(function() require("pdfview.viewer").fix_snacks_image() end)
     local b = scratch()
     show_art_buf(b)
     Snacks.image.buf.attach(b, { src = png })

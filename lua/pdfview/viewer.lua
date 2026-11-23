@@ -292,14 +292,34 @@ end
 -- render re-attaches, so a quick second render (autosize, sync) hit it. An
 -- invalid buffer is one of the timer's stop conditions, and nothing reads
 -- `buf` from a closed placement (update() returns early on it).
-local function fix_snacks_spinner()
+--
+-- snacks.image leak: Image:del() deletes with a lowercase `d=i`, which in the
+-- kitty graphics protocol removes the placements but KEEPS the decoded image in
+-- kitty (only uppercase `d=I` frees it). Every render here is a new window-sized
+-- PNG (a new image), so kitty piled up ~10 MB of RGBA per render until its
+-- storage quota evicted them (kitty measured at 546 MB, 708 MB peak, most of it
+-- image textures). When an image's last placement goes, free its data too, and
+-- mark it unsent so a later placement re-transmits it.
+local function fix_snacks_image()
   local Placement = require("snacks.image.placement")
-  if Placement._pdfview_close then return end
-  Placement._pdfview_close = Placement.close
-  function Placement:close()
-    local was_open = not self.closed
-    Placement._pdfview_close(self)
-    if was_open then self.buf = -1 end
+  if not Placement._pdfview_close then
+    Placement._pdfview_close = Placement.close
+    function Placement:close()
+      local was_open = not self.closed
+      Placement._pdfview_close(self)
+      if was_open then self.buf = -1 end
+    end
+  end
+  local Image = require("snacks.image.image")
+  if not Image._pdfview_del then
+    Image._pdfview_del = Image.del
+    function Image:del(pid)
+      Image._pdfview_del(self, pid)
+      if self.sent and not next(self.placements) then
+        Snacks.image.terminal.request({ a = "d", d = "I", i = self.id })
+        self.sent = false
+      end
+    end
   end
 end
 
@@ -310,7 +330,7 @@ function V:show(png)
   end
   local old = self.png
   self.png = png
-  fix_snacks_spinner()
+  fix_snacks_image()
   Snacks.image.buf.attach(self.buf, { src = png })
   -- kitty may still be reading the old file when the new one is placed
   if old then vim.defer_fn(function() os.remove(old) end, 5000) end
@@ -729,6 +749,6 @@ function V.setup()
 end
 
 -- Global patch; other image users (lua/music) install it too.
-V.fix_snacks_spinner = fix_snacks_spinner
+V.fix_snacks_image = fix_snacks_image
 
 return V
