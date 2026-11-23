@@ -58,6 +58,12 @@ return {
       -- calls vim.lsp.enable() for each installed server, picking up the configs
       -- registered above. They must be registered before this setup() call.
       require("mason-lspconfig").setup({
+        -- automatic_enable enables EVERY installed Mason package that has an
+        -- lspconfig entry, including tools installed only for conform:
+        -- nvim-lspconfig ships a `stylua` config (`stylua --lsp`), so each Lua
+        -- buffer got a second server next to lua_ls (and an error on exit).
+        -- conform still runs the stylua binary to format.
+        automatic_enable = { exclude = { "stylua" } },
         ensure_installed = {
           "clangd",                 -- C/C++
           "pyright",                -- Python types
