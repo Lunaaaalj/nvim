@@ -221,7 +221,7 @@ return {
     dashboard = {
       enabled = true,
       -- at least the HUD panel's width (hud_core.lua), so its reserved block isn't clipped
-      width = math.max(header_width, 60, 80),
+      width = math.max(header_width, 60, 80, 96),
       sections = {
         -- The braille header only shows when the generative art is off (re-run on every render).
         function()
@@ -234,10 +234,10 @@ return {
         -- for header_art's content_box(), which then measures exactly the panel.
         function()
           if not require("header_art").owns_content() then return nil end
-          local core = require("header_art.hud_core")
-          local row = ("\u{a0}"):rep(core.W)
+          local cw, ch = require("header_art").content_size()
+          local row = ("\u{a0}"):rep(cw)
           local rows = {}
-          for i = 1, core.H do rows[i] = row end
+          for i = 1, ch do rows[i] = row end
           return { text = table.concat(rows, "\n"), align = "center" }
         end,
         -- Sections-as-functions re-run on every render, so the time stays current.
