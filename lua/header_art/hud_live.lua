@@ -480,6 +480,14 @@ local OPEN = {
 }
 local ACTIONS = { music = music, lsp = lsp_menu, diagnostics = diagnostics }
 
+--- The actions that need no panel rectangle (music player, LSP menu, diagnostics
+--- list), for the static HUD's number keys. false for anything else.
+function M.action(id)
+  if not ACTIONS[id] then return false end
+  ACTIONS[id]()
+  return true
+end
+
 --- `id`: shell | claude | procs | peek | git (a float) or music | lsp |
 --- diagnostics (an action). Returns false when it isn't possible.
 function M.focus(id)

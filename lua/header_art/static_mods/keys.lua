@@ -9,7 +9,8 @@ return {
   noflash = true,
   render = function(w)
     local ok, hud = pcall(require, "header_art.hud")
-    local keys = ok and hud.config and hud.config.content and hud.config.content.keys or DEFAULT
+    local keys = vim.deepcopy(ok and hud.config and hud.config.content and hud.config.content.keys or DEFAULT)
+    table.insert(keys, #keys, { "1-4", "resume" })
     local segs = {}
     for _, k in ipairs(keys) do
       segs[#segs + 1] = { " " .. k[1] .. " ", "key" }

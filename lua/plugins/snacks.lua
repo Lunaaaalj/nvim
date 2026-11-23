@@ -147,14 +147,24 @@ local keys = {
   { key = "c", hint = "config", action = ":lua Snacks.dashboard.pick('files', {cwd = vim.fn.stdpath('config')})" },
   { key = "l", action = ":Lazy" },
   { key = "m", action = ":Mason" },
-  { key = "G", action = ":Upstream" },
+  { key = "G", hint = "github", action = function() require("defaults.dashboard_data").open_github() end },
   { key = "q", hint = "quit", action = ":qa" },
   -- HUD live modules (header_art/hud_live.lua; only with the hud piece and a
   -- lone dashboard): 0 shell, 1 Claude, 2 buffers, 3 peek, 4 lazygit,
   -- 5 music, 6 LSP, 7 diagnostics
 }
 for i, id in ipairs({ "shell", "claude", "procs", "peek", "git", "music", "lsp", "diagnostics" }) do
-  keys[#keys + 1] = { key = tostring(i - 1), action = function() require("header_art.hud_live").focus(id) end }
+  keys[#keys + 1] = {
+    key = tostring(i - 1),
+    action = function()
+      -- the static HUD has no panels: the same keys resume sessions / open the music, LSP and diagnostics pickers
+      local ha = require("header_art")
+      if ha.owns_content() and require("header_art.pieces").static[ha.options().piece] then
+        return require("header_art.static").digit(i - 1)
+      end
+      require("header_art.hud_live").focus(id)
+    end,
+  }
 end
 
 local function hint_line()

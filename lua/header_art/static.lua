@@ -736,6 +736,24 @@ function M.invalidate(ids)
   if S.layout then mark(ids) end
 end
 
+--- The dashboard's number keys while this piece is active: 1-4 resume the project
+--- sessions listed under CONTINUE, 5 the music player, 6 the LSP menu, 7 the
+--- diagnostics list, 0 a new shell. (The same keys run the live panels of the `hud`
+--- piece, which needs its own layout.)
+---@param n integer
+function M.digit(n)
+  if n >= 1 and n <= 4 then
+    local m = load_module("continue")
+    if m and m.activate then return m.activate(n) end
+  elseif n == 5 or n == 6 or n == 7 then
+    local id = ({ [5] = "music", [6] = "lsp", [7] = "diagnostics" })[n]
+    return require("header_art.hud_live").action(id)
+  elseif n == 0 then
+    local ok, T = pcall(require, "terminals")
+    if ok then return T.new() end
+  end
+end
+
 ---@param opts? header_art.static.opts
 function M.setup(opts)
   M.opts = vim.tbl_deep_extend("force", M.opts, opts or {})

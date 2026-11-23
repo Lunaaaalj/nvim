@@ -269,7 +269,10 @@ snacks.nvim dashboard ~  (folke/snacks.nvim)
   scratch notes (`header_art_opts.static.notes_file`), GitHub (titles and
   check state), Sessions (terminals, Claude chats), TODO/FIXME + diagnostics,
   Project, Editor, event log, Battery/load, a 12-week activity map and a key
-  tip. `j`/`k` over a row and <CR> opens it. When the window is too short,
+  tip. `j`/`k` over a row and <CR> opens it; `1`-`4` resume the CONTINUE
+  sessions, `5` music, `6` LSP menu, `7` diagnostics, `0` a new shell. `G`
+  opens upstream.nvim in a GitHub repository and otherwise a picker over your
+  review requests, PRs and issues. When the window is too short,
   modules drop in the order of `static.drop`; under 100 columns it is one
   column. Modules are `lua/header_art/static_mods/<id>.lua`. The dashboard
   draws itself in once (`header_art_opts.static.boot`: wipe, cascade, sweep,

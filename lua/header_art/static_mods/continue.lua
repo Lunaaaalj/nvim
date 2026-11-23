@@ -35,7 +35,8 @@ local function resume(dir)
   end
 end
 
-return {
+local M
+M = {
   id = "continue",
   title = "CONTINUE",
   every = 60,
@@ -55,3 +56,12 @@ return {
     return out
   end,
 }
+
+--- The number key: resume the i-th session shown.
+function M.activate(i)
+  local s = sessions()[i]
+  if not s then return vim.notify("dashboard: no session " .. i, vim.log.levels.INFO) end
+  resume(s.dir)()
+end
+
+return M

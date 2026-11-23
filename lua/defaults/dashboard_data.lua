@@ -168,6 +168,45 @@ function M.refresh(force)
 end
 
 -- ---------------------------------------------------------------------------
+-- G on the dashboard
+-- ---------------------------------------------------------------------------
+
+-- upstream.nvim works on the repository of the cwd. Outside one (the dashboard is
+-- usually opened in a project folder or $HOME) fall back to what the cache knows
+-- about the whole account: pick a review request / PR / issue and open it in the
+-- browser, or one of GitHub's own dashboards.
+local function pick_item()
+  local c = read_cache()
+  local items = {}
+  local function add(kind, list)
+    for _, n in ipairs(list or {}) do
+      items[#items + 1] = { label = ("%-7s %s #%d  %s"):format(kind, (n.repo or ""):match("[^/]+$") or "", n.number, n.title or ""), url = n.url }
+    end
+  end
+  if c then
+    add("review", c.reviews and c.reviews.nodes)
+    add("PR", c.pr_nodes)
+    add("issue", c.issue_nodes)
+  end
+  vim.list_extend(items, {
+    { label = "GitHub: review requests (browser)", url = "https://github.com/pulls/review-requested" },
+    { label = "GitHub: my pull requests (browser)", url = "https://github.com/pulls" },
+    { label = "GitHub: my issues (browser)", url = "https://github.com/issues/assigned" },
+  })
+  vim.ui.select(items, { prompt = "GitHub (this folder is not a repository)", format_item = function(i) return i.label end }, function(choice)
+    if choice then vim.ui.open(choice.url) end
+  end)
+end
+
+function M.open_github()
+  local ok, repo = pcall(require, "upstream.repo")
+  if not ok then return pick_item() end
+  repo.detect(function(err)
+    if err then pick_item() else vim.cmd("Upstream") end
+  end)
+end
+
+-- ---------------------------------------------------------------------------
 -- renderer -> snacks dashboard Text[]
 -- ---------------------------------------------------------------------------
 
