@@ -26,7 +26,7 @@ local ns = vim.api.nvim_create_namespace("header_art")
 
 ---@class header_art.opts
 ---@field enabled boolean   draw the art; false shows the static braille header instead
----@field piece string      plasma | torus | orb | rings | flow | terrain | galaxy | galaxies | descent | spiral | hilbert | rain | aurora | turing | attention | kmeans | matrix | warp | life | horizon | megacity | phosphor | radar | circuit | glitch | tunnel | monolith | wireframe | hud
+---@field piece string      plasma | torus | orb | rings | flow | terrain | galaxy | galaxies | descent | spiral | hilbert | rain | aurora | turing | attention | kmeans | matrix | warp | life | horizon | megacity | phosphor | radar | circuit | glitch | tunnel | monolith | wireframe | hud | hud-static
 ---@field charset string    classic | blocks | dots | binary
 ---@field fps integer       frames per second
 ---@field speed number      animation speed multiplier (1 = the pieces' natural pace)
@@ -34,6 +34,7 @@ local ns = vim.api.nvim_create_namespace("header_art")
 ---@field halo boolean      pad the clear content box and fade the art in at its edge
 ---@field steps integer     colour steps between the dim tone and the accent
 ---@field animate boolean   false draws a single still frame instead of animating
+---@field static? table     options of the static HUD piece (header_art/static.lua)
 local defaults = {
   enabled = true,
   piece = "plasma",
@@ -195,6 +196,8 @@ end
 local function draw()
   local win, buf = dashboard_win()
   if not win then return false end
+  -- the static HUD has its own event-driven renderer (header_art/static.lua)
+  if pieces.static[cfg.piece] then return require("header_art.static").attach() end
   local info = vim.fn.getwininfo(win)[1]
   local w, h, top = info.width - info.textoff, info.height, info.topline
   if w < 10 or h < 4 then
@@ -308,6 +311,7 @@ end
 ---------------------------------------------------------------------------
 
 local function stop()
+  if pieces.static[cfg.piece] then require("header_art.static").pause() end
   if S.timer then
     S.timer:stop()
     S.timer:close()
@@ -330,6 +334,10 @@ end
 local function start()
   if not cfg.enabled or S.timer then return end
   if not dashboard_win() then return end
+  if pieces.static[cfg.piece] then
+    vim.schedule(safe_draw) -- attach(): draws once, then only what changes
+    return
+  end
   if not cfg.animate then
     vim.schedule(safe_draw)
     return
@@ -358,6 +366,15 @@ function M.options() return vim.deepcopy(cfg) end
 --- clock panel): the snacks sections then only reserve its box.
 function M.owns_content() return cfg.enabled and pieces.paints_box[cfg.piece] == true end
 
+--- Size of the block the snacks sections reserve when the active piece draws
+--- the content (hud_core's panel, or the static HUD's layout).
+---@return integer w, integer h
+function M.content_size()
+  if pieces.static[cfg.piece] then return require("header_art.static").size() end
+  local core = require("header_art.hud_core")
+  return core.W, core.H
+end
+
 local function refresh_dashboard()
   if _G.Snacks and Snacks.dashboard and dashboard_win() then Snacks.dashboard.update() end
 end
@@ -365,6 +382,7 @@ end
 local function set_enabled(on)
   if cfg.enabled == on then return end
   cfg.enabled = on
+  if not on then require("header_art.static").detach() end
   if on then
     set_hl()
     refresh_dashboard() -- the braille header section hides itself
@@ -393,6 +411,7 @@ function M.apply(piece, persist)
   if piece then
     if type(pieces[piece]) ~= "function" then return end
     local owned = M.owns_content()
+    if pieces.static[cfg.piece] and not pieces.static[piece] then require("header_art.static").detach() end
     cfg.piece = piece
     set_enabled(true)
     if M.owns_content() ~= owned then refresh_dashboard() end
@@ -441,6 +460,7 @@ function M.set(key, value)
   if key == "piece" and type(pieces[value]) ~= "function" then return vim.notify("header_art: unknown piece " .. tostring(value), vim.log.levels.WARN) end
   if key == "charset" and not charsets[value] then return vim.notify("header_art: unknown charset " .. tostring(value), vim.log.levels.WARN) end
   if type(defaults[key]) == "number" and type(value) ~= "number" then return vim.notify("header_art: " .. key .. " needs a number", vim.log.levels.WARN) end
+  if key == "piece" and pieces.static[cfg.piece] and not pieces.static[value] then require("header_art.static").detach() end
   cfg[key] = value
   if key == "steps" then
     cfg.steps = math.max(1, math.floor(value))
@@ -471,6 +491,7 @@ function M.setup(opts)
   require("header_art.hud").configure(cfg.hud)
   require("header_art.hud_data").setup()
   require("header_art.hud_live").setup()
+  require("header_art.static").setup(cfg.static)
   set_hl()
 
   local grp = vim.api.nvim_create_augroup("HeaderArt", { clear = true })
@@ -501,7 +522,7 @@ function M.setup(opts)
   vim.api.nvim_create_autocmd({ "User", "VimResized", "WinResized" }, {
     group = grp,
     callback = function(ev)
-      if cfg.enabled and not cfg.animate and dashboard_win() and (ev.event ~= "User" or ev.match == "SnacksDashboardUpdatePost") then
+      if cfg.enabled and not cfg.animate and not pieces.static[cfg.piece] and dashboard_win() and (ev.event ~= "User" or ev.match == "SnacksDashboardUpdatePost") then
         vim.schedule(safe_draw)
       end
     end,
@@ -514,6 +535,7 @@ function M.setup(opts)
     if sub == "halo" then return M.set("halo", not cfg.halo) end
     if sub == "animate" then return M.set("animate", not cfg.animate) end
     if sub == "next" then return M.cycle_piece() end
+    if sub == "boot" then return require("header_art.static").replay(arg) end
     local num = tonumber(arg)
     M.set(sub, (sub == "piece" or sub == "charset") and arg or num)
   end, {
@@ -522,8 +544,9 @@ function M.setup(opts)
     complete = function(_, line)
       local parts = vim.split(line, "%s+")
       if #parts <= 2 then
-        return { "pick", "toggle", "next", "halo", "animate", "piece", "charset", "fps", "speed", "brightness", "steps" }
+        return { "pick", "toggle", "next", "halo", "animate", "boot", "piece", "charset", "fps", "speed", "brightness", "steps" }
       end
+      if parts[2] == "boot" then return require("header_art.static").reveal_names end
       if parts[2] == "piece" then return pieces.names end
       if parts[2] == "charset" then return charset_names end
       return {}

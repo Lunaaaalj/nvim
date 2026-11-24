@@ -3,10 +3,26 @@
 
 local M = {}
 
+-- A group's attributes with links resolved. `nvim_get_hl(..., { link = false })`
+-- can come back empty for a group that is set (Normal, right after a colorscheme
+-- loaded: seen on 0.11), while the plain call still has them, so fall back to it
+-- and follow the link chain by hand.
+local function attrs(name)
+  local hl = vim.api.nvim_get_hl(0, { name = name, link = false })
+  if next(hl) ~= nil then return hl end
+  for _ = 1, 8 do
+    hl = vim.api.nvim_get_hl(0, { name = name })
+    if not hl.link then return hl end
+    name = hl.link
+  end
+  return {}
+end
+M.attrs = attrs
+
 -- First defined foreground (as an integer) among `groups`, resolving links.
 function M.fg(...)
   for _, name in ipairs({ ... }) do
-    local hl = vim.api.nvim_get_hl(0, { name = name, link = false })
+    local hl = attrs(name)
     if hl.fg then return hl.fg end
   end
 end
@@ -32,7 +48,7 @@ M.terminal_bg = "#181818"
 -- has been stripped): recorded by the strip autocmd in defaults/init.lua.
 -- Falls back to a neutral dark/light when the scheme sets none.
 function M.bg()
-  local hl = vim.api.nvim_get_hl(0, { name = "Normal", link = false })
+  local hl = attrs("Normal")
   return vim.g.scheme_bg or hl.bg or (vim.o.background == "light" and 0xf5f5f5 or 0x181818)
 end
 

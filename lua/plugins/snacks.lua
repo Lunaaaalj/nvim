@@ -31,7 +31,7 @@ local data = require("defaults.dashboard_data")
 -- With `enabled = false` the braille header (below) is shown instead.
 local header_art_opts = {
   enabled = true,
-  piece = "plasma", -- plasma | torus | orb | rings | flow | terrain | galaxy | galaxies | descent | spiral | hilbert | rain | aurora | turing | attention | kmeans | matrix | warp | life | horizon | megacity | phosphor | radar | circuit | glitch | tunnel | monolith | wireframe | hud
+  piece = "hud-static", -- hud-static (event-driven, ~0 B/s idle) | plasma | torus | orb | rings | flow | terrain | galaxy | galaxies | descent | spiral | hilbert | rain | aurora | turing | attention | kmeans | matrix | warp | life | horizon | megacity | phosphor | radar | circuit | glitch | tunnel | monolith | wireframe | hud
   charset = "classic", -- classic | blocks | dots | binary
   fps = 30,
   speed = 0.4,
@@ -147,14 +147,24 @@ local keys = {
   { key = "c", hint = "config", action = ":lua Snacks.dashboard.pick('files', {cwd = vim.fn.stdpath('config')})" },
   { key = "l", action = ":Lazy" },
   { key = "m", action = ":Mason" },
-  { key = "G", action = ":Upstream" },
+  { key = "G", hint = "github", action = function() require("defaults.dashboard_data").open_github() end },
   { key = "q", hint = "quit", action = ":qa" },
   -- HUD live modules (header_art/hud_live.lua; only with the hud piece and a
   -- lone dashboard): 0 shell, 1 Claude, 2 buffers, 3 peek, 4 lazygit,
   -- 5 music, 6 LSP, 7 diagnostics
 }
 for i, id in ipairs({ "shell", "claude", "procs", "peek", "git", "music", "lsp", "diagnostics" }) do
-  keys[#keys + 1] = { key = tostring(i - 1), action = function() require("header_art.hud_live").focus(id) end }
+  keys[#keys + 1] = {
+    key = tostring(i - 1),
+    action = function()
+      -- the static HUD has no panels: the same keys resume sessions / open the music, LSP and diagnostics pickers
+      local ha = require("header_art")
+      if ha.owns_content() and require("header_art.pieces").static[ha.options().piece] then
+        return require("header_art.static").digit(i - 1)
+      end
+      require("header_art.hud_live").focus(id)
+    end,
+  }
 end
 
 local function hint_line()
@@ -200,6 +210,9 @@ local function start_clock()
   local ms_to_minute = (60 - tonumber(os.date("%S"))) * 1000
   timer:start(ms_to_minute, 60 * 1000, vim.schedule_wrap(function()
     if not dashboard_visible() then return stop_clock() end
+    -- the static HUD redraws its own clock; a re-render would only repaint every row
+    local ha = package.loaded["header_art"]
+    if ha and ha.owns_content() and require("header_art.pieces").static[ha.options().piece] then return end
     Snacks.dashboard.update()
   end))
 end
@@ -221,7 +234,7 @@ return {
     dashboard = {
       enabled = true,
       -- at least the HUD panel's width (hud_core.lua), so its reserved block isn't clipped
-      width = math.max(header_width, 60, 80),
+      width = math.max(header_width, 60, 80, 96),
       sections = {
         -- The braille header only shows when the generative art is off (re-run on every render).
         function()
@@ -234,10 +247,10 @@ return {
         -- for header_art's content_box(), which then measures exactly the panel.
         function()
           if not require("header_art").owns_content() then return nil end
-          local core = require("header_art.hud_core")
-          local row = ("\u{a0}"):rep(core.W)
+          local cw, ch = require("header_art").content_size()
+          local row = ("\u{a0}"):rep(cw)
           local rows = {}
-          for i = 1, core.H do rows[i] = row end
+          for i = 1, ch do rows[i] = row end
           return { text = table.concat(rows, "\n"), align = "center" }
         end,
         -- Sections-as-functions re-run on every render, so the time stays current.
