@@ -155,12 +155,13 @@ end
 -- background). `keep` rects (figures, in src pixels) keep their own colours.
 -- 1 - min(R,G,B) is max() of the negated channels, i.e. HSB brightness: same
 -- pixels as `-separate -evaluate-sequence min -negate`, at half the cost.
+-- `-alpha shape` then turns that grey into the alpha channel and paints every
+-- pixel `fg` in one step (~40 ms for a page, against ~110 ms for the old
+-- level-colors + CopyOpacity composite). It is also the exact result: colour
+-- `fg` with partial alpha at an antialiased edge, where the old pipeline tinted
+-- the edge pixels towards white a second time.
 function M.recolor(src, fg, keep)
-  local a = {
-    "-channel", "RGB", "+level-colors", fg .. ",white", "+channel",
-    "(", src, "-negate", "-grayscale", "Brightness", ")",
-    "-alpha", "off", "-compose", "CopyOpacity", "-composite", "-compose", "Over",
-  }
+  local a = { "-negate", "-grayscale", "Brightness", "-background", fg, "-alpha", "shape" }
   for _, r in ipairs(keep or {}) do
     local x, y = math.max(0, r[1]), math.max(0, r[2])
     local w, h = r[3] - x, r[4] - y
@@ -272,10 +273,14 @@ end
 
 -- The final viewport image: a w x h transparent canvas with `parts`
 -- ({ src, crop = {x,y,w,h}, at = {x,y} }) composited on and `marks`
--- ({ x0, y0, x1, y1, color }) drawn over. The tiny density makes snacks (which
--- sizes images by DPI and never enlarges) always shrink it to the window -- a
--- no-op for a window-sized image, keeping its pixels 1:1 with cells.
-function M.compose(parts, marks, w, h, out, cb)
+-- ({ x0, y0, x1, y1, color }) drawn over.
+-- `raw`: write straight 8-bit RGBA samples (`out` ends in .rgba) for kitty's
+-- f=32 transfer instead of a PNG. Encoding is ~60 ms of a PNG frame (~45 ms
+-- raw against ~105 ms) and kitty then has nothing to decode either.
+-- A PNG gets a tiny density, which makes snacks (it sizes images by DPI and
+-- never enlarges) always shrink it to the window -- a no-op for a
+-- window-sized image, keeping its pixels 1:1 with cells.
+function M.compose(parts, marks, w, h, out, cb, raw)
   local function read(p)
     local c = p.crop
     return ("%s[%dx%d+%d+%d]"):format(p.src, c[3], c[4], c[1], c[2])
@@ -298,10 +303,14 @@ function M.compose(parts, marks, w, h, out, cb)
   for _, mk in ipairs(marks) do
     vim.list_extend(args, { "-fill", mk[5], "-draw", ("rectangle %d,%d %d,%d"):format(mk[1], mk[2], mk[3], mk[4]) })
   end
-  vim.list_extend(args, {
-    "-density", 1, "-units", "PixelsPerInch",
-    "-define", "png:compression-level=1", "-define", "png:compression-filter=0", out,
-  })
+  if raw then
+    vim.list_extend(args, { "-depth", 8, "rgba:" .. out })
+  else
+    vim.list_extend(args, {
+      "-density", 1, "-units", "PixelsPerInch",
+      "-define", "png:compression-level=1", "-define", "png:compression-filter=0", out,
+    })
+  end
   run(args, function(res) cb(res.code == 0, res.stderr) end)
 end
 

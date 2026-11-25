@@ -3,6 +3,7 @@
 --   lua/pdfview/render.lua  rasterising + caches (pdftoppm, ImageMagick, poppler)
 --   lua/pdfview/viewer.lua  one viewer per PDF buffer: navigation, zoom, spread,
 --                           search, links, highlights, keymaps
+--   lua/pdfview/kitty.lua   double-buffered kitty image surface (no blink on re-render)
 --   lua/pdfview/tex.lua     LaTeX preview split, SyncTeX, compile status
 --   lua/pdfview/live.lua    live previews compiled on every edit, text-matched sync
 --   lua/pdfview/markdown.lua Markdown preview (pandoc -> typst)
@@ -37,9 +38,12 @@ M.config = {
     args = {}, -- extra pandoc arguments
   },
   typst = {
-    delay = 120, -- ms from an edit to its recompile (throttled while typing)
+    delay = 30, -- ms from an edit to its recompile (throttled while typing; `typst watch` takes ~15 ms)
     width = 0.45, -- initial split width; it then fits the page, as for LaTeX
     args = {}, -- extra `typst compile` arguments (e.g. { "--font-path", "fonts" })
+    -- "auto": compile with typst's embedded fonts only (~70 ms faster) unless the
+    -- document needs system fonts (see lua/pdfview/typst.lua); "always": scan them every time
+    system_fonts = "auto",
   },
   quarto = {
     delay = 700, -- ms from an edit to its re-render (a render takes ~2 s)

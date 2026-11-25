@@ -63,6 +63,7 @@ function V.new(buf, pdf, kind, opts)
     callback = function()
       viewers[buf] = nil
       self.timer:close()
+      if self.surface then self.surface:close() end
       if self.png then os.remove(self.png) end
       require("pdfview.store").save(self)
       pcall(vim.api.nvim_del_augroup_by_id, group)
@@ -103,6 +104,9 @@ function V:setup_win(win)
   wo.number, wo.relativenumber, wo.cursorline = false, false, false
   wo.spell, wo.wrap, wo.list = false, false, false
   wo.signcolumn, wo.foldcolumn, wo.statuscolumn = "no", "0", ""
+  -- kitty finds the image by the placeholder cells' colour: blending (the
+  -- global winblend) would change it and the image would silently not draw
+  wo.winblend = 0
   wo.winfixwidth = not self.float
 end
 
@@ -205,8 +209,10 @@ end
 function V:geometry(win)
   local px = Snacks.image.terminal.size()
   local cw, ch = px.cell_width, px.cell_height
-  local vw = math.floor(vim.api.nvim_win_get_width(win) * cw) - 1
-  local vh = math.floor(vim.fn.winheight(win) * ch) - 1
+  -- the whole window, in pixels: the image is exactly this big, so the
+  -- terminal maps it 1:1 onto the cells (inverse search and clicks rely on it)
+  local cols, rows = vim.api.nvim_win_get_width(win), vim.fn.winheight(win)
+  local vw, vh = math.floor(cols * cw), math.floor(rows * ch)
   local pages = self:view_pages()
   local ox, Wpt, Hpt = self:view_box(pages)
   local fit = math.min(vw / Wpt, vh / Hpt) -- px per point at "fit page"
@@ -226,7 +232,7 @@ function V:geometry(win)
   self.vx = clamp(self.vx, 0, Wpt - view_w)
   self.vy = clamp(self.vy, 0, Hpt - view_h)
   return {
-    s = s, cw = cw, ch = ch, vw = vw, W = W, H = H,
+    s = s, cw = cw, ch = ch, vw = vw, vh = vh, cols = cols, rows = rows, W = W, H = H,
     X = math.floor(self.vx * s), Y = math.floor(self.vy * s),
     padx = math.floor((vw - W) / 2), -- the view is centred horizontally
     view_w = view_w, view_h = view_h, max_vx = Wpt - view_w, max_vy = Hpt - view_h,
@@ -323,17 +329,26 @@ local function fix_snacks_image()
   end
 end
 
-function V:show(png)
+-- `png` is the frame's file: raw RGBA (g.vw x g.vh, kitty surface) or a PNG.
+function V:show(png, g)
   if not vim.api.nvim_buf_is_valid(self.buf) then
     os.remove(png)
     return
   end
   local old = self.png
   self.png = png
-  fix_snacks_image()
-  Snacks.image.buf.attach(self.buf, { src = png })
-  -- kitty may still be reading the old file when the new one is placed
-  if old then vim.defer_fn(function() os.remove(old) end, 5000) end
+  local K = require("pdfview.kitty")
+  if g and K.supported() then
+    -- double-buffered: the old image stays up until the new one is in place
+    self.surface = self.surface or K.new(self.buf)
+    self.surface:show(png, g.cols, g.rows, g.vw, g.vh)
+  else
+    fix_snacks_image()
+    Snacks.image.buf.attach(self.buf, { src = png })
+  end
+  -- the terminal may still be reading the old file when the new one is placed
+  -- (a raw frame is several MB, so don't let them pile up)
+  if old then vim.defer_fn(function() os.remove(old) end, g and 1500 or 5000) end
   self:winbar()
   require("pdfview.store").save(self)
 end
@@ -426,23 +441,24 @@ function V:render()
     local parts, temps, pending = {}, {}, #tasks
     local function compose()
       self.gen = self.gen + 1
-      local out = ("%s/view-%d-%d.png"):format(R.dir, self.buf, self.gen)
+      local raw = require("pdfview.kitty").supported()
+      local out = ("%s/view-%d-%d.%s"):format(R.dir, self.buf, self.gen, raw and "rgba" or "png")
       vim.fn.mkdir(R.dir, "p")
       local list = {}
       for i = 1, #tasks do
         if parts[i] then list[#list + 1] = parts[i] end
       end
-      R.compose(list, self:mark_rects(g), g.vw, g.H, out, function(ok, err)
+      R.compose(list, self:mark_rects(g), g.vw, g.vh, out, function(ok, err)
         for _, t in ipairs(temps) do os.remove(t) end
         if ok then
           self.layout = g
-          self:show(out)
+          self:show(out, g)
           self:prefetch(g)
         else
           notify("Render failed: " .. vim.trim(err or ""))
         end
         done()
-      end)
+      end, raw)
     end
     if pending == 0 then return compose() end
     for i, t in ipairs(tasks) do
