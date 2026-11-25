@@ -84,6 +84,8 @@ end
 --   command  fun(P, src, dir, tmp): argv and extra vim.system opts that write
 --            the PDF of `src` to `tmp` (stdin and cwd are filled in)
 --   missing  fun(): message when a tool is missing, else nil
+--   rerun    optional fun(src, res): true to run the command once more on the
+--            same text (typst: the fast no-system-fonts pass met an unknown font)
 ---@return table P with view/toggle_live/sync/inverse/refresh/compile/pdf_path
 function L.new(spec)
   local P = { words = spec.words }
@@ -234,30 +236,38 @@ function L.new(spec)
     local out = P.pdf_path(src)
     local tmp = out:gsub("%.pdf$", ".tmp.pdf")
     vim.fn.mkdir(R.dir, "p")
-    local cmd, opts = spec.command(P, src, dir, tmp)
-    opts = vim.tbl_extend("force", {
-      stdin = table.concat(vim.api.nvim_buf_get_lines(src, 0, -1, false), "\n"),
-      cwd = dir,
-      text = true,
-    }, opts or {})
-    vim.system(cmd, opts, vim.schedule_wrap(function(res)
-      if res.code == 0 then os.rename(tmp, out) end
-      job.busy = false
-      cb(res.code == 0, res.stderr or "")
-      if job.again then
-        job.again = false
-        P.compile(src, cb)
-      end
-    end))
+    local stdin = table.concat(vim.api.nvim_buf_get_lines(src, 0, -1, false), "\n")
+    local function run()
+      local cmd, opts = spec.command(P, src, dir, tmp)
+      opts = vim.tbl_extend("force", { stdin = stdin, cwd = dir, text = true }, opts or {})
+      vim.system(cmd, opts, vim.schedule_wrap(function(res)
+        if spec.rerun and spec.rerun(src, res) then return run() end
+        if res.code == 0 then os.rename(tmp, out) end
+        job.busy = false
+        cb(res.code == 0, res.stderr or "")
+        if job.again then
+          job.again = false
+          P.compile(src, cb)
+        end
+      end))
+    end
+    run()
   end
 
   -- Recompile `src` and refresh the preview, if it is the one being shown.
   function P.refresh(src)
     local v = P.current()
     if not (v and P.src == src) then return end
-    v.status = { kind = "busy", text = "rendering" }
-    v:winbar()
+    -- only a slow compile earns a "rendering" mark: a fast one would make the
+    -- winbar flash on every keystroke
+    local finished = false
+    vim.defer_fn(function()
+      if finished or v.status or not (P.current() == v and P.src == src) then return end
+      v.status = { kind = "busy", text = "rendering" }
+      v:winbar()
+    end, 400)
     P.compile(src, function(ok, err)
+      finished = true
       if not (P.current() and P.src == src) then return end
       if not ok then return fail(v, err) end
       v.status = nil
