@@ -40,7 +40,7 @@ vim.api.nvim_create_autocmd("ColorScheme", {
     -- that must not be see-through (Molten output, plot paper) is drawn on it.
     -- Read it with require("defaults.colors").bg().
     vim.g.scheme_bg = vim.api.nvim_get_hl(0, { name = "Normal", link = false }).bg
-    if not vim.g.ui_transparent then return end
+    if not require("defaults.colors").transparent() then return end
     for _, g in ipairs(transparent_groups) do
       -- only touch the bg attribute; fg/styles from the colorscheme are kept
       vim.cmd(("highlight %s guibg=NONE ctermbg=NONE"):format(g))

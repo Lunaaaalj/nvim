@@ -52,6 +52,16 @@ function M.bg()
   return vim.g.scheme_bg or hl.bg or (vim.o.background == "light" and 0xf5f5f5 or 0x181818)
 end
 
+-- Whether the editor really is see-through right now: transparent mode is on
+-- and the active scheme honours it. ambar-papel stays opaque under transparent
+-- mode (dark ink over the dark kitty glass is unreadable), so code that strips
+-- backgrounds or blends toward the terminal colour asks this, not the flag.
+function M.transparent()
+  if not vim.g.ui_transparent then return false end
+  local ambar = package.loaded.ambar
+  return not (ambar and ambar.opaque())
+end
+
 function M.hex(c)
   return ("#%06x"):format(c)
 end

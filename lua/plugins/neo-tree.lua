@@ -48,7 +48,7 @@ return {
         local base
         if vim.o.background == "light" then
           base = 0xffffff
-        elseif vim.g.ui_transparent then
+        elseif colors.transparent() then
           base = tonumber(colors.terminal_bg:sub(2), 16)
         else
           base = vim.api.nvim_get_hl(0, { name = "Normal", link = false }).bg or tonumber(colors.terminal_bg:sub(2), 16)
@@ -96,7 +96,7 @@ return {
         -- (number-only style), which left the tree with no visible selection,
         -- so the tree gets its own faint band. Solid mode keeps the scheme's.
         local band
-        if vim.g.ui_transparent then
+        if colors.transparent() then
           band = colors.blend(normal, base, 0.08)
         else
           band = vim.api.nvim_get_hl(0, { name = "CursorLine", link = false }).bg or colors.blend(normal, base, 0.08)
