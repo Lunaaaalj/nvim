@@ -194,15 +194,22 @@ lualine.nvim ~  (nvim-lualine/lualine.nvim)
   diagnostics+filetype | progress+location. ~60fps refresh, tabline always on.
 
 noice.nvim ~  (folke/noice.nvim)
-  Replaces the cmdline, messages and popupmenu UI. Popup cmdline, LSP
-  progress/hover/signature, presets: bottom_search, command_palette,
-  long_message_to_split, lsp_doc_border.
+  Replaces the cmdline and popupmenu UI. Popup cmdline, LSP hover/signature,
+  presets: bottom_search, command_palette, long_message_to_split,
+  lsp_doc_border. Its `notify` is off and its messages go to murmur through
+  the `murmur` view backend; LSP progress is murmur's too.
 
-nvim-notify ~  (rcarriga/nvim-notify)
-  Notification backend for Noice (configured only inside the Noice spec):
-  `slide` stage (moves, never fades: fading left dark corners on the
-  transparent toasts; `static` is the fallback), 3s timeout. Noice routes
-  `vim.notify` through it.
+murmur.nvim ~  (local: ~/Downloads/GitHub/murmur.nvim, `:help murmur`)
+  Notifications, replacing nvim-notify. Owns `vim.notify`. Layout `island`:
+  one pill in the middle of the bufferline row that grows to fit the message
+  and shrinks back, `+N` when more are waiting, progress filling it. Motion
+  `wipe` (text revealed left to right; floats only move by whole cells and
+  never fade). Repeats merge (×N), errors stay until dismissed, warnings 5 s,
+  info 3 s, debug only in the centre; nothing but errors pops up while you
+  type in insert mode (the rest follow on InsertLeave). Centre `drawer`
+  (<leader>sn): every entry, "new since you looked" / earlier, details and
+  the sender's action inline. Also the inbox (<leader>sN) and the log
+  (<leader>sl). Lualine shows `◆ N new` / focus; clicking it opens the glance.
 
 snacks.nvim dashboard ~  (folke/snacks.nvim)
   Minimal single-column start screen, everything centered: the header art

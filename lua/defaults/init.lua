@@ -28,11 +28,8 @@ local transparent_groups = {
   "SnacksDashboardNormal",
   "WhichKeyNormal", "WhichKeyFloat", "WhichKeyBorder", "WhichKeyTitle",
   "WinSeparator", "VertSplit", "StatusLine", "StatusLineNC",
-  -- nvim-notify popups (the Noice notification backend): strip the solid dark
-  -- fill so the toast bodies/borders show the terminal background through.
-  "NotifyBackground",
-  "NotifyERRORBody", "NotifyWARNBody", "NotifyINFOBody", "NotifyDEBUGBody", "NotifyTRACEBody",
-  "NotifyERRORBorder", "NotifyWARNBorder", "NotifyINFOBorder", "NotifyDEBUGBorder", "NotifyTRACEBorder",
+  -- (murmur's toasts are solid surfaces on the scheme's own bg, set in
+  -- lua/plugins/murmur.lua, so they aren't listed here)
 }
 vim.api.nvim_create_autocmd("ColorScheme", {
   callback = function()

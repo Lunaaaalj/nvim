@@ -18,7 +18,7 @@ return {
             include_current_win = false,
             autoselect_one = true, -- only one candidate → open there, no prompt
             bo = {
-              filetype = { "neo-tree", "neo-tree-popup", "notify", "noice" },
+              filetype = { "neo-tree", "neo-tree-popup", "notify", "noice", "murmur", "murmur_toast" },
               buftype = { "terminal", "quickfix" },
             },
           },

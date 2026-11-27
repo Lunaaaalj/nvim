@@ -4,25 +4,11 @@ return {
   event = "VeryLazy",
   dependencies = {
     "MunifTanjim/nui.nvim",
-    {
-      "rcarriga/nvim-notify",
-      opts = {
-        -- `slide` moves toasts in/out without fading them; fading (`fade`,
-        -- `fade_in_slide_out`) is what left dark-corner artifacts on the
-        -- transparent toast bg. Fall back to `static` if slide shows any. The hex below is only
-        -- the blend reference and silences nvim-notify's "NotifyBackground has
-        -- no background highlight" warning; actual transparency comes from the
-        -- Notify* groups stripped in lua/defaults/init.lua's ColorScheme autocmd.
-        stages = "slide",
-        background_colour = "#000000",
-        timeout = 3000,
-      },
-    },
+    -- murmur.nvim replaces nvim-notify: it owns vim.notify and ships the
+    -- "murmur" view backend that messages are routed to below.
+    "murmur.nvim",
   },
-  keys = {
-    { "<leader>sn", "<cmd>Noice history<cr>", desc = "Show notification history" },
-    { "<leader>sd", "<cmd>Noice dismiss<cr>", desc = "Dismiss visible notifications" },
-  },
+  -- <leader>sn / <leader>sd (centre, dismiss) are murmur's now
   opts = {
     -- Noice's message router re-arms a timer every `throttle` ms forever, idle
     -- or not: the default 1000/30 was ~30 of an idle Neovim's ~55 wake-ups/s
@@ -34,10 +20,16 @@ return {
       enabled = true,
       view = "cmdline_popup", -- popup command line (can appear near top)
     },
-    messages = { enabled = true },
+    -- murmur (lua/plugins/murmur.lua) owns vim.notify; noice must not replace it
+    notify = { enabled = false },
+    -- every message noice catches (`:w` written, errors, echo…) goes to murmur,
+    -- through the backend at murmur.nvim/lua/noice/view/backend/murmur.lua
+    messages = { enabled = true, view = "murmur", view_error = "murmur", view_warn = "murmur" },
     popupmenu = { enabled = true },
     lsp = {
-      progress = { enabled = true },
+      -- murmur draws LSP progress itself (one line per task, from LspProgress)
+      progress = { enabled = false },
+      message = { view = "murmur" }, -- window/showMessage
       hover = { enabled = true },
       signature = { enabled = true },
     },
@@ -55,6 +47,7 @@ return {
     -- terminal background through. (Noice's own defaults suggest NormalFloat
     -- "to make it look like other floats".)
     views = {
+      murmur = { backend = "murmur" },
       cmdline_popup = {
         win_options = {
           winhighlight = {
