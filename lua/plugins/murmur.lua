@@ -9,34 +9,45 @@
 -- centre.
 --
 -- Glue that lives here, not in the plugin: theme-derived colours (through
--- defaults/colors.lua, re-applied on ColorScheme; toasts are solid surfaces on
--- the scheme's real background, so they read the same in transparent mode),
+-- defaults/colors.lua, re-applied on ColorScheme; toasts are solid surfaces in
+-- the scheme's popup-menu colours, so they read the same in transparent mode),
 -- the keys, and the lualine refresh on `User MurmurChanged`. The centre's
 -- filetype `murmur` is in cursorline.lua's `unmanaged_ft`.
+
+-- Colours come from the scheme's own floating UI, not from a blend on its
+-- background: schemes that are transparent by design (Ámbar Cielo) draw no
+-- Normal/NormalFloat background at all, and blending on colors.bg()'s
+-- fallback gave neutral black panels that matched nothing. The popup menu is
+-- the one surface every scheme paints, so murmur's floats look like the
+-- completion menu, its selection like PmenuSel and its titles like FloatTitle.
 local function set_hl()
   local c = require("defaults.colors")
   local hl = function(name, val) vim.api.nvim_set_hl(0, name, val) end
-  local bg = c.bg()
+  local bg_of = function(g) return c.attrs(g).bg end
   local fg = c.fg("Normal") or 0xd4be98
-  local acc = c.accent() or fg
+  local surface = bg_of("NormalFloat") or bg_of("Pmenu") or c.blend(fg, c.bg(), 0.08)
+  local text = c.fg("Pmenu", "NormalFloat", "Normal") or fg
+  local sel = bg_of("PmenuSel") or bg_of("Visual") or c.blend(fg, surface, 0.2)
+  local title = c.fg("FloatTitle", "Title") or c.accent() or fg
   local err = c.fg("DiagnosticError") or 0xea6962
-  local muted = c.fg("Comment") or c.blend(fg, bg, 0.55)
-  hl("MurmurNormal", { fg = fg, bg = c.blend(fg, bg, 0.07) })
-  hl("MurmurErrorNormal", { fg = fg, bg = c.blend(err, bg, 0.16) })
-  hl("MurmurIsland", { fg = fg, bg = c.blend(fg, bg, 0.10) })
-  hl("MurmurIslandError", { fg = fg, bg = c.blend(err, bg, 0.20) })
-  hl("MurmurCentre", { fg = fg, bg = c.blend(fg, bg, 0.05) })
-  hl("MurmurSel", { bg = c.blend(acc, bg, 0.20) })
-  hl("MurmurFlash", { fg = fg, bg = c.blend(acc, bg, 0.30) })
-  hl("MurmurAccent", { fg = acc })
-  hl("MurmurUnread", { fg = acc })
-  hl("MurmurTitle", { fg = acc, bold = true })
+  local muted = c.fg("Comment") or c.blend(text, surface, 0.55)
+  local faint = c.fg("NonText") or c.blend(muted, surface, 0.6)
+  hl("MurmurNormal", { fg = text, bg = surface })
+  hl("MurmurErrorNormal", { fg = text, bg = c.blend(err, surface, 0.22) })
+  hl("MurmurIsland", { fg = text, bg = surface })
+  hl("MurmurIslandError", { fg = text, bg = c.blend(err, surface, 0.25) })
+  hl("MurmurCentre", { fg = text, bg = surface })
+  hl("MurmurSel", { bg = sel })
+  hl("MurmurFlash", { fg = text, bg = c.blend(title, surface, 0.3) })
+  hl("MurmurAccent", { fg = title })
+  hl("MurmurUnread", { fg = title })
+  hl("MurmurTitle", { fg = title, bold = true })
   hl("MurmurSource", { fg = muted })
   hl("MurmurMuted", { fg = muted })
-  hl("MurmurFaint", { fg = c.blend(muted, bg, 0.6) })
-  hl("MurmurKey", { fg = c.blend(muted, bg, 0.75) })
+  hl("MurmurFaint", { fg = faint })
+  hl("MurmurKey", { fg = faint })
   hl("MurmurChip", { fg = muted })
-  hl("MurmurChipOn", { fg = bg, bg = acc, bold = true })
+  hl("MurmurChipOn", { fg = text, bg = sel, bold = true })
   require("murmur.hl").derive() -- island caps follow MurmurIsland's bg
 end
 
