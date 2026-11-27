@@ -247,6 +247,13 @@ Built-in window keys worth knowing:
                 ("<id> <state> <name>"). In terminal mode, <C-h/j/k/l>
                 jump to other windows and <Esc><Esc> returns to normal mode.
   -             Oil: open the parent directory as an editable buffer
+  <leader>e     Columns explorer (mini.files) at the current file; again
+                closes. l/h in/out, <CR> open, edit + `=` to apply,
+                <C-v>/<C-x> split, g? help
+  <leader>E     Columns explorer at the cwd
+  <leader>;     Breadcrumbs (dropbar): pick a winbar segment and open its
+                menu; hovering a file previews it
+  [; / ];       Breadcrumbs: start of the current context / next context
   <leader>sr    Search & replace across files (grug-far); prefills a
                 `*.<ext>` filter from the current file
   <leader>sR    (visual) Search & replace using the visual selection

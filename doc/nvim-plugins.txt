@@ -130,6 +130,17 @@ oil.nvim ~  (stevearc/oil.nvim)
   Edit the filesystem as a buffer; shown in a float, hidden files visible.
   Not the default explorer. Open parent dir with `-`.
 
+mini.files ~  (echasnovski/mini.files)
+  Miller-column explorer in floats: the branch you are on as columns with
+  a preview of the entry under the cursor. <leader>e opens at the current
+  file (again closes), <leader>E at the cwd. l/h step in/out, <CR> opens a
+  file and closes. The columns are editable like oil: rename by editing,
+  `o` new entry (a trailing / makes a folder), dd delete (to mini.files'
+  trash), then `=` applies after a confirmation. <C-v>/<C-x>/<C-t> open in
+  a split/tab, g. hides dotfiles, gy yanks the path, gO reveals in Finder,
+  g? lists every key. Git state colours the names, as in neo-tree.
+  Not the default explorer (neo-tree is).
+
 harpoon ~  (ThePrimeagen/harpoon, branch harpoon2)
   Pin a handful of files for instant jumps. <leader>Ha add, <leader>Hh menu,
   <leader>1-4 jump.
@@ -303,11 +314,14 @@ snacks.nvim dashboard ~  (folke/snacks.nvim)
   spec (`enabled = false`; it made the dashboard view jump back and forth).
   Its timings are kept for re-enabling: 140ms outQuad per jump (<C-d>, n, G, ...), 50ms linear for held-key repeats.
 
-barbecue.nvim ~  (utilyre/barbecue.nvim)
-  Winbar breadcrumbs of the code location, powered by nvim-navic.
-
-nvim-navic ~  (SmiteshP/nvim-navic)
-  LSP-driven location provider feeding barbecue's breadcrumbs.
+dropbar.nvim ~  (Bekaboo/dropbar.nvim)
+  Winbar breadcrumbs (path + LSP/treesitter symbols) where every segment
+  is a menu of its siblings; hovering a file in a menu previews it in the
+  window below. <leader>; picks a segment by letter, [; jumps to the start
+  of the current context, ]; selects the next one. Inside a menu: j/k,
+  l/<CR> open, h back, i fuzzy-filters, q/<Esc> close. Only ordinary file
+  windows get a bar: terminals keep toggleterm's winbar, neo-tree its
+  source selector, pdfview its status. Replaced barbecue.nvim + nvim-navic.
 
 Cursor trail ~
   No plugin: kitty's own `cursor_trail` animates the cursor on the GPU, so
