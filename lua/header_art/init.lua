@@ -114,7 +114,7 @@ local function set_hl()
   local accent = colors.fg("Normal") or colors.accent()
   if not accent then return end
   local bg
-  if vim.g.ui_transparent then
+  if colors.transparent() then
     bg = hex_to_int(colors.terminal_bg)
   else
     bg = vim.api.nvim_get_hl(0, { name = "Normal", link = false }).bg or hex_to_int(colors.terminal_bg)

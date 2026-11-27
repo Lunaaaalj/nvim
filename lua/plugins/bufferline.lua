@@ -18,7 +18,7 @@ local function highlights(defaults)
   local hl = {}
   for name, attrs in pairs(defaults.highlights) do
     hl[name] = {}
-    if vim.g.ui_transparent then hl[name].bg = "NONE" end
+    if c.transparent() then hl[name].bg = "NONE" end
     if attrs.underline then hl[name].sp = accent end
   end
 

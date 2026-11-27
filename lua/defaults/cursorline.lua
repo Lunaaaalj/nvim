@@ -21,12 +21,12 @@ local styles = { "number", "underline", "band" }
 vim.g.cursorline_style = vim.g.cursorline_style or "number"
 
 local function opt()
-  if vim.g.ui_transparent and vim.g.cursorline_style == "number" then return "number" end
+  if colors.transparent() and vim.g.cursorline_style == "number" then return "number" end
   return "number,line"
 end
 
 local function apply_highlights()
-  if not vim.g.ui_transparent then return end -- the scheme's band looks right on its own bg
+  if not colors.transparent() then return end -- the scheme's band looks right on its own bg
   local set = vim.api.nvim_set_hl
   set(0, "CursorLineNr", { fg = colors.accent(), bold = true })
   local style = vim.g.cursorline_style
