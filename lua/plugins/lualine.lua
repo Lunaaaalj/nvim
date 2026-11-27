@@ -127,6 +127,14 @@ return {
                 return require("music").state.playing and "MusicAccent" or "MusicMuted"
               end,
             },
+            -- murmur.nvim: unread notifications / held while typing / focus mode;
+            -- reads cached counts, refreshed on User MurmurChanged; click = glance
+            {
+              function() return require("murmur").status() end,
+              cond = function() return package.loaded.murmur ~= nil and require("murmur").status() ~= "" end,
+              color = "MurmurAccent",
+              on_click = function() require("murmur").open("glance") end,
+            },
             -- quill.nvim: findings that need facts from you / left for later
             -- (only once the plugin is loaded; never loads it)
             {

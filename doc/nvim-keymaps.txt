@@ -83,8 +83,15 @@ Discovery: `<leader>?` opens a Telescope live search of ALL keymaps;
   5 / 6 / 7     The Apple Music player (the spectrum also shows the playing
                 song and goes quiet when paused) / an LSP menu (info, log,
                 restart a client) / diagnostics in Telescope.
-  <leader>sn    Show notification history (Noice)
+  <leader>sn    Notification centre: the drawer (murmur.nvim; j/k move,
+                <CR> runs the entry's action, y yank, m mute the source,
+                d delete, f level filter, g group, x clear, q close)
+  <leader>sN    Search notifications (the inbox, a Telescope picker; type
+                `src:pdfview` or `lvl:warn`)
+  <leader>sl    Notification log (60 s activity strip + table)
   <leader>sd    Dismiss visible notifications
+  <leader>uN    Notification focus mode: only errors pop up, the rest wait
+                in the centre (the statusline counts them; click it to glance)
   <leader>fml   Make it rain (cellular-automaton, just for fun)
   <leader>flife Game of Life (cellular-automaton)
   <leader>ty    Typing practice (typr)

@@ -38,8 +38,9 @@ local sections = {
     { "<leader>uC / ui", "Chatter sounds, each its own switch: Claude talking + working watch / terminal (typing + output)" },
     { "<leader>ut", "Toggle treesitter context" },
     { "<leader>up", "Toggle precognition motion hints" },
-    { "<leader>sn", "Show notification history (Noice)" },
+    { "<leader>sn / sN / sl", "Notifications: centre (drawer) / search (inbox) / log" },
     { "<leader>sd", "Dismiss visible notifications" },
+    { "<leader>uN", "Notification focus mode: only errors pop up" },
   } },
   { "Fun", {
     { "<leader>fml", "Make it rain (cellular automaton)" },
