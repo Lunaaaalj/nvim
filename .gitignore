@@ -1,3 +1,4 @@
 # Machine-local colorscheme choice (now persisted in stdpath("state"))
 .colorscheme
 __pycache__/
+audit/
